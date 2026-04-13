@@ -1,0 +1,22 @@
+name,champions_type,champions_category,champions_pp,champions_power,champions_accuracy,champions_effect,champions_effect_chance,sv_type,sv_pp,sv_power,sv_accuracy,sv_effect_chance
+Growth,Grass,Status,20,--,101,Boosts the user's Attack and Sp. Atk stats by 1 stage. In harsh sunlight these stats will be boosted by 2 stages instead.,0,Normal,20,--,101,0
+Crabhammer,Water,Physical,12,100,95,This move has a 1-stage Critical-Hit Ratio Boost.,0,,10,100,90,0
+Bone Rush,Ground,Physical,12,30,90,The user attacks 2 to 5 times in a row.,0,,10,25,90,0
+Iron Head,Steel,Physical,16,80,100,Has a 20% chance of making the target flinch.,20,,15,80,100,30
+Night Daze,Dark,Special,12,90,95,Has a 40% chance of lowering the target's accuracy by 1 stage.,40,,10,85,95,40
+Moonblast,Fairy,Special,16,95,100,Has a 10% chance of lowering the target's Sp. Atk stat by 1 stage.,10,,15,95,100,30
+First Impression,Bug,Physical,12,100,100,This move fails unless it is the first move used by the user after it enters a battle.,0,,10,90,100,0
+Spirit Shackle,Ghost,Physical,12,90,100,Gives the target the Can't Escape status.,0,,10,80,100,0
+Fire Lash,Fire,Physical,16,90,100,Lowers the target's Defense stat by 1 stage.,0,,15,80,100,0
+Trop Kick,Grass,Physical,16,85,100,Lowers the target's Attack stat by 1 stage.,0,,15,70,100,0
+Beak Blast,Flying,Physical,8,120,100,If the user is hit by a contact move before it uses this move the attacker will be burned.,0,,15,100,100,0
+Snap Trap,Steel,Physical,16,35,100,Gives the target the Bound status.,100,Grass,15,35,100,100
+Apple Acid,Grass,Special,12,90,100,Lowers the target's Sp. Def stat by 1 stage.,0,,10,80,100,0
+Grav Apple,Grass,Physical,12,90,100,Lowers the target's Defense stat by 1 stage. This move's power is boosted by 50% when the Gravity status is active.,0,,10,80,100,0
+Dire Claw,Poison,Physical,16,80,100,Has a 30% chance of leaving the target poisoned paralyzed or asleep.,30,,15,80,100,50
+Psyshield Bash,Psychic,Physical,12,90,90,Boosts the user's Defense stat by 1 stage.,0,,10,70,90,0
+Mountain Gale,Ice,Physical,12,120,85,Has a 30% chance of making the target flinch.,30,,10,100,85,30
+Infernal Parade,Ghost,Special,16,65,100,Has a 30% chance of burning the target. This move's power is doubled if the target has a status condition.,30,,15,60,100,30
+Revival Blessing,Normal,Status,,--,--,Revives a Pokémon in the user's party that has fainted and restores 1/2 of that Pokémon's max HP.,0,,1,--,101,0
+Double Shock,Electric,Physical,,--,--,The user loses the Electric type. This move fails unless it is used by an Electric type.,0,,5,120,100,0
+Syrup Bomb,Grass,Special,12,60,90,Gives the target the Syrupy status for 3 turns.,100,,10,60,85,100

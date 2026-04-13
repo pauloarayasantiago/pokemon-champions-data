@@ -1,0 +1,13 @@
+Prior Effect
+
+Pokémon is unable to use moves (except for moves that thaw)20% chance to thaw each turn
+
+Pokémon is unable to use moves (except for moves that thaw)25% chance to thaw each turn it attempts to use a move.Pokémon will thaw on third turn after becoming frozen
+
+25% chance of being unable to moveSpeed reduced to 50% of maximum
+
+12.5% chance of being unable to moveSpeed reduced to 50% of maximum
+
+Lasts 2-4 turns and unable to move while asleep
+
+Unable to move while Asleep. 33.3% chance of waking on Turn 2 of Sleep. 100% on Turn 3
