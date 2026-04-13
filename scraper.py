@@ -154,6 +154,68 @@ def extract_all_forms(soup):
     return forms
 
 
+def parse_base_stats(soup):
+    """Extract base stats (HP/Atk/Def/SpA/SpD/Spe) from a Pokémon page.
+    Serebii layout: row0 = fooevo "Stats", row1 = column headers, row2 = base stats.
+    Returns dict with stat keys or None if not found."""
+    for table in soup.find_all("table", class_="dextable"):
+        rows = table.find_all("tr", recursive=False)
+        if len(rows) < 3:
+            continue
+        # Base form stat table has exactly "Stats" in the fooevo header
+        header_text = rows[0].get_text(strip=True)
+        if header_text != "Stats":
+            continue
+        # Row 2 has: ["Base Stats - Total: XXX", HP, Atk, Def, SpA, SpD, Spe]
+        data_cells = rows[2].find_all("td", recursive=False)
+        vals = []
+        for cell in data_cells:
+            text = cell.get_text(strip=True)
+            if text.isdigit():
+                vals.append(int(text))
+        if len(vals) >= 6:
+            return {
+                "hp": vals[0],
+                "attack": vals[1],
+                "defense": vals[2],
+                "sp_atk": vals[3],
+                "sp_def": vals[4],
+                "speed": vals[5],
+            }
+    return None
+
+
+def parse_mega_stats(soup):
+    """Extract Mega Evolution base stats from the same Pokémon page.
+    Mega stat tables have "Stats -" in the fooevo header (one table per Mega).
+    Returns list of dicts: [{mega_name, hp, attack, ...}, ...] or empty list."""
+    mega_stats = []
+    for table in soup.find_all("table", class_="dextable"):
+        rows = table.find_all("tr", recursive=False)
+        if len(rows) < 3:
+            continue
+        header_text = rows[0].get_text(strip=True)
+        if header_text != "Stats -":
+            continue
+        # Row 2 has base stats for this Mega form
+        data_cells = rows[2].find_all("td", recursive=False)
+        vals = []
+        for cell in data_cells:
+            text = cell.get_text(strip=True)
+            if text.isdigit():
+                vals.append(int(text))
+        if len(vals) >= 6:
+            mega_stats.append({
+                "hp": vals[0],
+                "attack": vals[1],
+                "defense": vals[2],
+                "sp_atk": vals[3],
+                "sp_def": vals[4],
+                "speed": vals[5],
+            })
+    return mega_stats
+
+
 def scrape_pokemon(name, url):
     """Scrape a single Pokémon page. Returns dict or None on 404."""
     full_url = BASE_URL + url
@@ -168,12 +230,16 @@ def scrape_pokemon(name, url):
     moves = parse_moves(soup)
     forms = extract_all_forms(soup)
     megas = [f for f in forms if f["name"].startswith("Mega ")]
+    stats = parse_base_stats(soup)
+    mega_stats = parse_mega_stats(soup)
     return {
         "type1": type1,
         "type2": type2,
         "abilities": abilities,
         "moves": moves,
         "megas": megas,
+        "stats": stats,
+        "mega_stats": mega_stats,
     }
 
 
@@ -480,23 +546,44 @@ def main():
                 print("404 — skipped")
                 failed.append(name)
             else:
+                stats = data.get("stats") or {}
+                bst = sum(stats.values()) if stats else ""
                 results.append({
                     "name": name,
                     "type1": data["type1"],
                     "type2": data["type2"],
                     "abilities": "|".join(data["abilities"]),
                     "moves": "|".join(data["moves"]),
+                    "hp": stats.get("hp", ""),
+                    "attack": stats.get("attack", ""),
+                    "defense": stats.get("defense", ""),
+                    "sp_atk": stats.get("sp_atk", ""),
+                    "sp_def": stats.get("sp_def", ""),
+                    "speed": stats.get("speed", ""),
+                    "bst": bst,
                 })
-                for mega in data["megas"]:
+                # Match mega stats by index order (forms and stat tables appear in same order)
+                mega_stats_list = data.get("mega_stats", [])
+                for idx, mega in enumerate(data["megas"]):
+                    ms = mega_stats_list[idx] if idx < len(mega_stats_list) else {}
+                    mega_bst = sum(ms.values()) if ms else ""
                     all_megas.append({
                         "base_pokemon": name,
                         "mega_name": mega["name"],
                         "type1": mega["type1"],
                         "type2": mega["type2"],
                         "ability": "|".join(mega["abilities"]),
+                        "hp": ms.get("hp", ""),
+                        "attack": ms.get("attack", ""),
+                        "defense": ms.get("defense", ""),
+                        "sp_atk": ms.get("sp_atk", ""),
+                        "sp_def": ms.get("sp_def", ""),
+                        "speed": ms.get("speed", ""),
+                        "bst": mega_bst,
                     })
                 mega_info = f", {len(data['megas'])} mega(s)" if data["megas"] else ""
-                print(f"{data['type1']}/{data['type2'] or '—'}, {len(data['abilities'])} abilities, {len(data['moves'])} moves{mega_info}")
+                stats_info = f", BST {bst}" if bst else ", no stats found"
+                print(f"{data['type1']}/{data['type2'] or '—'}, {len(data['abilities'])} abilities, {len(data['moves'])} moves{mega_info}{stats_info}")
         except Exception as e:
             print(f"ERROR: {e}")
             failed.append(name)
@@ -504,8 +591,12 @@ def main():
         if i < len(pokemon_list):
             time.sleep(1)
 
-    write_csv("pokemon_champions.csv", results, ["name", "type1", "type2", "abilities", "moves"])
-    write_csv("mega_evolutions.csv", all_megas, ["base_pokemon", "mega_name", "type1", "type2", "ability"])
+    write_csv("pokemon_champions.csv", results,
+             ["name", "type1", "type2", "abilities", "moves",
+              "hp", "attack", "defense", "sp_atk", "sp_def", "speed", "bst"])
+    write_csv("mega_evolutions.csv", all_megas,
+             ["base_pokemon", "mega_name", "type1", "type2", "ability",
+              "hp", "attack", "defense", "sp_atk", "sp_def", "speed", "bst"])
 
     # Summary
     print(f"\n{'='*50}")

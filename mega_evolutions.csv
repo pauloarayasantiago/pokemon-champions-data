@@ -1,60 +1,60 @@
-base_pokemon,mega_name,type1,type2,ability
-Venusaur,Mega Venusaur,Grass,Poison,Thick Fat
-Charizard,Mega Charizard,Fire,Dragon,Tough Claws
-Charizard,Mega Charizard,Fire,Flying,Drought
-Blastoise,Mega Blastoise,Water,,Mega Launcher
-Beedrill,Mega Beedrill,Bug,Poison,Adaptability
-Pidgeot,Mega Pidgeot,Normal,Flying,No Guard
-Clefable,Mega Clefable,Fairy,Flying,Magic Bounce
-Alakazam,Mega Alakazam,Psychic,,Trace
-Victreebel,Mega Victreebel,Grass,Poison,Innards Out
-Slowbro,Mega Slowbro,Water,Psychic,Shell Armor
-Gengar,Mega Gengar,Ghost,Poison,Shadow Tag
-Kangaskhan,Mega Kangaskhan,Normal,,Parental Bond
-Starmie,Mega Starmie,Water,Psychic,Huge Power
-Pinsir,Mega Pinsir,Bug,Flying,Aerilate
-Gyarados,Mega Gyarados,Water,Dark,Mold Breaker
-Aerodactyl,Mega Aerodactyl,Rock,Flying,Tough Claws
-Dragonite,Mega Dragonite,Dragon,Flying,Multiscale
-Meganium,Mega Meganium,Grass,Fairy,Mega Sol
-Feraligatr,Mega Feraligatr,Water,Dragon,Dragonize
-Ampharos,Mega Ampharos,Electric,Dragon,Mold Breaker
-Steelix,Mega Steelix,Steel,Ground,Sand Force
-Scizor,Mega Scizor,Bug,Steel,Technician
-Heracross,Mega Heracross,Bug,Fighting,Skill Link
-Skarmory,Mega Skarmory,Steel,Flying,Stalwart
-Houndoom,Mega Houndoom,Dark,Fire,Solar Power
-Tyranitar,Mega Tyranitar,Rock,Dark,Sand Stream
-Gardevoir,Mega Gardevoir,Psychic,Fairy,Pixilate
-Sableye,Mega Sableye,Dark,Ghost,Magic Bounce
-Aggron,Mega Aggron,Steel,,Filter
-Medicham,Mega Medicham,Fighting,Psychic,Pure Power
-Manectric,Mega Manectric,Electric,,Intimidate
-Sharpedo,Mega Sharpedo,Water,Dark,Strong Jaw
-Camerupt,Mega Camerupt,Fire,Ground,Sheer Force
-Altaria,Mega Altaria,Dragon,Fairy,Pixilate
-Banette,Mega Banette,Ghost,,Prankster
-Chimecho,Mega Chimecho,Psychic,Steel,Levitate
-Absol,Mega Absol,Dark,,Magic Bounce
-Glalie,Mega Glalie,Ice,,Refrigerate
-Lopunny,Mega Lopunny,Normal,Fighting,Scrappy
-Garchomp,Mega Garchomp,Dragon,Ground,Sand Force
-Lucario,Mega Lucario,Fighting,Steel,Adaptability
-Abomasnow,Mega Abomasnow,Grass,Ice,Snow Warning
-Gallade,Mega Gallade,Psychic,Fighting,Inner Focus
-Froslass,Mega Froslass,Ice,Ghost,Snow Warning
-Emboar,Mega Emboar,Fire,Fighting,Mold Breaker
-Excadrill,Mega Excadrill,Ground,Steel,Piercing Drill
-Audino,Mega Audino,Normal,Fairy,Healer
-Chandelure,Mega Chandelure,Ghost,Fire,Infiltrator
-Golurk,Mega Golurk,Ground,Ghost,Unseen Fist
-Chesnaught,Mega Chesnaught,Grass,Fighting,Bulletproof
-Delphox,Mega Delphox,Fire,Psychic,Levitate
-Greninja,Mega Greninja,Water,Dark,Protean
-Floette,Mega Floette,Fairy,,Fairy Aura
-Meowstic,Mega Meowstic,Psychic,,Trace
-Hawlucha,Mega Hawlucha,Fighting,Flying,No Guard
-Crabominable,Mega Crabominable,Fighting,Ice,Iron Fist
-Drampa,Mega Drampa,Normal,Dragon,Berserk
-Scovillain,Mega Scovillain,Grass,Fire,Spicy Spray
-Glimmora,Mega Glimmora,Rock,Poison,Adaptability
+base_pokemon,mega_name,type1,type2,ability,hp,attack,defense,sp_atk,sp_def,speed,bst
+Venusaur,Mega Venusaur,Grass,Poison,Thick Fat,80,100,123,122,120,80,625
+Charizard,Mega Charizard,Fire,Dragon,Tough Claws,78,130,111,130,85,100,634
+Charizard,Mega Charizard,Fire,Flying,Drought,78,104,78,159,115,100,634
+Blastoise,Mega Blastoise,Water,,Mega Launcher,79,103,120,135,115,78,630
+Beedrill,Mega Beedrill,Bug,Poison,Adaptability,65,150,40,15,80,145,495
+Pidgeot,Mega Pidgeot,Normal,Flying,No Guard,83,80,80,135,80,121,579
+Clefable,Mega Clefable,Fairy,Flying,Magic Bounce,95,80,93,135,110,70,583
+Alakazam,Mega Alakazam,Psychic,,Trace,55,50,65,175,105,150,600
+Victreebel,Mega Victreebel,Grass,Poison,Innards Out,80,125,85,135,95,70,590
+Slowbro,Mega Slowbro,Water,Psychic,Shell Armor,95,75,180,130,80,30,590
+Gengar,Mega Gengar,Ghost,Poison,Shadow Tag,60,65,80,170,95,130,600
+Kangaskhan,Mega Kangaskhan,Normal,,Parental Bond,105,125,100,60,100,100,590
+Starmie,Mega Starmie,Water,Psychic,Huge Power,60,100,105,130,105,120,620
+Pinsir,Mega Pinsir,Bug,Flying,Aerilate,65,155,120,65,90,105,600
+Gyarados,Mega Gyarados,Water,Dark,Mold Breaker,95,155,109,70,130,81,640
+Aerodactyl,Mega Aerodactyl,Rock,Flying,Tough Claws,80,135,85,70,95,150,615
+Dragonite,Mega Dragonite,Dragon,Flying,Multiscale,91,124,115,145,125,100,700
+Meganium,Mega Meganium,Grass,Fairy,Mega Sol,80,92,115,143,115,80,625
+Feraligatr,Mega Feraligatr,Water,Dragon,Dragonize,85,160,125,89,93,78,630
+Ampharos,Mega Ampharos,Electric,Dragon,Mold Breaker,90,95,105,165,110,45,610
+Steelix,Mega Steelix,Steel,Ground,Sand Force,75,125,230,55,95,30,610
+Scizor,Mega Scizor,Bug,Steel,Technician,70,150,140,65,100,75,600
+Heracross,Mega Heracross,Bug,Fighting,Skill Link,80,185,115,40,105,75,600
+Skarmory,Mega Skarmory,Steel,Flying,Stalwart,65,140,110,40,100,110,565
+Houndoom,Mega Houndoom,Dark,Fire,Solar Power,75,90,90,140,90,115,600
+Tyranitar,Mega Tyranitar,Rock,Dark,Sand Stream,100,164,150,95,120,71,700
+Gardevoir,Mega Gardevoir,Psychic,Fairy,Pixilate,68,85,65,165,135,100,618
+Sableye,Mega Sableye,Dark,Ghost,Magic Bounce,50,85,125,85,115,20,480
+Aggron,Mega Aggron,Steel,,Filter,70,140,230,60,80,50,630
+Medicham,Mega Medicham,Fighting,Psychic,Pure Power,60,100,85,80,85,100,510
+Manectric,Mega Manectric,Electric,,Intimidate,70,75,80,135,80,135,575
+Sharpedo,Mega Sharpedo,Water,Dark,Strong Jaw,70,140,70,110,65,105,560
+Camerupt,Mega Camerupt,Fire,Ground,Sheer Force,70,120,100,145,105,20,560
+Altaria,Mega Altaria,Dragon,Fairy,Pixilate,75,110,110,110,105,80,590
+Banette,Mega Banette,Ghost,,Prankster,64,165,75,93,83,75,555
+Chimecho,Mega Chimecho,Psychic,Steel,Levitate,75,50,110,135,120,65,555
+Absol,Mega Absol,Dark,,Magic Bounce,65,150,60,115,60,115,565
+Glalie,Mega Glalie,Ice,,Refrigerate,80,120,80,120,80,100,580
+Lopunny,Mega Lopunny,Normal,Fighting,Scrappy,65,136,94,54,96,135,580
+Garchomp,Mega Garchomp,Dragon,Ground,Sand Force,108,170,115,120,95,92,700
+Lucario,Mega Lucario,Fighting,Steel,Adaptability,70,145,88,140,70,112,625
+Abomasnow,Mega Abomasnow,Grass,Ice,Snow Warning,90,132,105,132,105,30,594
+Gallade,Mega Gallade,Psychic,Fighting,Inner Focus,68,165,95,65,115,110,618
+Froslass,Mega Froslass,Ice,Ghost,Snow Warning,70,80,70,140,100,120,580
+Emboar,Mega Emboar,Fire,Fighting,Mold Breaker,110,148,75,110,110,75,628
+Excadrill,Mega Excadrill,Ground,Steel,Piercing Drill,110,165,100,65,65,103,608
+Audino,Mega Audino,Normal,Fairy,Healer,103,60,126,80,126,50,545
+Chandelure,Mega Chandelure,Ghost,Fire,Infiltrator,60,75,110,175,110,90,620
+Golurk,Mega Golurk,Ground,Ghost,Unseen Fist,89,159,105,70,105,55,583
+Chesnaught,Mega Chesnaught,Grass,Fighting,Bulletproof,88,137,172,74,115,44,630
+Delphox,Mega Delphox,Fire,Psychic,Levitate,75,69,72,159,125,134,634
+Greninja,Mega Greninja,Water,Dark,Protean,72,125,77,133,81,142,630
+Floette,Mega Floette,Fairy,,Fairy Aura,74,85,87,155,148,102,651
+Meowstic,Mega Meowstic,Psychic,,Trace,74,48,76,143,101,124,566
+Hawlucha,Mega Hawlucha,Fighting,Flying,No Guard,78,137,100,74,93,118,600
+Crabominable,Mega Crabominable,Fighting,Ice,Iron Fist,97,157,122,62,107,33,578
+Drampa,Mega Drampa,Normal,Dragon,Berserk,78,85,110,160,116,36,585
+Scovillain,Mega Scovillain,Grass,Fire,Spicy Spray,65,138,85,138,85,75,586
+Glimmora,Mega Glimmora,Rock,Poison,Adaptability,83,90,105,150,96,101,625

@@ -1,5 +1,6 @@
 import { connect } from "@lancedb/lancedb";
 import { resolve } from "node:path";
+import { readdirSync } from "node:fs";
 import {
   chunkPokemonCsv,
   chunkMegaEvolutionsCsv,
@@ -8,6 +9,8 @@ import {
   chunkUpdatedAttacksCsv,
   chunkNewAbilitiesCsv,
   chunkMegaAbilitiesCsv,
+  chunkTournamentTeamsCsv,
+  chunkPikalyticsUsageCsv,
   chunkPlainTextFile,
   chunkMarkdownFile,
   type Chunk,
@@ -29,6 +32,8 @@ interface FileEntry {
     | "updated-attacks-csv"
     | "new-abilities-csv"
     | "mega-abilities-csv"
+    | "tournament-teams-csv"
+    | "pikalytics-usage-csv"
     | "plain-text"
     | "markdown";
 }
@@ -42,6 +47,8 @@ const FILES: FileEntry[] = [
   { path: "updated_attacks.csv", type: "updated-attacks-csv" },
   { path: "new_abilities.csv", type: "new-abilities-csv" },
   { path: "mega_abilities.csv", type: "mega-abilities-csv" },
+  { path: "tournament_teams.csv", type: "tournament-teams-csv" },
+  { path: "pikalytics_usage.csv", type: "pikalytics-usage-csv" },
 
   // Plain text mechanics files
   { path: "status_conditions.txt", type: "plain-text" },
@@ -55,7 +62,32 @@ const FILES: FileEntry[] = [
   { path: "memory-bank/projectbrief.md", type: "markdown" },
   { path: "memory-bank/systemPatterns.md", type: "markdown" },
   { path: "memory-bank/techContext.md", type: "markdown" },
+
+  // Research documents
+  { path: "research/claude-research.md", type: "markdown" },
+  { path: "research/Gemini.txt", type: "plain-text" },
+  { path: "research/Pokémon Champions (2026) — Competitive Knowledge Base.md", type: "markdown" },
+
+  // Knowledge documents
+  { path: "data/knowledge/type_chart.md", type: "markdown" },
+  { path: "data/knowledge/damage_calc.md", type: "markdown" },
+  { path: "data/knowledge/team_archetypes.md", type: "markdown" },
+  { path: "data/knowledge/team_building_theory.md", type: "markdown" },
+  { path: "data/knowledge/meta_snapshot.md", type: "markdown" },
+  { path: "data/knowledge/speed_tiers.md", type: "markdown" },
+  { path: "data/knowledge/champions_rules.md", type: "markdown" },
 ];
+
+// Dynamically add all YouTube transcript markdown files
+try {
+  const transcriptDir = resolve(PROJECT_ROOT, "data", "transcripts");
+  const transcriptFiles = readdirSync(transcriptDir)
+    .filter((f) => f.endsWith(".md"))
+    .map((f): FileEntry => ({ path: `data/transcripts/${f}`, type: "markdown" }));
+  FILES.push(...transcriptFiles);
+} catch {
+  // data/transcripts/ may not exist yet — skip silently
+}
 
 async function chunkFile(entry: FileEntry, absPath: string): Promise<Chunk[]> {
   switch (entry.type) {
@@ -73,6 +105,10 @@ async function chunkFile(entry: FileEntry, absPath: string): Promise<Chunk[]> {
       return chunkNewAbilitiesCsv(absPath, entry.path);
     case "mega-abilities-csv":
       return chunkMegaAbilitiesCsv(absPath, entry.path);
+    case "tournament-teams-csv":
+      return chunkTournamentTeamsCsv(absPath, entry.path);
+    case "pikalytics-usage-csv":
+      return chunkPikalyticsUsageCsv(absPath, entry.path);
     case "plain-text":
       return chunkPlainTextFile(absPath, entry.path);
     case "markdown":

@@ -2,28 +2,50 @@
 
 ## Environment
 - **Platform:** Windows 11 Pro
-- **Python:** 3.13 (system)
-- **Libraries:** requests, beautifulsoup4
+- **Python:** 3.13 (system, miniconda3)
+- **Node.js:** with npx tsx for TypeScript execution
 - **Shell:** bash (Git Bash on Windows)
 - **Encoding:** UTF-8 (set PYTHONIOENCODING=utf-8 for Windows console)
 
+## Python Dependencies
+- `requests` + `beautifulsoup4` — Web scraping (Serebii)
+- `yt-dlp` — YouTube search and metadata extraction
+- `youtube-transcript-api` (v1.2.4) — YouTube transcript fetching
+  - API: `YouTubeTranscriptApi().fetch(video_id, languages=["en"])` returns `FetchedTranscript` with `.text` snippets
+  - **Known issue:** YouTube rate-limits/IP-blocks after ~24 sequential requests; no documented cooldown period (community reports 1-24 hours)
+
+## TypeScript / Node.js Dependencies
+- `@huggingface/transformers` (^4.0.0) — Local embedding model
+- `@lancedb/lancedb` (^0.27.2) — Vector database
+- `apache-arrow` (^18.1.0) — Data serialization
+- `csv-parse` (^6.2.1) — CSV parsing
+- `tsx` (^4.21.0) — TypeScript executor
+- `typescript` (^6.0.2)
+
+## Embedding Model
+- Model: `Xenova/all-MiniLM-L6-v2`
+- Dimensions: 384
+- Download: ~80MB (first run, cached locally)
+- Normalization: L2 for cosine distance
+
 ## Scraper Architecture
-Single script `scraper.py` using requests + BeautifulSoup4.
-- 1-second delay between individual Pokémon page requests
-- Deduplicates Pokémon by URL (Mega/regional forms share base URLs)
-- Extracts all forms (base + Mega) from each individual page
 
-## Data Source: Serebii.net
-- **Pokémon list:** `/pokemonchampions/pokemon.shtml` — table with `<a href="/pokedex-champions/{name}/">`
-- **Individual pages:** `/pokedex-champions/{name}/` — types via `<img src="/pokedex-bw/type/{type}.gif">`, abilities via `<a href="/abilitydex/">`, moves in "Standard Moves" `dextable`
-- **Mega forms:** Same URL as base form, separate Name/Type/Abilities sections further down the page
-- **Items:** `/pokemonchampions/items.shtml` — 4 `dextable` tables (Hold Items, Mega Stones, Berries, Misc)
-- **Moves:** `/pokemonchampions/moves.shtml` — `class="tab"` table, 7 columns
-- **Updated attacks:** `/pokemonchampions/updatedattacks.shtml` — paired rows (Champions/S/V), 9+5 cells
+### scraper.py (Serebii)
+- Source: `serebii.net/pokemonchampions/` and `/pokedex-champions/`
+- 1-second delay between Pokémon page requests
+- Deduplicates by URL (Mega/regional forms share base URLs)
+- Extracts all forms (base + Mega) from each page
+- Key HTML patterns:
+  - Type images: `<img src="/pokedex-bw/type/{type}.gif">`
+  - Abilities: `<a href="/abilitydex/...">`
+  - Moves: "Standard Moves" `dextable`
+  - Mega sections: `class="fooevo"` headers
 
-## Key HTML Patterns
-- Type images: `<img src="/pokedex-bw/type/{type}.gif">` — extract type from src filename
-- Move type in individual pages: alt text like `"Assurance - Dark-type"` (different from list page)
-- Category: `physical.png`, `special.png`, `other.png` in same directory
-- Abilities: `<td class="fooleft"><b>Abilities</b>: <a href="/abilitydex/...">`
-- Mega sections: separate Name/Type `dextable` blocks with `class="fooevo"` headers
+### scraper_youtube.py (YouTube)
+- yt-dlp for search (no API key needed)
+- youtube-transcript-api for transcripts (auto-captions)
+- Date filter: `--dateafter 20260408` (release day)
+- Keyword filter on titles; rejects S/V, Sword/Shield, Unite, TCG, etc.
+- Output: `data/transcripts/{date}_{channel}_{slug}.md` with YAML frontmatter
+- Deduplication: reads existing transcripts to skip re-downloads
+- 21 search queries covering competitive topics, specific creators, and mechanics

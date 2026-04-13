@@ -39,7 +39,10 @@ export async function chunkPokemonCsv(filePath: string, source: string): Promise
     const moves = (r.moves || "").replace(/\|/g, ", ");
     const typeStr = r.type2 ? `${r.type1}/${r.type2}` : r.type1;
 
-    const text = `${r.name} is a ${typeStr} type Pokémon. Abilities: ${abilities}. Moves: ${moves}.`;
+    const statLine = r.hp
+      ? ` Base stats: HP ${r.hp}, Atk ${r.attack}, Def ${r.defense}, SpA ${r.sp_atk}, SpD ${r.sp_def}, Spe ${r.speed} (BST ${r.bst}).`
+      : "";
+    const text = `${r.name} is a ${typeStr} type Pokémon.${statLine} Abilities: ${abilities}. Moves: ${moves}.`;
 
     return {
       id: `pokemon:${slug(r.name)}`,
@@ -52,6 +55,13 @@ export async function chunkPokemonCsv(filePath: string, source: string): Promise
         type2: r.type2 || null,
         abilities: (r.abilities || "").split("|"),
         move_count: (r.moves || "").split("|").length,
+        hp: r.hp ? Number(r.hp) : null,
+        attack: r.attack ? Number(r.attack) : null,
+        defense: r.defense ? Number(r.defense) : null,
+        sp_atk: r.sp_atk ? Number(r.sp_atk) : null,
+        sp_def: r.sp_def ? Number(r.sp_def) : null,
+        speed: r.speed ? Number(r.speed) : null,
+        bst: r.bst ? Number(r.bst) : null,
       },
     };
   });
@@ -67,7 +77,10 @@ export async function chunkMegaEvolutionsCsv(filePath: string, source: string): 
 
   return rows.map((r, i) => {
     const typeStr = r.type2 ? `${r.type1}/${r.type2}` : r.type1;
-    const text = `${r.mega_name} is the Mega Evolution of ${r.base_pokemon}. Type: ${typeStr}. Ability: ${r.ability}.`;
+    const statLine = r.hp
+      ? ` Base stats: HP ${r.hp}, Atk ${r.attack}, Def ${r.defense}, SpA ${r.sp_atk}, SpD ${r.sp_def}, Spe ${r.speed} (BST ${r.bst}).`
+      : "";
+    const text = `${r.mega_name} is the Mega Evolution of ${r.base_pokemon}. Type: ${typeStr}. Ability: ${r.ability}.${statLine}`;
 
     return {
       id: `mega:${slug(r.mega_name)}:${i}`,
@@ -80,6 +93,13 @@ export async function chunkMegaEvolutionsCsv(filePath: string, source: string): 
         type1: r.type1,
         type2: r.type2 || null,
         ability: r.ability,
+        hp: r.hp ? Number(r.hp) : null,
+        attack: r.attack ? Number(r.attack) : null,
+        defense: r.defense ? Number(r.defense) : null,
+        sp_atk: r.sp_atk ? Number(r.sp_atk) : null,
+        sp_def: r.sp_def ? Number(r.sp_def) : null,
+        speed: r.speed ? Number(r.speed) : null,
+        bst: r.bst ? Number(r.bst) : null,
       },
     };
   });
@@ -241,7 +261,94 @@ export async function chunkMegaAbilitiesCsv(filePath: string, source: string): P
 }
 
 // ---------------------------------------------------------------------------
-// 8. Plain text files (status_conditions.txt, training_mechanics.txt)
+// 8. tournament_teams.csv
+// ---------------------------------------------------------------------------
+
+export async function chunkTournamentTeamsCsv(filePath: string, source: string): Promise<Chunk[]> {
+  const raw = await readFile(filePath, "utf-8");
+  const rows = parseCsv(raw);
+
+  return rows.map((r) => {
+    const pokemon = [r.pokemon1, r.pokemon2, r.pokemon3, r.pokemon4, r.pokemon5, r.pokemon6].filter(Boolean);
+    const items = [r.item1, r.item2, r.item3, r.item4, r.item5, r.item6];
+    const paired = pokemon.map((p, i) => items[i] ? `${p} @ ${items[i]}` : p).join(", ");
+    const parts = [`Tournament team ${r.team_id} by ${r.player}`];
+    if (r.tournament && r.tournament !== "-") parts[0] += ` from ${r.tournament}`;
+    if (r.player_rank && r.player_rank !== "-") parts[0] += ` (${r.player_rank})`;
+    parts[0] += `: ${paired}.`;
+    if (r.description) parts.push(r.description + ".");
+    if (r.replica_code) parts.push(`Replica code: ${r.replica_code}.`);
+
+    return {
+      id: `team:${slug(r.team_id)}`,
+      text: parts.join(" "),
+      source,
+      sourceType: "csv-row" as const,
+      metadata: {
+        team_id: r.team_id,
+        player: r.player,
+        tournament: r.tournament || null,
+        player_rank: r.player_rank || null,
+        pokemon,
+        items: items.filter(Boolean),
+        replica_code: r.replica_code || null,
+        pokepaste_link: r.pokepaste_link || null,
+      },
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 9. pikalytics_usage.csv
+// ---------------------------------------------------------------------------
+
+function expandPairs(encoded: string): string {
+  if (!encoded) return "";
+  return encoded
+    .split("|")
+    .map((pair) => {
+      const [name, pct] = pair.split(":");
+      return `${name} (${pct}%)`;
+    })
+    .join(", ");
+}
+
+export async function chunkPikalyticsUsageCsv(filePath: string, source: string): Promise<Chunk[]> {
+  const raw = await readFile(filePath, "utf-8");
+  const rows = parseCsv(raw);
+
+  return rows.map((r) => {
+    const parts = [
+      `${r.pokemon} competitive usage statistics: Ranked #${r.rank} with ${r.usage_pct}% usage in Champions tournaments.`,
+    ];
+    if (r.top_moves) parts.push(`Top moves: ${expandPairs(r.top_moves)}.`);
+    if (r.top_items) parts.push(`Top items: ${expandPairs(r.top_items)}.`);
+    if (r.top_abilities) parts.push(`Top abilities: ${expandPairs(r.top_abilities)}.`);
+    if (r.top_teammates) parts.push(`Common teammates: ${expandPairs(r.top_teammates)}.`);
+
+    const topMove = r.top_moves ? r.top_moves.split("|")[0]?.split(":")[0] : null;
+    const topItem = r.top_items ? r.top_items.split("|")[0]?.split(":")[0] : null;
+    const topAbility = r.top_abilities ? r.top_abilities.split("|")[0]?.split(":")[0] : null;
+
+    return {
+      id: `usage:${slug(r.pokemon)}`,
+      text: parts.join(" "),
+      source,
+      sourceType: "csv-row" as const,
+      metadata: {
+        pokemon: r.pokemon,
+        usage_pct: Number(r.usage_pct),
+        rank: Number(r.rank),
+        top_move: topMove,
+        top_item: topItem,
+        top_ability: topAbility,
+      },
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 10. Plain text files (status_conditions.txt, training_mechanics.txt)
 // ---------------------------------------------------------------------------
 
 export async function chunkPlainTextFile(filePath: string, source: string): Promise<Chunk[]> {
@@ -262,7 +369,7 @@ export async function chunkPlainTextFile(filePath: string, source: string): Prom
 }
 
 // ---------------------------------------------------------------------------
-// 9. Markdown files
+// 11. Markdown files
 // ---------------------------------------------------------------------------
 
 const MAX_SECTION_CHARS = 2000;
