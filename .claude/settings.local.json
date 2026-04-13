@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.serebii.net)",
+      "Bash(pip install:*)",
+      "Bash(python -c ':*)",
+      "Bash(python scraper.py)",
+      "Bash(ls -la *.csv *.txt)",
+      "Bash(PYTHONIOENCODING=utf-8 python scraper.py)",
+      "Bash(gh auth:*)",
+      "Bash(where gh:*)",
+      "Bash(winget install:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh --version)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
+      "Bash(git config:*)",
+      "Bash(curl -s -u \"pauloarayasantiago\" -X POST https://api.github.com/user/repos -d '{\"name\":\"pokemon-champions-data\",\"description\":\"Pokémon Champions game data scraper and structured datasets for building a team-building AI agent\",\"private\":false}' -H \"Content-Type: application/json\")",
+      "Bash(npm install:*)",
+      "Bash(npx tsx:*)"
+    ]
+  }
+}

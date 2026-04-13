@@ -1,0 +1,683 @@
+================================================================================
+PROMPT: Build a Local Semantic Search System with LanceDB + Claude Code Skills
+================================================================================
+
+You are building a local semantic search (RAG retrieval) system for a project
+workspace. The system lets users index CSV data rows and Markdown documents into
+a LanceDB vector database, then search it via natural language queries. It is
+wired into Claude Code as two slash commands: /lookup (search) and /reindex
+(rebuild the index).
+
+The stack is TypeScript (ESM), runs with `npx tsx`, and uses:
+  - LanceDB (embedded vector DB, Apache Arrow format, file-based)
+  - HuggingFace Transformers.js (local embedding model, no API key needed)
+  - csv-parse (CSV parsing)
+
+Below is everything you need to reconstruct the full system.
+
+
+================================================================================
+1. PROJECT SETUP
+================================================================================
+
+1a. package.json — must have "type": "module" for ESM imports.
+
+{
+  "name": "<project-name>",
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "^4.0.0",
+    "@lancedb/lancedb": "^0.27.2",
+    "apache-arrow": "^18.1.0",
+    "csv-parse": "^6.2.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
+
+1b. tsconfig.json
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["scripts/**/*.ts", "lib/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
+
+1c. Directory structure to create:
+
+    project-root/
+    ├── package.json
+    ├── tsconfig.json
+    ├── lib/
+    │   ├── embed.ts          # Embedding module
+    │   ├── chunker.ts        # Text chunking strategies
+    │   └── rag.ts            # Query/retrieval module
+    ├── scripts/
+    │   ├── index-data.ts     # Indexing CLI script
+    │   └── search.ts         # Search CLI script
+    └── .claude/
+        └── commands/
+            ├── lookup.md     # /lookup skill definition
+            └── reindex.md    # /reindex skill definition
+
+After creating package.json, run `npm install`.
+
+
+================================================================================
+2. EMBEDDING MODULE — lib/embed.ts
+================================================================================
+
+This module wraps the HuggingFace Transformers.js pipeline for local embedding.
+
+Key design decisions:
+  - Model: Xenova/all-MiniLM-L6-v2 (384-dimensional, ~80MB download on first use)
+  - Lazy-loaded singleton — the model loads on first call, then stays in memory
+  - Batch size of 64 to stay within memory limits
+  - Mean pooling + L2 normalization for cosine-compatible vectors
+
+```typescript
+import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
+
+const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
+const BATCH_SIZE = 64;
+
+let extractor: FeatureExtractionPipeline | null = null;
+
+async function getExtractor(): Promise<FeatureExtractionPipeline> {
+  if (!extractor) {
+    console.log(`Loading embedding model ${MODEL_ID} (first run downloads ~80MB)...`);
+    extractor = await pipeline("feature-extraction", MODEL_ID, {
+      dtype: "fp32",
+    }) as FeatureExtractionPipeline;
+    console.log("Embedding model loaded.");
+  }
+  return extractor;
+}
+
+/**
+ * Embed an array of texts into 384-dim normalized vectors.
+ * Processes in batches of 64 to stay within memory limits.
+ */
+export async function embed(texts: string[]): Promise<number[][]> {
+  const ext = await getExtractor();
+  const results: number[][] = [];
+
+  for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+    const batch = texts.slice(i, i + BATCH_SIZE);
+    const output = await ext(batch, { pooling: "mean", normalize: true });
+    const nested: number[][] = output.tolist();
+    results.push(...nested);
+  }
+
+  return results;
+}
+```
+
+Notes:
+  - The `output.tolist()` call converts the Tensor to a plain JS number[][].
+  - Normalization ensures cosine distance works correctly in LanceDB.
+  - You can swap the model for any Sentence Transformers-compatible ONNX model.
+
+
+================================================================================
+3. CHUNKER MODULE — lib/chunker.ts
+================================================================================
+
+This module converts raw data files into searchable text chunks. Each chunk has:
+  - id: unique identifier (enables incremental indexing)
+  - text: the searchable natural-language content
+  - source: relative file path
+  - sourceType: "csv-row" or "markdown-section"
+  - metadata: structured data for downstream filtering
+
+The module exports a Chunk interface and three chunking functions.
+
+```typescript
+import { readFile } from "node:fs/promises";
+import { parse } from "csv-parse/sync";
+
+export interface Chunk {
+  id: string;
+  text: string;
+  source: string;
+  sourceType: "csv-row" | "markdown-section";
+  metadata: Record<string, unknown>;
+}
+```
+
+3a. CSV ROW CHUNKING
+
+Each CSV row becomes one chunk. The `text` field is a natural-language sentence
+assembled from the row's columns, making it semantically searchable. The
+`metadata` field preserves the original typed values for filtering.
+
+You should adapt the column names and text template to your own CSV schema.
+Here is the pattern used for an image-level CSV:
+
+```typescript
+export async function chunkImageCsv(filePath: string, source: string): Promise<Chunk[]> {
+  const raw = await readFile(filePath, "utf-8");
+  const rows: Record<string, string>[] = parse(raw, {
+    columns: true,
+    skip_empty_lines: true,
+    relax_column_count: true,
+  });
+
+  return rows.map((r) => {
+    const id = `img:${r.image_id}`;
+    const text = [
+      `Account: ${r.username}.`,
+      `Tweet: ${r.text}`,
+      `IGA: ${r.is_iga}.`,
+      `AIDE agreement: ${r.aide_agreement_t0_30 ?? r["aide_agreement_t0.30"]}/3.`,
+      `Likes: ${r.like_count}, Retweets: ${r.retweet_count}, Impressions: ${r.impression_count}.`,
+      r.is_retweet === "True" ? `Retweet from ${r.rt_source_account}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return {
+      id,
+      text,
+      source,
+      sourceType: "csv-row" as const,
+      metadata: {
+        username: r.username,
+        image_id: r.image_id,
+        tweet_id: r.extracted_tweet_id,
+        is_iga: r.is_iga === "True",
+        aide_agreement: Number(r.aide_agreement_t0_30 ?? r["aide_agreement_t0.30"] ?? 0),
+        like_count: Number(r.like_count ?? 0),
+        impression_count: Number(r.impression_count ?? 0),
+        is_retweet: r.is_retweet === "True",
+      },
+    };
+  });
+}
+```
+
+And for a tweet-level CSV (similar pattern, different columns):
+
+```typescript
+export async function chunkTweetCsv(filePath: string, source: string): Promise<Chunk[]> {
+  const raw = await readFile(filePath, "utf-8");
+  const rows: Record<string, string>[] = parse(raw, {
+    columns: true,
+    skip_empty_lines: true,
+    relax_column_count: true,
+  });
+
+  return rows.map((r) => {
+    const id = `tweet:${r.tweet_id}`;
+    const text = [
+      `Account: ${r.username}.`,
+      `Tweet: ${r.text}`,
+      `Contains IGA: ${r.contains_iga}. IGA images: ${r.iga_image_count}.`,
+      `AIDE agreement: ${r.aide_agreement_t0_30 ?? r["aide_agreement_t0.30"]}/3.`,
+      `Likes: ${r.like_count}, Retweets: ${r.retweet_count}, Impressions: ${r.impression_count}.`,
+      r.is_retweet === "True" ? `Retweet from ${r.rt_source_account}.` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return {
+      id,
+      text,
+      source,
+      sourceType: "csv-row" as const,
+      metadata: {
+        username: r.username,
+        tweet_id: r.tweet_id,
+        contains_iga: r.contains_iga === "True",
+        iga_image_count: Number(r.iga_image_count ?? 0),
+        like_count: Number(r.like_count ?? 0),
+        impression_count: Number(r.impression_count ?? 0),
+        is_retweet: r.is_retweet === "True",
+      },
+    };
+  });
+}
+```
+
+KEY PATTERN: Each CSV chunker follows the same recipe:
+  1. Read + parse CSV with csv-parse/sync (columns: true)
+  2. Map each row to a Chunk with a unique prefix:id
+  3. Build a `text` string by joining human-readable field descriptions
+  4. Store typed values in `metadata` (cast booleans and numbers from strings)
+
+3b. MARKDOWN SECTION CHUNKING
+
+Splits a Markdown file into chunks by headings. Large sections (>2000 chars)
+are further split on double-newlines.
+
+```typescript
+const MAX_SECTION_CHARS = 2000;
+
+export async function chunkMarkdownFile(filePath: string, source: string): Promise<Chunk[]> {
+  const raw = await readFile(filePath, "utf-8");
+  const lines = raw.split("\n");
+  const chunks: Chunk[] = [];
+
+  let currentHeading = "(top)";
+  let currentBody: string[] = [];
+  let sectionIndex = 0;
+
+  function flush() {
+    const body = currentBody.join("\n").trim();
+    if (!body) return;
+
+    const fullText = `${currentHeading}\n${body}`;
+
+    if (fullText.length <= MAX_SECTION_CHARS) {
+      chunks.push({
+        id: `md:${source}:${sectionIndex}`,
+        text: fullText,
+        source,
+        sourceType: "markdown-section",
+        metadata: { heading: currentHeading, section_index: sectionIndex },
+      });
+      sectionIndex++;
+    } else {
+      // Split large sections on double-newline
+      const parts = body.split(/\n\s*\n/).filter((p) => p.trim());
+      for (const part of parts) {
+        chunks.push({
+          id: `md:${source}:${sectionIndex}`,
+          text: `${currentHeading}\n${part.trim()}`,
+          source,
+          sourceType: "markdown-section",
+          metadata: { heading: currentHeading, section_index: sectionIndex },
+        });
+        sectionIndex++;
+      }
+    }
+  }
+
+  for (const line of lines) {
+    if (/^#{1,6}\s/.test(line)) {
+      flush();
+      currentHeading = line;
+      currentBody = [];
+    } else {
+      currentBody.push(line);
+    }
+  }
+  flush(); // last section
+
+  return chunks;
+}
+```
+
+Notes:
+  - The heading regex `/^#{1,6}\s/` matches H1 through H6.
+  - Content before the first heading goes under the pseudo-heading "(top)".
+  - Chunk IDs use the format `md:<source>:<index>` so they're unique per file.
+
+
+================================================================================
+4. RAG RETRIEVAL MODULE — lib/rag.ts
+================================================================================
+
+This module connects to LanceDB and performs vector similarity search.
+
+```typescript
+import { connect } from "@lancedb/lancedb";
+import { resolve } from "node:path";
+import { embed } from "./embed.js";
+
+const PROJECT_ROOT = resolve(import.meta.dirname, "..");
+const DB_PATH = resolve(PROJECT_ROOT, ".lancedb");
+const TABLE_NAME = "chunks";
+
+export interface Result {
+  text: string;
+  source: string;
+  score: number;        // 0-1, higher = more similar
+  sourceType: string;
+  metadata: Record<string, unknown>;
+}
+
+export async function query(question: string, topK = 5): Promise<Result[]> {
+  const [vector] = await embed([question]);
+
+  const db = await connect(DB_PATH);
+  const table = await db.openTable(TABLE_NAME);
+
+  const raw = await table
+    .vectorSearch(vector)
+    .distanceType("cosine")
+    .limit(topK)
+    .toArray();
+
+  return raw.map((r: Record<string, unknown>) => ({
+    text: r.text as string,
+    source: r.source as string,
+    score: 1 - (r._distance as number), // cosine distance -> similarity
+    sourceType: r.source_type as string,
+    metadata: JSON.parse(r.metadata as string),
+  }));
+}
+```
+
+Key details:
+  - LanceDB returns `_distance` (cosine distance, 0 = identical). We convert
+    to similarity via `1 - distance` so higher scores = better matches.
+  - Metadata is stored as a JSON string in LanceDB and parsed back on retrieval.
+  - The `source_type` column uses snake_case (LanceDB column convention).
+  - IMPORTANT: use `.js` extensions in import paths (ESM + Node16 resolution).
+
+
+================================================================================
+5. INDEXING SCRIPT — scripts/index-data.ts
+================================================================================
+
+CLI script that chunks all registered files and writes them to LanceDB.
+Supports two modes:
+  - `--force`: drops the existing table and rebuilds from scratch
+  - (default): incremental — only inserts chunks whose IDs don't already exist
+
+```typescript
+import { connect } from "@lancedb/lancedb";
+import { resolve } from "node:path";
+import { chunkImageCsv, chunkTweetCsv, chunkMarkdownFile, type Chunk } from "../lib/chunker.js";
+import { embed } from "../lib/embed.js";
+
+const PROJECT_ROOT = resolve(import.meta.dirname, "..");
+const DB_PATH = resolve(PROJECT_ROOT, ".lancedb");
+const TABLE_NAME = "chunks";
+const EMBED_BATCH = 64;
+
+interface FileEntry {
+  path: string;
+  type: "image-csv" | "tweet-csv" | "markdown";
+}
+
+// --- CONFIGURE THIS: list every file you want indexed ---
+const FILES: FileEntry[] = [
+  { path: "src/data/master_image_level.csv", type: "image-csv" },
+  { path: "src/data/master_tweet_level.csv", type: "tweet-csv" },
+  { path: "src/docs/some_document.md",       type: "markdown" },
+  { path: "memory-bank/context.md",          type: "markdown" },
+  { path: "CLAUDE.md",                       type: "markdown" },
+  // Add more files here as the project grows
+];
+
+async function main() {
+  const force = process.argv.includes("--force");
+
+  // 1. Chunk all files
+  console.log(`\nChunking ${FILES.length} files...`);
+  const allChunks: Chunk[] = [];
+
+  for (const entry of FILES) {
+    const absPath = resolve(PROJECT_ROOT, entry.path);
+    try {
+      let chunks: Chunk[];
+      if (entry.type === "image-csv") {
+        chunks = await chunkImageCsv(absPath, entry.path);
+      } else if (entry.type === "tweet-csv") {
+        chunks = await chunkTweetCsv(absPath, entry.path);
+      } else {
+        chunks = await chunkMarkdownFile(absPath, entry.path);
+      }
+      console.log(`  ${entry.path}: ${chunks.length} chunks`);
+      allChunks.push(...chunks);
+    } catch (err) {
+      console.error(`  SKIP ${entry.path}: ${(err as Error).message}`);
+    }
+  }
+
+  console.log(`Total chunks: ${allChunks.length}`);
+
+  // 2. Connect to LanceDB
+  const db = await connect(DB_PATH);
+  const tableNames = await db.tableNames();
+  const tableExists = tableNames.includes(TABLE_NAME);
+
+  if (force && tableExists) {
+    console.log("--force: dropping existing table...");
+    await db.dropTable(TABLE_NAME);
+  }
+
+  // 3. Determine which chunks are new (incremental mode)
+  let chunksToInsert = allChunks;
+  if (!force && tableExists) {
+    const table = await db.openTable(TABLE_NAME);
+    const existing = await table.query().select(["id"]).toArray();
+    const existingIds = new Set(existing.map((r: { id: string }) => r.id));
+    chunksToInsert = allChunks.filter((c) => !existingIds.has(c.id));
+    console.log(`Existing: ${existingIds.size}, new: ${chunksToInsert.length}, skipped: ${allChunks.length - chunksToInsert.length}`);
+  }
+
+  if (chunksToInsert.length === 0) {
+    console.log("Nothing to index. Done.");
+    return;
+  }
+
+  // 4. Embed in batches
+  console.log(`\nEmbedding ${chunksToInsert.length} chunks...`);
+  const vectors: number[][] = [];
+  for (let i = 0; i < chunksToInsert.length; i += EMBED_BATCH) {
+    const batch = chunksToInsert.slice(i, i + EMBED_BATCH);
+    const batchVectors = await embed(batch.map((c) => c.text));
+    vectors.push(...batchVectors);
+    console.log(`  Embedded ${Math.min(i + EMBED_BATCH, chunksToInsert.length)}/${chunksToInsert.length}`);
+  }
+
+  // 5. Build records for LanceDB
+  const records = chunksToInsert.map((c, i) => ({
+    id: c.id,
+    text: c.text,
+    source: c.source,
+    source_type: c.sourceType,      // snake_case for LanceDB column
+    metadata: JSON.stringify(c.metadata), // stored as JSON string
+    vector: vectors[i],              // float32[384]
+  }));
+
+  // 6. Insert into LanceDB
+  if (!force && tableExists) {
+    const table = await db.openTable(TABLE_NAME);
+    await table.add(records);
+    console.log(`\nAdded ${records.length} new chunks to existing table.`);
+  } else {
+    await db.createTable(TABLE_NAME, records);
+    console.log(`\nCreated table "${TABLE_NAME}" with ${records.length} chunks.`);
+  }
+
+  console.log("Done.");
+}
+
+main().catch((err) => {
+  console.error("Fatal:", err);
+  process.exit(1);
+});
+```
+
+Usage:
+  npx tsx scripts/index-data.ts          # incremental
+  npx tsx scripts/index-data.ts --force  # full rebuild
+
+LanceDB table schema (created automatically from the first insert):
+  - id:          string    (unique chunk identifier)
+  - text:        string    (searchable content)
+  - source:      string    (relative file path)
+  - source_type: string    ("csv-row" | "markdown-section")
+  - metadata:    string    (JSON blob with typed values)
+  - vector:      float[384] (embedding vector)
+
+
+================================================================================
+6. SEARCH SCRIPT — scripts/search.ts
+================================================================================
+
+Minimal CLI that wraps the RAG query function.
+
+```typescript
+import { query } from "../lib/rag.js";
+
+const question = process.argv[2];
+const topK = parseInt(process.argv[3] ?? "5", 10);
+
+if (!question) {
+  console.error("Usage: npx tsx scripts/search.ts <question> [topK]");
+  process.exit(1);
+}
+
+console.log(`Searching for: "${question}" (top ${topK})\n`);
+
+const results = await query(question, topK);
+
+for (const [i, r] of results.entries()) {
+  console.log(`--- Result ${i + 1} (similarity: ${r.score.toFixed(4)}) ---`);
+  console.log(`Source: ${r.source} [${r.sourceType}]`);
+  console.log(r.text.length > 300 ? r.text.slice(0, 300) + "..." : r.text);
+  console.log();
+}
+```
+
+Usage:
+  npx tsx scripts/search.ts "your question here" 10
+
+
+================================================================================
+7. CLAUDE CODE SKILL DEFINITIONS
+================================================================================
+
+These are Markdown files placed in `.claude/commands/` that register slash
+commands in Claude Code. Create these two files:
+
+7a. .claude/commands/lookup.md
+
+```markdown
+Search the project's vector database before reading files.
+
+This project has a LanceDB vector index containing all CSVs, documentation,
+and project context files — pre-chunked and embedded for semantic search.
+
+## How to search
+
+Run one or more semantic queries against the index:
+
+\`\`\`bash
+npx tsx scripts/search.ts "<natural language question>" [topK]
+\`\`\`
+
+- `topK` defaults to 5. Use 10-15 for broader exploration, 3 for focused lookups.
+- Results include similarity scores, source file paths, and chunk text.
+- You can run multiple searches in parallel with different queries.
+
+## What's indexed
+
+The index (`scripts/index-data.ts` -> `.lancedb/`) contains:
+- **CSV data**: Every row from your data CSVs as searchable text
+- **Documentation**: All markdown files registered in the FILES array
+- **Project context**: CLAUDE.md and any other registered files
+
+## When to use this
+
+Use `/lookup` as your **first step** when you need to understand something
+about the project — before manually reading files. It's faster and uses less
+context than reading full CSVs or reports.
+
+**After getting search results, answer directly from the returned chunks.
+Do NOT use Read, Glob, or Grep unless a chunk is visibly truncated.**
+
+## Argument
+
+Pass your search query as the argument: `/lookup your question here`
+```
+
+7b. .claude/commands/reindex.md
+
+```markdown
+Rebuild the LanceDB vector search index for the project.
+
+## What to do
+
+1. Run the index script with `--force` to drop and rebuild the full table:
+   \`\`\`bash
+   npx tsx scripts/index-data.ts --force
+   \`\`\`
+
+2. After the script completes, report to the user:
+   - Total number of files processed
+   - Total chunks indexed
+   - Whether the run succeeded or failed
+   - If any files were skipped (SKIP lines in output)
+
+3. If the indexing script is missing new files that were created during the
+   session (new markdown reports, new CSVs), **add them to the `FILES` array
+   in `scripts/index-data.ts`** before running the index.
+
+## When to use
+
+Run this at the end of any session where:
+- Documentation or context files were updated
+- New reports or analysis outputs were created
+- CLAUDE.md was modified
+- Any file that the RAG system indexes was changed
+
+## Technical details
+
+- Index script: `scripts/index-data.ts`
+- Database: `.lancedb/` (LanceDB, Apache Arrow format)
+- Embedding model: `Xenova/all-MiniLM-L6-v2` (384-dim, ~80MB first download)
+- `--force` drops the existing table and rebuilds from scratch
+- Without `--force`, only new chunks are added (incremental)
+```
+
+
+================================================================================
+8. ADAPTATION GUIDE
+================================================================================
+
+To adapt this system to a new project:
+
+1. Install deps: copy the dependencies from section 1a into your package.json
+   and run `npm install`.
+
+2. Copy the lib/ and scripts/ directories as-is. The embedding and RAG modules
+   are project-agnostic.
+
+3. Customize the chunker (lib/chunker.ts):
+   - Keep chunkMarkdownFile as-is — it works for any Markdown.
+   - Modify or replace the CSV chunkers to match YOUR CSV schema:
+     a. Change the `id` field to use your unique row identifier column
+     b. Change the `text` array to describe your columns in natural language
+     c. Change `metadata` to include the typed fields you want to filter on
+   - Add new chunker functions for other file types (JSON, YAML, etc.)
+
+4. Update the FILES array in scripts/index-data.ts to list your project's files.
+   Each entry needs a `path` (relative to project root) and a `type` that maps
+   to a chunker function.
+
+5. Create the .claude/commands/ directory and drop in lookup.md and reindex.md.
+   Update the descriptions to match your project's content.
+
+6. Run the initial index: `npx tsx scripts/index-data.ts --force`
+
+7. Test with a search: `npx tsx scripts/search.ts "test query" 5`
+
+8. Add `/lookup <query>` and `/reindex` references to your CLAUDE.md so the
+   agent knows they exist.
+
+Key things to remember:
+  - All TypeScript imports must use .js extensions (ESM + Node16 requirement)
+  - The .lancedb/ directory is auto-created and should be in .gitignore
+  - The embedding model (~80MB) downloads on first run and is cached locally
+  - Metadata is stored as a JSON string, not a native object — parse on read
+  - Chunk IDs must be unique across ALL files for incremental indexing to work
+  - The cosine distance -> similarity conversion is: score = 1 - distance
+================================================================================

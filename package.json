@@ -1,0 +1,14 @@
+{
+  "name": "pokemon-champions-search",
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "^4.0.0",
+    "@lancedb/lancedb": "^0.27.2",
+    "apache-arrow": "^18.1.0",
+    "csv-parse": "^6.2.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
