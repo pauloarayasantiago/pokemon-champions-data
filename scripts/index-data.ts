@@ -11,6 +11,7 @@ import {
   chunkMegaAbilitiesCsv,
   chunkTournamentTeamsCsv,
   chunkPikalyticsUsageCsv,
+  chunkMatchupMatrixCsv,
   chunkPlainTextFile,
   chunkMarkdownFile,
   type Chunk,
@@ -34,6 +35,7 @@ interface FileEntry {
     | "mega-abilities-csv"
     | "tournament-teams-csv"
     | "pikalytics-usage-csv"
+    | "matchup-matrix-csv"
     | "plain-text"
     | "markdown";
 }
@@ -49,6 +51,7 @@ const STATIC_FILES: FileEntry[] = [
   { path: "mega_abilities.csv", type: "mega-abilities-csv" },
   { path: "tournament_teams.csv", type: "tournament-teams-csv" },
   { path: "pikalytics_usage.csv", type: "pikalytics-usage-csv" },
+  { path: "matchup_matrix.csv", type: "matchup-matrix-csv" },
   { path: "status_conditions.txt", type: "plain-text" },
   { path: "training_mechanics.txt", type: "plain-text" },
 ];
@@ -92,6 +95,7 @@ function getDataCategory(entry: FileEntry): string {
     case "mega-abilities-csv": return "mega";
     case "tournament-teams-csv": return "team";
     case "pikalytics-usage-csv": return "usage";
+    case "matchup-matrix-csv": return "matchup";
     case "plain-text": return "knowledge";
     case "markdown": {
       if (entry.path.startsWith("memory-bank/")) return "project";
@@ -121,6 +125,8 @@ async function chunkFile(entry: FileEntry, absPath: string): Promise<Chunk[]> {
       return chunkTournamentTeamsCsv(absPath, entry.path);
     case "pikalytics-usage-csv":
       return chunkPikalyticsUsageCsv(absPath, entry.path);
+    case "matchup-matrix-csv":
+      return chunkMatchupMatrixCsv(absPath, entry.path);
     case "plain-text":
       return chunkPlainTextFile(absPath, entry.path);
     case "markdown":

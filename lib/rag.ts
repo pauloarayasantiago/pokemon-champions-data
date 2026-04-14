@@ -108,6 +108,8 @@ export interface QueryIntent {
   isUsageQuery: boolean;
   /** Whether user is asking about countering/beating something */
   isCounterQuery: boolean;
+  /** Whether user is asking about matchups/damage calcs */
+  isMatchupQuery: boolean;
 }
 
 const USAGE_KEYWORDS = [
@@ -149,6 +151,13 @@ const TEAM_KEYWORDS = [
   "pair", "pairs", "synergy",
 ];
 
+const MATCHUP_KEYWORDS = [
+  "matchup", "matchups", "beats", "walls", "checks", "counters",
+  "what beats", "who beats", "loses to", "weak to", "strong against",
+  "favored", "unfavored", "best matchup", "worst matchup",
+  "ohko", "one-shot", "damage calc",
+];
+
 export function classifyQuery(question: string): QueryIntent {
   const q = question.toLowerCase();
   const names = getPokemonNames();
@@ -186,6 +195,7 @@ export function classifyQuery(question: string): QueryIntent {
 
   const isUsageQuery = USAGE_KEYWORDS.some((kw) => q.includes(kw));
   const isCounterQuery = COUNTER_KEYWORDS.some(matchKeyword);
+  const isMatchupQuery = MATCHUP_KEYWORDS.some(matchKeyword);
   const hasMoveKeyword = MOVE_KEYWORDS.some(matchKeyword);
   const hasItemKeyword = ITEM_KEYWORDS.some(matchKeyword);
   const hasTeamKeyword = TEAM_KEYWORDS.some(matchKeyword);
@@ -207,9 +217,9 @@ export function classifyQuery(question: string): QueryIntent {
     categories.push("usage");
     if (pokemonName) categories.push("pokemon");
   }
-  // 3. Counter query — exclude move chunks to avoid "Counter" the move
-  else if (isCounterQuery) {
-    categories.push("pokemon", "knowledge", "transcript", "usage");
+  // 3. Counter/matchup query — include matchup data for damage-backed answers
+  else if (isCounterQuery || isMatchupQuery) {
+    categories.push("matchup", "pokemon", "knowledge", "usage");
   }
   // 4. Item query
   else if (hasItemKeyword) {
@@ -237,6 +247,7 @@ export function classifyQuery(question: string): QueryIntent {
     moveName,
     isUsageQuery,
     isCounterQuery,
+    isMatchupQuery,
   };
 }
 
@@ -380,6 +391,16 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
       const chunkName = (r.metadata.name as string)?.toLowerCase();
       if (chunkName === intent.moveName) {
         boost += 0.04;
+      }
+    }
+
+    // Matchup data boost for counter/matchup queries
+    if (r.dataCategory === "matchup" && (intent.isCounterQuery || intent.isMatchupQuery)) {
+      boost += 0.06;
+      // Extra boost if matching Pokemon name
+      if (intent.pokemonName) {
+        const chunkPokemon = (r.metadata.pokemon as string)?.toLowerCase();
+        if (chunkPokemon === intent.pokemonName) boost += 0.06;
       }
     }
 

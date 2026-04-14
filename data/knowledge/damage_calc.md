@@ -72,16 +72,17 @@ IMPORTANT: Many standard competitive items are MISSING from Champions.
 
 Available damage items:
 - Type-boosting items (Charcoal, Mystic Water, Magnet, etc.): 1.2x to that type
-- Expert Belt: 1.2x to super effective moves
 - Scope Lens: Raises crit rate by one stage
-- Metronome: Escalating boost for repeated moves (1.2x → 1.4x → 1.6x → 1.8x → 2.0x)
-- Throat Spray: +1 SpA after using a sound-based move
-- Gems (Normal Gem, etc.): 1.3x one-time boost to that type, consumed on use
+- Shell Bell: Restores 1/8 of damage dealt to holder
 
 NOT available (do NOT use in calculations):
-- Life Orb (1.3x, no recoil trade-off available)
-- Choice Band / Choice Specs (1.5x, no stat-locking items)
-- Assault Vest (no 1.5x SpD boost available)
+- Life Orb (1.3x — not in game)
+- Choice Band / Choice Specs (1.5x — not in game)
+- Assault Vest (1.5x SpD — not in game)
+- Expert Belt (1.2x on SE — not in game)
+- Metronome held item (escalating boost — not in game)
+- Throat Spray (+1 SpA on sound moves — not in game)
+- Gems (Normal Gem, typed Gems — not in game)
 
 ## Protect Interaction
 Protect blocks all damage. PP is 8 in Champions (reduced from standard).

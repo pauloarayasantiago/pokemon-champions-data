@@ -60,15 +60,25 @@ These competitively important items are NOT in Champions:
 - Covert Cloak
 - Loaded Dice
 - Utility Umbrella
+- Expert Belt
+- Clear Amulet
+- Throat Spray
+- Metronome (held item)
+- Booster Energy
+- Gems (Normal Gem, typed Gems)
+- Weakness Policy
+- Black Sludge
+- Safety Goggles
 
 ## Available Staple Items
-- Focus Sash, Sitrus Berry, Leftovers, Lum Berry
-- White Herb, Mental Herb, Clear Amulet
-- Scope Lens, Throat Spray, Metronome
-- Booster Energy, Damage-reducing berries (Yache, Shuca, etc.)
-- Type-boosting items (Charcoal, Mystic Water, Magnet, etc.)
-- All Mega Stones
-- Choice Scarf (likely available)
+Verified against Serebii (serebii.net/pokemonchampions/items.shtml) and items.csv:
+- **Survival:** Focus Sash, Focus Band, Sitrus Berry, Leftovers, Oran Berry
+- **Status/stat control:** Lum Berry, White Herb, Mental Herb, status-cure berries (Cheri, Chesto, Rawst, Aspear, Pecha, Persim)
+- **Offensive utility:** Scope Lens, Shell Bell, Choice Scarf
+- **Type-boosting (1.2x):** Charcoal, Mystic Water, Magnet, Miracle Seed, Never-Melt Ice, Dragon Fang, Soft Sand, Sharp Beak, Poison Barb, Twisted Spoon, Black Belt, Black Glasses, Silk Scarf, Silver Powder, Spell Tag, Hard Stone, Metal Coat, Fairy Feather
+- **Damage-reducing berries:** Occa, Passho, Wacan, Rindo, Yache, Chople, Kebia, Shuca, Coba, Payapa, Tanga, Charti, Kasib, Haban, Colbur, Babiri, Roseli, Chilan
+- **All 59 Mega Stones**
+- **Niche:** Light Ball (Pikachu only), King's Rock, Quick Claw, Bright Powder, Leppa Berry
 
 ## Status Condition Nerfs
 - Paralysis: Speed reduced by 50%, but only 12.5% (1/8) chance to be fully paralyzed (halved from 25%)

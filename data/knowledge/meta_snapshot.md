@@ -52,7 +52,7 @@ The strongest Megas that shape teambuilding decisions:
 - Mega Charizard Y: Drought (sets Sun on Mega). Fire/Flying with boosted Fire STAB.
 
 ## Common Meta Threats Every Team Must Answer
-1. Incineroar: Intimidate spam + Fake Out disruption. Answer: Defiant/Competitive users, Clear Amulet.
+1. Incineroar: Intimidate spam + Fake Out disruption. Answer: Defiant/Competitive users, White Herb (one-time stat drop negation).
 2. Sneasler: Fast Dire Claw threatens status. Answer: Psychic types (4x weakness), Arcanine, Hatterene.
 3. Garchomp: Earthquake + Dragon Claw spread. Answer: Ice coverage, Fairy types, Levitate/Flying.
 4. Weather modes: Rain, Sand, Sun can overwhelm if you lack weather counter-play. Answer: Opposing weather, Cloud Nine, or type resistances.

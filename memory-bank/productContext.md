@@ -15,7 +15,7 @@ Pokémon Champions is a new competitive-focused Pokémon game with sweeping mech
 The agent should be a knowledgeable but approachable Pokémon Champions VGC specialist who:
 - Explains reasoning behind team choices (type coverage, speed tiers, role compression, win conditions)
 - **Always validates against Champions-specific data** — never assumes S/V mechanics apply
-- Considers the restricted item pool (no Life Orb, Choice Band/Specs, etc.) when recommending sets
+- Considers the restricted item pool (~138 items, verified against items.csv + Serebii) when recommending sets — never recommends phantom items from S/V or AI-authored sources
 - Uses the Stat Points system (not legacy EVs/IVs) in recommendations
 - Highlights Champions-specific mechanics when relevant
 - Understands Mega Evolution timing and team-wide one-per-battle restriction
@@ -26,41 +26,32 @@ The agent should be a knowledgeable but approachable Pokémon Champions VGC spec
 1. **Scrape** — `scraper.py` (Serebii game data) + `scraper_youtube.py` (creator transcripts)
 2. **Research** — External AI agent research in `research/` folder
 3. **Structure** — CSVs, markdown, and text files
-4. **Index** — LanceDB vector database via `scripts/index-data.ts`
-5. **Query** — RAG retrieval via `/lookup` skill
-6. **Advise** — AI reasoning layer via `/team` skill + CLAUDE.md expert persona
+4. **Calculate** — `lib/calc/` damage engine + `matchup_matrix.csv` (59,292 pairs)
+5. **Index** — LanceDB vector database via `scripts/index-data.ts`
+6. **Query** — RAG retrieval via `/lookup` skill
+7. **Advise** — AI reasoning layer via `/team` skill + CLAUDE.md expert persona + `/calc` for damage verification
 
-## PROPOSED: Pokemon Matchup Matrix
+## IMPLEMENTED: Pokemon Matchup Matrix (2026-04-13)
 
-A mathematical scoring system that assigns a numeric matchup score to every Pokemon vs every other Pokemon in the 186-Pokemon roster, producing a 186×186 matchup matrix.
+A mathematical scoring system assigning numeric matchup scores to every Pokemon pair. Implemented as a custom TypeScript damage calculator (`lib/calc/`) producing a 244×244 matrix (186 base + 59 Mega - 1 overlap = 244 entries, 59,292 pairs).
 
-### Scoring Factors
-Each cell `M[A][B]` represents how well Pokemon A performs against Pokemon B, considering:
+### Scoring Implementation
+Each cell `M[A][B]` = offensive pressure - defensive pressure + speed U-curve:
 
-1. **Type effectiveness** — STAB moves of A vs defensive typing of B, and vice versa. Super effective = positive, resisted = negative, immune = heavily negative.
+1. **Offensive pressure** — A's best move damage % vs B (actual damage calc with types, stats, abilities, items)
+2. **Defensive pressure** — B's best move damage % vs A (reverse calc)
+3. **Speed U-curve** — >=130→1.0, >=110→0.8, >=90→0.3, >=60→0.0, >=30→0.5, <30→0.7 (fast > slow > average, TR requires setup)
+4. **Ability interactions** — Levitate vs Ground, Flash Fire vs Fire, Multiscale, Intimidate, Thick Fat, etc. (~25 abilities handled)
+5. **Item effects** — Type-boost items (1.2x), resist berries (0.5x)
 
-2. **Base stats** — Raw stat comparison weighted by role. Atk/SpA matters for the attacker, Def/SpD matters for the defender.
-
-3. **Move coverage** — Does A have a viable move (above a power threshold) that hits B super-effectively? A move must be strong enough to matter (e.g., minimum 60-80 BP). Having coverage with a weak move shouldn't count the same as a 120BP STAB nuke.
-
-4. **Speed relationship** — Speed is nuanced and non-linear:
-   - **Fast (outspeeds most)**: Strong advantage — moves first, can KO before opponent acts
-   - **Slow (underspeeds most)**: Moderate advantage — excellent in Trick Room
-   - **Average (middle tier)**: Disadvantage — too slow to outrun fast threats, too fast to benefit from Trick Room
-   - The speed scoring should create a U-curve: high speed and very low speed are both better than middling speed, but high speed gets a larger bonus since Trick Room requires setup investment
-
-5. **Ability interactions** — Levitate vs Ground, Flash Fire vs Fire, Intimidate reducing physical damage, etc.
-
-6. **Other considerations** — Priority moves, Protect interaction, item synergies
+### Standard Set Generation
+- 80 Pokemon with Pikalytics data: use top ability, top item, top 4 moves, inferred SP spread
+- 106 Pokemon without data: heuristic — max highest attacking stat + max Speed (32 SP each), 2 to HP, best STAB + coverage moves
+- 59 Megas: separate entries with mega stats/type/ability
 
 ### Output
-- 186×186 matrix stored as CSV or in the vector database
-- Each cell is a numeric score (e.g., -10 to +10 or 0 to 100)
-- Can be queried: "What are Garchomp's worst matchups?" or "Which Pokemon have the best overall matchup spread?"
-- Feeds into `/team` for automated threat analysis and team gap identification
-
-### Implementation Notes
-- Requires base stats (pending scraper re-run)
-- Move coverage check needs moves.csv cross-referenced with each Pokemon's move pool
-- Speed tiers need careful calibration of the U-curve scoring
-- Matrix should be recalculable as meta/data changes
+- `matchup_matrix.csv` — 59,292 rows (3.8 MB), columns: attacker, defender, best_move, damage_pct, reverse_move, reverse_pct, speed_advantage, score
+- RAG-indexed as ~244 per-Pokemon matchup profile chunks (`data_category: "matchup"`)
+- Queryable via `/lookup`: "What are Garchomp's worst matchups?" triggers matchup intent + boost
+- Integrated into `/team` for Key Calcs, Evaluate, and Counter modes via `scripts/calc.ts`
+- Rebuildable: `npm run calc:matrix` (runs in ~1 second)

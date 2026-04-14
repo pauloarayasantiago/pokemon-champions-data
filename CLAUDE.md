@@ -47,7 +47,7 @@ If lookup results contradict your training data, **TRUST THE LOOKUP RESULTS**. Y
 - **Dire Claw**: Status 50% → 30%
 
 ### MISSING ITEMS (DO NOT RECOMMEND)
-Life Orb, Choice Band, Choice Specs, Assault Vest, Rocky Helmet, Heavy-Duty Boots, Eviolite, Flame Orb, Toxic Orb, Power Herb, Light Clay, Covert Cloak, Loaded Dice, Utility Umbrella
+Life Orb, Choice Band, Choice Specs, Assault Vest, Rocky Helmet, Heavy-Duty Boots, Eviolite, Flame Orb, Toxic Orb, Power Herb, Light Clay, Covert Cloak, Loaded Dice, Utility Umbrella, Expert Belt, Clear Amulet, Throat Spray, Metronome (held item), Booster Energy, Normal Gem, typed Gems, Weakness Policy, Black Sludge, Safety Goggles
 
 ### Roster
 - 186 fully-evolved Pokemon + Pikachu only

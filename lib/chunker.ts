@@ -384,7 +384,62 @@ export async function chunkPikalyticsUsageCsv(filePath: string, source: string):
 }
 
 // ---------------------------------------------------------------------------
-// 10. Plain text files (status_conditions.txt, training_mechanics.txt)
+// 10. matchup_matrix.csv — aggregated per-Pokemon matchup profiles
+// ---------------------------------------------------------------------------
+
+export async function chunkMatchupMatrixCsv(filePath: string, source: string): Promise<Chunk[]> {
+  const raw = await readFile(filePath, "utf-8");
+  const rows = parseCsv(raw);
+
+  // Group rows by attacker
+  const byAttacker = new Map<string, Array<Record<string, string>>>();
+  for (const r of rows) {
+    const atk = r.attacker;
+    if (!byAttacker.has(atk)) byAttacker.set(atk, []);
+    byAttacker.get(atk)!.push(r);
+  }
+
+  const chunks: Chunk[] = [];
+  for (const [attacker, matchups] of byAttacker) {
+    // Sort by damage % descending
+    matchups.sort((a, b) => Number(b.damage_pct) - Number(a.damage_pct));
+
+    const bestMatchups = matchups.slice(0, 8);
+    const worstMatchups = matchups.slice(-5).reverse();
+    const beats = bestMatchups
+      .map((m) => `${m.defender} (${m.best_move} ${m.damage_pct}%)`)
+      .join(", ");
+    const walls = worstMatchups
+      .filter((m) => Number(m.damage_pct) < 40)
+      .map((m) => `${m.defender} (${m.best_move} ${m.damage_pct}%)`)
+      .join(", ");
+
+    const avgDmg = matchups.reduce((s, m) => s + Number(m.damage_pct), 0) / matchups.length;
+    const ohkoCount = matchups.filter((m) => Number(m.damage_pct) >= 100).length;
+
+    const parts = [`${attacker} matchup profile: avg damage ${avgDmg.toFixed(1)}%, OHKOs ${ohkoCount}/${matchups.length} matchups.`];
+    parts.push(`Best matchups: ${beats}.`);
+    if (walls) parts.push(`Walled by: ${walls}.`);
+
+    chunks.push({
+      id: `matchup:${slug(attacker)}`,
+      text: parts.join(" "),
+      source,
+      sourceType: "csv-row" as const,
+      metadata: {
+        pokemon: attacker,
+        avg_damage_pct: Math.round(avgDmg * 10) / 10,
+        ohko_count: ohkoCount,
+        total_matchups: matchups.length,
+      },
+    });
+  }
+
+  return chunks;
+}
+
+// ---------------------------------------------------------------------------
+// 11. Plain text files (status_conditions.txt, training_mechanics.txt)
 // ---------------------------------------------------------------------------
 
 export async function chunkPlainTextFile(filePath: string, source: string): Promise<Chunk[]> {

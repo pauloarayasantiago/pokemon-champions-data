@@ -23,7 +23,7 @@ Pokémon Champions is a **separate game** with sweeping mechanical changes:
 - **21+ move changes** — power buffs, type changes (Growth→Grass, Snap Trap→Steel), new slicing classifications
 - **4 new abilities** — Piercing Drill, Dragonize, Mega Sol, Spicy Spray
 - **23 new Mega abilities** — Mega Starmie (Huge Power), Mega Dragonite (Multiscale), Mega Gengar (Shadow Tag), etc.
-- **Dramatically reduced item pool** — No Life Orb, Choice Band/Specs, Assault Vest, Rocky Helmet, Eviolite, Toxic/Flame Orb
+- **Dramatically reduced item pool** (~138 items) — Missing: Life Orb, Choice Band/Specs, Assault Vest, Rocky Helmet, Eviolite, Toxic/Flame Orb, Heavy-Duty Boots, Power Herb, Light Clay, Covert Cloak, Loaded Dice, Utility Umbrella, Expert Belt, Clear Amulet, Throat Spray, Metronome (item), Booster Energy, Gems, Weakness Policy, Black Sludge, Safety Goggles
 - **186 fully-evolved Pokémon only** (no NFEs except Pikachu) — No Porygon2, Clefairy, Dusclops
 - **Incineroar lost Knock Off and U-turn** — massive competitive impact
 - **Screens nerfed in Doubles** — Reflect/Light Screen reduce damage by 33% (was 50%)
@@ -46,5 +46,6 @@ Pokémon Champions is a **separate game** with sweeping mechanical changes:
 ## Interface
 - Always-on expert persona via CLAUDE.md
 - `/team` skill for structured team-building queries
+- `/calc` skill for ad-hoc damage calculations
 - `/research` skill for automated competitive data gathering
 - Existing `/lookup` and `/reindex` for RAG operations

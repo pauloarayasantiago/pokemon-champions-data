@@ -17,7 +17,17 @@
       "Bash(git config:*)",
       "Bash(curl -s -u \"pauloarayasantiago\" -X POST https://api.github.com/user/repos -d '{\"name\":\"pokemon-champions-data\",\"description\":\"Pokémon Champions game data scraper and structured datasets for building a team-building AI agent\",\"private\":false}' -H \"Content-Type: application/json\")",
       "Bash(npm install:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "WebFetch(domain:nerd-of-now.github.io)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:championslab.xyz)",
+      "WebFetch(domain:www.porygonlabs.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(git clone:*)",
+      "Bash(node -e \"const t = JSON.parse\\(require\\('fs'\\).readFileSync\\('lib/translations.json','utf8'\\)\\); console.log\\('Keys:', Object.keys\\(t\\)\\); console.log\\('Moves count:', Object.keys\\(t.moves || {}\\).length\\); console.log\\('Items count:', Object.keys\\(t.items || {}\\).length\\); console.log\\('Abilities count:', Object.keys\\(t.abilities || {}\\).length\\);\")",
+      "Bash(grep -ri \"clear amulet\\\\|throat spray\\\\|expert belt\\\\|booster energy\" data/knowledge/*.md CLAUDE.md)"
     ]
   }
 }

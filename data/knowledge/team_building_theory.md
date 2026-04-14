@@ -55,7 +55,7 @@ Follow Me and Rage Powder redirect single-target attacks to the user. This prote
 Earthquake, Rock Slide, Heat Wave, and similar spread moves hit both opponents at 0.75x power. They're efficient for damage but risk hitting your own partner (Earthquake). Wide Guard blocks all spread moves for one turn. Rock Slide has a 30% flinch chance per target — in Champions with Iron Head flinch nerfed to 20%, Rock Slide flinch is more valuable.
 
 ### Intimidate
-Intimidate reduces both opponents' Attack by 1 stage on switch-in. Incineroar is the primary user (48-54% usage). Counter-play: Clear Amulet (prevents stat drops), Defiant/Competitive (punishes Intimidate), Inner Focus (prevents Intimidate).
+Intimidate reduces both opponents' Attack by 1 stage on switch-in. Incineroar is the primary user (48-54% usage). Counter-play: White Herb (restores one stat drop, consumed), Defiant/Competitive (punishes Intimidate with +2 Atk/SpA), Inner Focus (prevents flinch, not Intimidate).
 
 ## Item Economy in Champions
 The restricted item pool fundamentally changes team building:
