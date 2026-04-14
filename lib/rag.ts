@@ -1,6 +1,6 @@
 import { connect, rerankers } from "@lancedb/lancedb";
 import { resolve } from "node:path";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync, existsSync } from "node:fs";
 import { parse } from "csv-parse/sync";
 import { embed } from "./embed.js";
 import { buildStatFilter } from "./structured-query.js";
@@ -8,6 +8,44 @@ import { buildStatFilter } from "./structured-query.js";
 const PROJECT_ROOT = resolve(import.meta.dirname, "..");
 const DB_PATH = resolve(PROJECT_ROOT, ".lancedb");
 const TABLE_NAME = "chunks";
+const INDEX_META_PATH = resolve(DB_PATH, "index-meta.json");
+
+// ---------------------------------------------------------------------------
+// Staleness detection
+// ---------------------------------------------------------------------------
+
+let _stalenessChecked = false;
+
+function checkStaleness(): void {
+  if (_stalenessChecked) return;
+  _stalenessChecked = true;
+
+  if (!existsSync(INDEX_META_PATH)) return;
+  try {
+    const meta = JSON.parse(readFileSync(INDEX_META_PATH, "utf-8"));
+    const mtimes: Record<string, string> = meta.file_mtimes ?? {};
+    const staleFiles: string[] = [];
+
+    for (const [relPath, indexedMtime] of Object.entries(mtimes)) {
+      const absPath = resolve(PROJECT_ROOT, relPath);
+      try {
+        const currentMtime = statSync(absPath).mtime.toISOString();
+        if (currentMtime > indexedMtime) staleFiles.push(relPath);
+      } catch {
+        // File removed — stale
+        staleFiles.push(relPath);
+      }
+    }
+
+    if (staleFiles.length > 0) {
+      console.error(
+        `[WARN] Index is stale: ${staleFiles.length} file(s) modified since last reindex (${staleFiles.slice(0, 3).join(", ")}${staleFiles.length > 3 ? "..." : ""}). Run /reindex to update.`
+      );
+    }
+  } catch {
+    // Malformed meta — ignore
+  }
+}
 
 export interface Result {
   text: string;
@@ -36,6 +74,24 @@ function getPokemonNames(): Set<string> {
 }
 
 // ---------------------------------------------------------------------------
+// Move name dictionary (loaded once)
+// ---------------------------------------------------------------------------
+
+let _moveNames: Set<string> | null = null;
+
+function getMoveNames(): Set<string> {
+  if (_moveNames) return _moveNames;
+  try {
+    const csv = readFileSync(resolve(PROJECT_ROOT, "moves.csv"), "utf-8");
+    const rows: Array<{ name: string }> = parse(csv, { columns: true, skip_empty_lines: true });
+    _moveNames = new Set(rows.map((r) => r.name.toLowerCase()));
+  } catch {
+    _moveNames = new Set();
+  }
+  return _moveNames;
+}
+
+// ---------------------------------------------------------------------------
 // Query intent classification
 // ---------------------------------------------------------------------------
 
@@ -46,6 +102,8 @@ export interface QueryIntent {
   isStructured: boolean;
   /** Extracted Pokemon name (lowercase) if any */
   pokemonName: string | null;
+  /** Extracted move name (lowercase) if any */
+  moveName: string | null;
   /** Whether user is asking about competitive usage data */
   isUsageQuery: boolean;
   /** Whether user is asking about countering/beating something */
@@ -94,14 +152,25 @@ const TEAM_KEYWORDS = [
 export function classifyQuery(question: string): QueryIntent {
   const q = question.toLowerCase();
   const names = getPokemonNames();
+  const moves = getMoveNames();
 
-  // Extract Pokemon name from query
+  // Extract Pokemon name from query (longest match first)
   let pokemonName: string | null = null;
-  // Try multi-word names first (longest match)
   const sortedNames = [...names].sort((a, b) => b.length - a.length);
   for (const name of sortedNames) {
     if (q.includes(name)) {
       pokemonName = name;
+      break;
+    }
+  }
+
+  // Extract move name from query (longest match first, skip if it's a Pokemon name)
+  let moveName: string | null = null;
+  const sortedMoves = [...moves].sort((a, b) => b.length - a.length);
+  for (const name of sortedMoves) {
+    if (name === pokemonName) continue; // Avoid collision
+    if (q.includes(name)) {
+      moveName = name;
       break;
     }
   }
@@ -165,6 +234,7 @@ export function classifyQuery(question: string): QueryIntent {
     categories,
     isStructured,
     pokemonName,
+    moveName,
     isUsageQuery,
     isCounterQuery,
   };
@@ -185,7 +255,8 @@ function extractScore(row: Record<string, unknown>): number {
 // ---------------------------------------------------------------------------
 
 export async function query(question: string, topK = 5): Promise<Result[]> {
-  const [vector] = await embed([question]);
+  checkStaleness();
+  const [vector] = await embed([question], "query");
   const intent = classifyQuery(question);
 
   const db = await connect(DB_PATH);
@@ -300,6 +371,14 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
         ? r.metadata.pokemon.toLowerCase()
         : undefined;
       if (chunkName === intent.pokemonName || chunkPokemon === intent.pokemonName) {
+        boost += 0.04;
+      }
+    }
+
+    // Exact move name match — boost the specific move chunk
+    if (intent.moveName && r.dataCategory === "move") {
+      const chunkName = (r.metadata.name as string)?.toLowerCase();
+      if (chunkName === intent.moveName) {
         boost += 0.04;
       }
     }

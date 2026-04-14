@@ -112,7 +112,7 @@ export const EVAL_CASES: EvalCase[] = [
     query: "best items for physical attackers",
     topK: 5,
     forbiddenIds: ["pokemon:araquanid", "pokemon:blastoise"],
-    expectedSources: ["team_building_theory.md", "damage_calc.md"],
+    expectedSources: ["team_building_theory.md"],
     category: "item-lookup",
   },
   {

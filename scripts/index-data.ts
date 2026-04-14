@@ -1,6 +1,6 @@
 import { connect, Index } from "@lancedb/lancedb";
 import { resolve } from "node:path";
-import { readdirSync } from "node:fs";
+import { readdirSync, statSync, writeFileSync, existsSync } from "node:fs";
 import {
   chunkPokemonCsv,
   chunkMegaEvolutionsCsv,
@@ -38,8 +38,8 @@ interface FileEntry {
     | "markdown";
 }
 
-const FILES: FileEntry[] = [
-  // Game data CSVs
+// Hardcoded CSV and text files (each has a specific chunker function)
+const STATIC_FILES: FileEntry[] = [
   { path: "pokemon_champions.csv", type: "pokemon-csv" },
   { path: "mega_evolutions.csv", type: "mega-evolutions-csv" },
   { path: "moves.csv", type: "moves-csv" },
@@ -49,45 +49,36 @@ const FILES: FileEntry[] = [
   { path: "mega_abilities.csv", type: "mega-abilities-csv" },
   { path: "tournament_teams.csv", type: "tournament-teams-csv" },
   { path: "pikalytics_usage.csv", type: "pikalytics-usage-csv" },
-
-  // Plain text mechanics files
   { path: "status_conditions.txt", type: "plain-text" },
   { path: "training_mechanics.txt", type: "plain-text" },
-
-  // Memory-bank project context
-  { path: "memory-bank/activeContext.md", type: "markdown" },
-  { path: "memory-bank/errors.md", type: "markdown" },
-  { path: "memory-bank/productContext.md", type: "markdown" },
-  { path: "memory-bank/progress.md", type: "markdown" },
-  { path: "memory-bank/projectbrief.md", type: "markdown" },
-  { path: "memory-bank/systemPatterns.md", type: "markdown" },
-  { path: "memory-bank/techContext.md", type: "markdown" },
-
-  // Research documents
-  { path: "research/claude-research.md", type: "markdown" },
-  { path: "research/Gemini.txt", type: "plain-text" },
-  { path: "research/Pokémon Champions (2026) — Competitive Knowledge Base.md", type: "markdown" },
-
-  // Knowledge documents
-  { path: "data/knowledge/type_chart.md", type: "markdown" },
-  { path: "data/knowledge/damage_calc.md", type: "markdown" },
-  { path: "data/knowledge/team_archetypes.md", type: "markdown" },
-  { path: "data/knowledge/team_building_theory.md", type: "markdown" },
-  { path: "data/knowledge/meta_snapshot.md", type: "markdown" },
-  { path: "data/knowledge/speed_tiers.md", type: "markdown" },
-  { path: "data/knowledge/champions_rules.md", type: "markdown" },
 ];
 
-// Dynamically add all YouTube transcript markdown files
-try {
-  const transcriptDir = resolve(PROJECT_ROOT, "data", "transcripts");
-  const transcriptFiles = readdirSync(transcriptDir)
-    .filter((f) => f.endsWith(".md"))
-    .map((f): FileEntry => ({ path: `data/transcripts/${f}`, type: "markdown" }));
-  FILES.push(...transcriptFiles);
-} catch {
-  // data/transcripts/ may not exist yet — skip silently
+// Glob patterns for auto-discovered markdown/text files
+const GLOB_DIRS: Array<{ dir: string; ext: string; type: FileEntry["type"] }> = [
+  { dir: "memory-bank", ext: ".md", type: "markdown" },
+  { dir: "research", ext: ".md", type: "markdown" },
+  { dir: "research", ext: ".txt", type: "plain-text" },
+  { dir: "data/knowledge", ext: ".md", type: "markdown" },
+  { dir: "data/transcripts", ext: ".md", type: "markdown" },
+];
+
+function discoverFiles(): FileEntry[] {
+  const files = [...STATIC_FILES];
+  for (const { dir, ext, type } of GLOB_DIRS) {
+    try {
+      const absDir = resolve(PROJECT_ROOT, dir);
+      const entries = readdirSync(absDir)
+        .filter((f) => f.endsWith(ext) && !f.startsWith("."))
+        .map((f): FileEntry => ({ path: `${dir}/${f}`, type }));
+      files.push(...entries);
+    } catch {
+      // Directory may not exist yet — skip
+    }
+  }
+  return files;
 }
+
+const FILES = discoverFiles();
 
 // Map file types to searchable data categories
 function getDataCategory(entry: FileEntry): string {
@@ -250,6 +241,27 @@ async function main() {
   console.log("Creating scalar index on data_category...");
   await idxTable.createIndex("data_category", { replace: true });
   console.log("Scalar index created.");
+
+  // 8. Write index metadata for staleness detection
+  const metaPath = resolve(DB_PATH, "index-meta.json");
+  const fileMtimes: Record<string, string> = {};
+  for (const entry of FILES) {
+    try {
+      const absPath = resolve(PROJECT_ROOT, entry.path);
+      fileMtimes[entry.path] = statSync(absPath).mtime.toISOString();
+    } catch {
+      // File may have been skipped
+    }
+  }
+  const meta = {
+    indexed_at: new Date().toISOString(),
+    embedding_model: "onnx-community/embeddinggemma-300m-ONNX",
+    chunk_count: allChunks.length,
+    file_count: FILES.length,
+    file_mtimes: fileMtimes,
+  };
+  writeFileSync(metaPath, JSON.stringify(meta, null, 2), "utf-8");
+  console.log(`Index metadata written to ${metaPath}`);
 
   console.log("Done.");
 }

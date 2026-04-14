@@ -8,7 +8,10 @@ import requests
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.pikalytics.com/pokedex/championstournaments"
-HEADERS = {"User-Agent": "Mozilla/5.0 (Pokemon Champions Scraper)"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Pokemon Champions Scraper)",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 # Pokemon whose CSV name doesn't match the Pikalytics URL slug
 SLUG_OVERRIDES = {

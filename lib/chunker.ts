@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import { parse } from "csv-parse/sync";
 
 export interface Chunk {
@@ -302,6 +303,35 @@ export async function chunkTournamentTeamsCsv(filePath: string, source: string):
 // 9. pikalytics_usage.csv
 // ---------------------------------------------------------------------------
 
+// Lazy-loaded IT -> EN translation dictionary for fixing Italian Pikalytics data
+let _translations: { moves: Record<string, string>; items: Record<string, string>; abilities: Record<string, string> } | null = null;
+
+function getTranslations() {
+  if (_translations) return _translations;
+  const path = resolve(import.meta.dirname, "translations.json");
+  if (existsSync(path)) {
+    _translations = JSON.parse(readFileSync(path, "utf-8"));
+  } else {
+    _translations = { moves: {}, items: {}, abilities: {} };
+  }
+  return _translations!;
+}
+
+function translatePairs(encoded: string, dict: Record<string, string>): string {
+  if (!encoded) return encoded;
+  return encoded
+    .split("|")
+    .map((pair) => {
+      const sepIdx = pair.lastIndexOf(":");
+      if (sepIdx === -1) return pair;
+      const name = pair.slice(0, sepIdx);
+      const pct = pair.slice(sepIdx + 1);
+      const translated = dict[name] ?? name;
+      return `${translated}:${pct}`;
+    })
+    .join("|");
+}
+
 function expandPairs(encoded: string): string {
   if (!encoded) return "";
   return encoded
@@ -316,19 +346,25 @@ function expandPairs(encoded: string): string {
 export async function chunkPikalyticsUsageCsv(filePath: string, source: string): Promise<Chunk[]> {
   const raw = await readFile(filePath, "utf-8");
   const rows = parseCsv(raw);
+  const t = getTranslations();
 
   return rows.map((r) => {
+    // Translate Italian names to English before building chunk text
+    const moves = translatePairs(r.top_moves, t.moves);
+    const items = translatePairs(r.top_items, t.items);
+    const abilities = translatePairs(r.top_abilities, t.abilities);
+
     const parts = [
       `${r.pokemon} competitive usage statistics: Ranked #${r.rank} with ${r.usage_pct}% usage in Champions tournaments.`,
     ];
-    if (r.top_moves) parts.push(`Top moves: ${expandPairs(r.top_moves)}.`);
-    if (r.top_items) parts.push(`Top items: ${expandPairs(r.top_items)}.`);
-    if (r.top_abilities) parts.push(`Top abilities: ${expandPairs(r.top_abilities)}.`);
+    if (moves) parts.push(`Top moves: ${expandPairs(moves)}.`);
+    if (items) parts.push(`Top items: ${expandPairs(items)}.`);
+    if (abilities) parts.push(`Top abilities: ${expandPairs(abilities)}.`);
     if (r.top_teammates) parts.push(`Common teammates: ${expandPairs(r.top_teammates)}.`);
 
-    const topMove = r.top_moves ? r.top_moves.split("|")[0]?.split(":")[0] : null;
-    const topItem = r.top_items ? r.top_items.split("|")[0]?.split(":")[0] : null;
-    const topAbility = r.top_abilities ? r.top_abilities.split("|")[0]?.split(":")[0] : null;
+    const topMove = moves ? moves.split("|")[0]?.split(":")[0] : null;
+    const topItem = items ? items.split("|")[0]?.split(":")[0] : null;
+    const topAbility = abilities ? abilities.split("|")[0]?.split(":")[0] : null;
 
     return {
       id: `usage:${slug(r.pokemon)}`,
@@ -400,10 +436,16 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
       sectionIndex++;
     } else {
       const parts = body.split(/\n\s*\n/).filter((p) => p.trim());
-      for (const part of parts) {
+      for (let j = 0; j < parts.length; j++) {
+        // Carry trailing lines of previous paragraph as overlap for context
+        const overlap =
+          j > 0 ? parts[j - 1].trim().split("\n").slice(-3).join("\n") : "";
+        const chunkBody = overlap
+          ? `${overlap}\n\n${parts[j].trim()}`
+          : parts[j].trim();
         chunks.push({
           id: `md:${source}:${sectionIndex}`,
-          text: `${currentHeading}\n${part.trim()}`,
+          text: `${currentHeading}\n${chunkBody}`,
           source,
           sourceType: "markdown-section",
           metadata: { heading: currentHeading, section_index: sectionIndex },
