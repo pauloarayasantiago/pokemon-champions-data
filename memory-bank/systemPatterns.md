@@ -15,11 +15,15 @@
 ├── .lancedb/                   Vector database (Apache Arrow format, 1330 chunks)
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→natural language, markdown→sections)
-│   ├── embed.ts                HuggingFace Xenova/all-MiniLM-L6-v2 (384-dim)
-│   └── rag.ts                  LanceDB cosine similarity search
+│   ├── embed.ts                HuggingFace Xenova/all-MiniLM-L6-v2 (384-dim) — upgrade planned to EmbeddingGemma
+│   ├── rag.ts                  Hybrid search (FTS+Vector+RRF) + intent classification + structured queries + re-ranking
+│   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
+│   └── eval-data.ts            25 eval test cases across 8 categories
 ├── scripts/
-│   ├── index-data.ts           Chunks all files → embeds → stores in LanceDB (50 files registered)
-│   └── search.ts               CLI: npx tsx scripts/search.ts "query" [topK]
+│   ├── index-data.ts           Chunks all files → embeds → stores in LanceDB (52 files, FTS+scalar indexes)
+│   ├── search.ts               CLI: npx tsx scripts/search.ts "query" [topK]
+│   ├── eval.ts                 Eval harness: Recall@5, MRR, pass rate, per-category breakdown
+│   └── debug-db.ts             DB inspection utility (temporary)
 ├── data/
 │   ├── knowledge/              Structured competitive knowledge (7 files, 101 chunks)
 │   │   ├── type_chart.md       18-type offensive + defensive matchups
@@ -66,10 +70,14 @@
   - Auto-skips previously downloaded transcripts
   - Filters out wrong-game content (S/V, Sword/Shield, Unite, etc.)
 
-## RAG Pipeline
-1. **Chunk** — `lib/chunker.ts` converts each data type to natural language text chunks
+## RAG Pipeline (Post-Overhaul, Phase 4)
+1. **Chunk** — `lib/chunker.ts` converts each data type to natural language text chunks with `data_category` tags
 2. **Embed** — `lib/embed.ts` uses HuggingFace local model (384-dim, batch size 64)
-3. **Store** — LanceDB table "chunks" with id, text, source, source_type, metadata, vector
-4. **Query** — `lib/rag.ts` embeds question → cosine similarity search → **over-fetch 3x → metadata re-rank → top-K results**
-5. **Re-rank** — Usage chunks boosted when query contains usage-intent keywords (USAGE_KEYWORDS list) AND Pokemon name matches metadata. Two boost levels: +0.10 (specific Pokemon + usage intent) or +0.05 (general usage intent, no specific Pokemon)
-6. **Incremental** — index-data.ts checks existing chunk IDs, only inserts new ones (--force rebuilds)
+3. **Store** — LanceDB table "chunks" with: id, text, source, source_type, data_category, metadata, vector, plus top-level stat columns (pokemon_name, col_type1, col_type2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst — null for non-Pokemon)
+4. **Index** — FTS index on text (BM25/Tantivy, stemmed English), scalar index on data_category
+5. **Classify** — Rule-based `classifyQuery()` detects intent (usage, counter, stat, item, move, team) via word-boundary matching against keyword sets + Pokemon name dictionary
+6. **Search** — Hybrid: vector + BM25 FTS fused via RRF reranker (k=60), with `where()` category pre-filter based on intent
+7. **Structured** — If stat query detected, parallel SQL path: `buildStatFilter()` → type/speed/attack WHERE predicates → `table.query().where(filter)`. **No data_category in WHERE** (LanceDB scalar index bug)
+8. **Merge + Re-rank** — Deduplicate hybrid + structured results, apply 5 additive boosts (structured +0.1, usage +0.1/0.05, exact name +0.04, counter knowledge +0.015, project -0.08), sort by score, return topK
+9. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 0.944
+10. **Incremental** — index-data.ts checks existing chunk IDs, only inserts new ones (--force rebuilds all + recreates indexes)

@@ -1,41 +1,46 @@
-# Active Context (2026-04-12)
+# Active Context (2026-04-13)
 
-## Current Phase: System Fully Operational — RAG Quality Improved
+## Current Phase: RAG System Overhauled — Phases 5-8 Ready for Implementation
 
-All data scraping, competitive meta data, and indexing is complete. The RAG system has 1,550 chunks across 52 files. Semantic search retrieval quality has been improved with over-fetch + metadata re-ranking.
+The RAG system underwent a major overhaul (Phases 0-4). Current score: **25/25 eval cases pass (100%), MRR 0.944, zero forbidden results.** Four more phases are planned and ready to implement.
 
-### Completed
-- Scraped 186 base Pokémon with types, abilities, moves, and base stats → `pokemon_champions.csv`
-- Scraped 59 Mega Evolutions with types, abilities, and base stats → `mega_evolutions.csv`
-- Scraped 138 items, 494 moves, 21 updated attacks, 4 new abilities, 23 mega abilities
-- **Scraped 136 tournament teams** from VGCPastes Google Sheets → `tournament_teams.csv`
-- **Scraped 80 Pokémon usage stats** from Pikalytics → `pikalytics_usage.csv`
-- Built LanceDB RAG system with `/lookup`, `/reindex`, and **`/refresh`** skills
-- Built YouTube transcript scraper; 24 transcripts (868KB) collected
-- 3 deep research documents → `research/`
-- **CLAUDE.md** — Expert persona with mandatory lookup rule
-- **`/team` skill** — 5 modes + data freshness check (warns if data >3 days old)
-- **`/research` skill** — Web-based competitive data gathering
-- **`/refresh` skill** — Re-scrapes Pikalytics + Google Sheets + reindexes
-- 7 knowledge documents in `data/knowledge/`
-- **Reindexed**: 1,550 chunks across 52 files
-- **RAG retrieval fix**: Over-fetch + metadata re-rank in `lib/rag.ts` — usage chunks now surface correctly when queries contain usage keywords + Pokemon name
+### RAG Overhaul Complete (Phases 0-4)
+- **Phase 0**: Built eval framework — 25 test cases across 8 categories (`lib/eval-data.ts`, `scripts/eval.ts`)
+- **Phase 1**: Hybrid search — LanceDB native FTS (BM25/Tantivy) + Vector + RRF reranker (`rerankers.RRFReranker.create(60)`)
+- **Phase 2**: Intent classification — rule-based `classifyQuery()` with word-boundary matching, `data_category` column + scalar index for source filtering
+- **Phase 3**: Structured stat queries — top-level stat columns (hp, attack, speed, etc.) + `lib/structured-query.ts` NL→SQL parser. **LanceDB bug workaround**: omit `data_category` from structured WHERE clauses (scalar index + non-indexed columns return incomplete results)
+- **Phase 4**: Multi-signal re-ranking — boosts for exact name (+0.04), usage intent (+0.05/0.10), structured results (+0.1), knowledge for counter queries (+0.015), project penalty (-0.08)
+
+### New/Modified Files from Overhaul
+- `lib/rag.ts` — Completely rewritten: hybrid search, intent classification, structured queries, multi-signal re-ranking
+- `lib/structured-query.ts` — NEW: NL→SQL stat filter builder (type, speed, attack thresholds)
+- `lib/eval-data.ts` — NEW: 25 test cases with expected/forbidden IDs
+- `scripts/eval.ts` — NEW: eval harness (Recall@5, MRR, pass rate, per-category breakdown)
+- `scripts/debug-db.ts` — DB inspection utility (temporary, can be deleted)
+- `scripts/index-data.ts` — Added FTS index, scalar index, `data_category` column, top-level stat columns
+
+### Phases 5-8: Ready to Implement (see plan file)
+
+**Phase 5: Embedding Upgrade** — `Xenova/all-MiniLM-L6-v2` (384-dim) → `onnx-community/embeddinggemma-300m-ONNX` (768-dim, q8 quantization). Modify `lib/embed.ts` to add query/document prefix support. Requires `--force` reindex.
+
+**Phase 6: Chunking Overlap** — Add sliding paragraph overlap to markdown chunk splits in `lib/chunker.ts`. ~10-15% more storage, better cross-boundary recall.
+
+**Phase 7: Index Lifecycle** — Add `.lancedb/index-meta.json` with file mtimes for staleness detection. Replace hardcoded FILES array with glob-based auto-discovery for `data/knowledge/`, `research/`, `data/transcripts/`.
+
+**Phase 8: Pikalytics Italian Fix** — 5 Pokemon (Kingambit #5, Venusaur #17, Lucario, Meowstic, Manectric) have Italian move/item/ability names. Fix: (1) Add `Accept-Language: en` header to `scraper_pikalytics.py`, (2) Build IT→EN translation dictionary via PokeAPI (`scripts/build-translations.ts` → `lib/translations.json`), (3) Apply translations in `lib/chunker.ts` during Pikalytics chunk creation.
+
+**Optimal order**: Phase 8 → 5 → 6 → 7 (combine 5+6+8 code changes, single `--force` reindex).
 
 ### Known Issues
 - Floette has no base stats (Serebii page layout issue)
-- Pikalytics move names may be in non-English languages (tournament submission language)
+- 5 Pikalytics entries in Italian (Kingambit, Venusaur, Lucario, Meowstic, Manectric) — Phase 8 fix planned
 - 106/186 Pokemon have no Pikalytics data (insufficient tournament appearances)
 - Mr. Rime has no Pikalytics page (slug format unknown)
-- Rotom form names (Rotom-Wash, Rotom-Heat) have low embedding similarity — hyphenated names don't embed well with MiniLM-L6-v2
-
-### Pending / Next Steps
-- YouTube scraper re-run when IP cooldown lifts
-- **PROPOSED: Pokemon Matchup Matrix** — Mathematical scoring system (see productContext.md)
-- Consider hybrid search (BM25 + vector) via LanceDB FTS index for further retrieval improvements
+- LanceDB scalar index bug: combining `data_category` scalar index with non-indexed columns in WHERE returns incomplete results — workaround in place (omit category filter from structured queries)
 
 ### Key Decisions
-- Research-first approach completed successfully
-- Using multiple data sources: Serebii (game data), Pikalytics (usage stats), VGCPastes (tournament teams), YouTube creators (meta opinions), AI research (comprehensive analysis)
-- Champions ≠ Scarlet/Violet — all data must be verified as Champions-specific
-- Target format: VGC Doubles, Regulation M-A
-- RAG re-ranking: boost only when usage-intent keywords detected (not on every Pokemon name query) to avoid regressions on type/ability/moveset queries
+- Hybrid search (BM25 + vector + RRF) is the foundation — compensates for smaller embedding model
+- Intent classification is rule-based (not LLM) — fast, deterministic, zero API cost
+- Structured stat queries bypass vector search entirely — SQL WHERE on pre-computed columns
+- EmbeddingGemma 300M chosen as upgrade path (Apache 2.0, proven Transformers.js support, q8 quantization)
+- PokeAPI used for Italian→English translation dictionary (confirmed: move endpoint returns multi-language names)

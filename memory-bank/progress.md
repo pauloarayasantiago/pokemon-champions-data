@@ -120,15 +120,29 @@
 - **Second bug caught**: `extractPokemonFromQuery()` crashed with `TypeError: name.toLowerCase is not a function` when metadata contained non-string `name` fields (e.g., numeric values from CSV rows). Fixed with `typeof raw !== "string"` guard.
 - **Results**: "Garchomp competitive usage" went from rank 4 → rank 1. No regressions on non-usage queries.
 
+### RAG System Overhaul — Phases 0-4 (2026-04-13)
+- **Phase 0**: Built eval framework — 25 test cases, 8 categories (exact-lookup, mechanic, move-lookup, item-lookup, counter, stat-filter, usage, strategic). Baseline: 21/25 (84%)
+- **Phase 1**: Hybrid search — LanceDB native FTS (BM25 via Tantivy) + vector + RRF reranker. Import: `import { rerankers } from "@lancedb/lancedb"` then `rerankers.RRFReranker.create(60)`. Score improved to 24/25 (96%)
+- **Phase 2**: Intent classification — rule-based `classifyQuery()` with word-boundary matching, `data_category` column + scalar index, `where()` pre-filters. Score: 25/25 (100%)
+- **Phase 3**: Structured stat queries — top-level stat columns (hp, attack, speed, type1, type2, bst, pokemon_name) on Pokemon/Mega chunks. `lib/structured-query.ts` parses NL to SQL WHERE predicates. **LanceDB bug found**: scalar-indexed `data_category` combined with non-indexed columns in WHERE returns incomplete results — fixed by omitting `data_category` from structured queries (stat columns are null for non-Pokemon chunks, naturally filtering them out)
+- **Phase 4**: Multi-signal re-ranking — 5 boost signals calibrated to RRF score scale (~0.02-0.035): structured +0.1, usage match +0.1, general usage +0.05, exact name +0.04, counter knowledge +0.015, project penalty -0.08
+- **Final score**: 25/25 (100%), MRR 0.944, 100% no-forbidden, 100% sources-found
+- New files: `lib/eval-data.ts`, `scripts/eval.ts`, `lib/structured-query.ts`, `scripts/debug-db.ts`
+- Modified files: `lib/rag.ts` (complete rewrite), `scripts/index-data.ts` (FTS index, scalar index, data_category, stat columns)
+- 1,556 total chunks across 10 categories: move (515), knowledge (267), pokemon (186), item (138), team (136), transcript (96), mega (82), usage (80), project (52), ability (4)
+
 ## Pending
+- **Phase 5**: Embedding upgrade — `Xenova/all-MiniLM-L6-v2` → `onnx-community/embeddinggemma-300m-ONNX` (768-dim, q8). Modify `lib/embed.ts`, add query/document prefix support. Requires `--force` reindex.
+- **Phase 6**: Chunking overlap — sliding paragraph overlap in `lib/chunker.ts` markdown splits
+- **Phase 7**: Index lifecycle — staleness detection (`.lancedb/index-meta.json` with file mtimes) + glob-based auto-discovery for `data/knowledge/`, `research/`
+- **Phase 8**: Pikalytics Italian fix — 5 Pokemon (Kingambit, Venusaur, Lucario, Meowstic, Manectric) have Italian text. Fix scraper header + build IT→EN translation dict via PokeAPI + apply in chunker
 - YouTube scraper re-run when IP cooldown lifts
 - Design and implement Pokemon Matchup Matrix (proposed — see productContext.md)
-- Consider LanceDB FTS index for hybrid search (BM25 + vector) to improve generic queries like "what Pokemon are most used"
 
 ## Known Issues
 - Castform shows Normal/Fire because Serebii lists its form types together
 - Lycanroc shows 6 abilities (combines all 3 form abilities)
 - Training mechanics page has minimal content (just VP costs)
 - YouTube transcript API rate-limited — IP block with no documented cooldown duration
-- Rotom form names (Rotom-Wash, etc.) have low embedding similarity (~0.36) — hyphenated form names don't embed well with MiniLM-L6-v2
-- Pikalytics move names for some Pokemon are in non-English (e.g., Kingambit: "Sbigoattacco" = Sucker Punch, Incineroar: "Mogelhieb" = Fake Out)
+- LanceDB scalar index bug: combining scalar-indexed column with non-indexed columns in WHERE returns incomplete results — workaround in place
+- Pikalytics Italian text in 5 Pokemon: Kingambit ("Sbigoattacco" = Sucker Punch), Venusaur ("Fangobomba" = Sludge Bomb), Lucario, Meowstic, Manectric — ~83 Italian strings total (44 moves, 25 items, 14 abilities)

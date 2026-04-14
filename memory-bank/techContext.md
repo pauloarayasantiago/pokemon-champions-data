@@ -23,10 +23,25 @@
 - `typescript` (^6.0.2)
 
 ## Embedding Model
-- Model: `Xenova/all-MiniLM-L6-v2`
-- Dimensions: 384
-- Download: ~80MB (first run, cached locally)
+- **Current**: `Xenova/all-MiniLM-L6-v2` (22M params, 384-dim, MTEB ~56.3)
+- **Planned upgrade**: `onnx-community/embeddinggemma-300m-ONNX` (308M params, 768-dim, q8 quantization)
+  - Does NOT support fp16 — use fp32, q8, or q4
+  - Requires task prefixes: queries = `task: search result | query: <text>`, documents = `title: none | text: <text>`
+  - Apache 2.0 license, proven Transformers.js support
+- Download: ~80MB current, ~300MB after upgrade (first run, cached locally)
 - Normalization: L2 for cosine distance
+
+## RAG Architecture (as of Phase 4 overhaul)
+- **Hybrid search**: LanceDB native FTS (BM25 via Tantivy) + vector search + RRF reranker (k=60)
+  - Import: `import { connect, rerankers } from "@lancedb/lancedb"` (NOT from subpath `/rerankers`)
+  - Chained: `table.vectorSearch(vector).distanceType("cosine").fullTextSearch(question).rerank(reranker).limit(k)`
+  - RRF scores are ~0.02-0.035 scale (not 0-1)
+- **Intent classification**: Rule-based `classifyQuery()` in `lib/rag.ts` — detects usage/counter/stat/item/move/team queries via word-boundary matching
+- **Source filtering**: `data_category` column with scalar index, applied as `where()` predicate
+- **Structured queries**: `lib/structured-query.ts` — NL→SQL for stat-based filtering (type, speed, attack, etc.)
+  - **IMPORTANT**: Do NOT combine `data_category` scalar index with non-indexed stat columns in WHERE — LanceDB returns incomplete results. Stat columns are null for non-Pokemon chunks, so category filter is redundant.
+- **Multi-signal re-ranking**: 5 additive boosts calibrated to RRF scale
+- **Eval**: 25 test cases, `npx tsx scripts/eval.ts` — current: 100% pass, MRR 0.944
 
 ## Scraper Architecture
 

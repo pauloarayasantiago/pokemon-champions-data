@@ -1,4 +1,4 @@
-import { connect } from "@lancedb/lancedb";
+import { connect, Index } from "@lancedb/lancedb";
 import { resolve } from "node:path";
 import { readdirSync } from "node:fs";
 import {
@@ -89,6 +89,27 @@ try {
   // data/transcripts/ may not exist yet — skip silently
 }
 
+// Map file types to searchable data categories
+function getDataCategory(entry: FileEntry): string {
+  switch (entry.type) {
+    case "pokemon-csv": return "pokemon";
+    case "mega-evolutions-csv": return "mega";
+    case "moves-csv": return "move";
+    case "items-csv": return "item";
+    case "updated-attacks-csv": return "move";
+    case "new-abilities-csv": return "ability";
+    case "mega-abilities-csv": return "mega";
+    case "tournament-teams-csv": return "team";
+    case "pikalytics-usage-csv": return "usage";
+    case "plain-text": return "knowledge";
+    case "markdown": {
+      if (entry.path.startsWith("memory-bank/")) return "project";
+      if (entry.path.startsWith("data/transcripts/")) return "transcript";
+      return "knowledge";
+    }
+  }
+}
+
 async function chunkFile(entry: FileEntry, absPath: string): Promise<Chunk[]> {
   switch (entry.type) {
     case "pokemon-csv":
@@ -121,14 +142,15 @@ async function main() {
 
   // 1. Chunk all files
   console.log(`\nChunking ${FILES.length} files...`);
-  const allChunks: Chunk[] = [];
+  const allChunks: Array<Chunk & { data_category: string }> = [];
 
   for (const entry of FILES) {
     const absPath = resolve(PROJECT_ROOT, entry.path);
     try {
       const chunks = await chunkFile(entry, absPath);
-      console.log(`  ${entry.path}: ${chunks.length} chunks`);
-      allChunks.push(...chunks);
+      const category = getDataCategory(entry);
+      console.log(`  ${entry.path}: ${chunks.length} chunks [${category}]`);
+      allChunks.push(...chunks.map((c) => ({ ...c, data_category: category })));
     } catch (err) {
       console.error(`  SKIP ${entry.path}: ${(err as Error).message}`);
     }
@@ -175,15 +197,31 @@ async function main() {
     );
   }
 
-  // 5. Build records for LanceDB
-  const records = chunksToInsert.map((c, i) => ({
-    id: c.id,
-    text: c.text,
-    source: c.source,
-    source_type: c.sourceType,
-    metadata: JSON.stringify(c.metadata),
-    vector: vectors[i],
-  }));
+  // 5. Build records for LanceDB (with top-level stat columns for structured queries)
+  const records = chunksToInsert.map((c, i) => {
+    const meta = c.metadata as Record<string, unknown>;
+    const isPokemon = c.data_category === "pokemon" || c.data_category === "mega";
+    return {
+      id: c.id,
+      text: c.text,
+      source: c.source,
+      source_type: c.sourceType,
+      data_category: c.data_category,
+      metadata: JSON.stringify(c.metadata),
+      vector: vectors[i],
+      // Top-level stat columns for SQL filtering (null for non-Pokemon chunks)
+      pokemon_name: isPokemon ? (meta.name ?? meta.mega_name ?? null) as string | null : null,
+      col_type1: isPokemon ? (meta.type1 ?? null) as string | null : null,
+      col_type2: isPokemon ? (meta.type2 ?? null) as string | null : null,
+      stat_hp: isPokemon ? (meta.hp ?? null) as number | null : null,
+      stat_attack: isPokemon ? (meta.attack ?? null) as number | null : null,
+      stat_defense: isPokemon ? (meta.defense ?? null) as number | null : null,
+      stat_sp_atk: isPokemon ? (meta.sp_atk ?? null) as number | null : null,
+      stat_sp_def: isPokemon ? (meta.sp_def ?? null) as number | null : null,
+      stat_speed: isPokemon ? (meta.speed ?? null) as number | null : null,
+      stat_bst: isPokemon ? (meta.bst ?? null) as number | null : null,
+    };
+  });
 
   // 6. Insert into LanceDB
   if (!force && tableExists) {
@@ -194,6 +232,24 @@ async function main() {
     await db.createTable(TABLE_NAME, records);
     console.log(`\nCreated table "${TABLE_NAME}" with ${records.length} chunks.`);
   }
+
+  // 7. Create indexes (FTS for hybrid search + scalar for category filtering)
+  const idxTable = await db.openTable(TABLE_NAME);
+  console.log("\nCreating FTS index on text column...");
+  await idxTable.createIndex("text", {
+    config: Index.fts({
+      withPosition: true,
+      lowercase: true,
+      stem: true,
+      language: "English",
+    }),
+    replace: true,
+  });
+  console.log("FTS index created.");
+
+  console.log("Creating scalar index on data_category...");
+  await idxTable.createIndex("data_category", { replace: true });
+  console.log("Scalar index created.");
 
   console.log("Done.");
 }
