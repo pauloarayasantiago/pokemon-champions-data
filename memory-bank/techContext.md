@@ -70,9 +70,15 @@
 - `lib/calc/stats.ts` — Champions SP calculator: HP = `floor((2*Base + 31 + SP*2) * 50/100) + 60`, Other = `floor((floor((2*Base + 31 + SP*2) * 50/100) + 5) * Nature)`
 - `lib/calc/damage.ts` — Full damage engine with ordered modifier chain: spread → weather → crit → random → STAB → effectiveness → burn → screen → item → ~15 attacker abilities → ~10 defender abilities → Friend Guard → Helping Hand → Protect
 - `lib/calc/matchup.ts` — Standard set generator (80 Pikalytics + 106 heuristic), matchup scorer with speed U-curve, full N×N matrix builder
+- `lib/calc/efficiency.ts` — Efficiency coefficient engine: 6 sub-score calculators (offense, defense, speed, typing, movepool, mega), composite E(A,B) on [-1,+1], matrix builder, CSV exporter
 - `lib/calc/index.ts` — Barrel export
 - **CLI**: `npx tsx scripts/calc.ts "Garchomp Earthquake vs Incineroar"` — supports --weather, --spread, --crit, --mega, --item, --sp, --burned, --reflect, --screen, --helping-hand, --all
 - **Matrix**: 244×244 (186 base + 59 mega - 1 overlap) = 59,292 pairs in ~1 second → `matchup_matrix.csv` (3.8 MB)
+- **Efficiency Matrix**: Same 59,292 pairs with 26 columns → `efficiency_matrix.csv` (~9.6 MB, builds in ~15s)
+  - Formula: `E = 0.30*offense + 0.25*defense + 0.20*speed + 0.10*typing + 0.10*movepool + 0.05*mega`
+  - Sub-scores: offense (dmg%, OHKO/2HKO, coverage depth), defense (survival margin, bulk ratio, type resist), speed (continuous diff, TR favor, priority, speed control), typing (log2 STAB diff, resist balance), movepool (coverage types, status threats, setup potential), mega (opportunity cost, ability bonuses)
+  - Meta weight = `usagePct / maxUsagePct` stored as separate column; `isMeta` flag for Pikalytics-tracked Pokemon
+  - Build: `npx tsx scripts/build-matchup-matrix.ts --efficiency` (full) or `--efficiency --top-only` (meta subset ~1.4s)
 - **Validation**: 24/24 tests pass (`scripts/test-calc.ts`) — stats, type chart, damage calcs, immunities, weather, screens, burn, protect
 - **Reference calc**: NCP-VGC-Damage-Calculator cloned to `tools/` (gitignored) for cross-validation
 

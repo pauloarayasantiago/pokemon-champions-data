@@ -118,6 +118,34 @@ export interface MatchupEntry {
   score: number;
 }
 
+// ── Efficiency coefficient types ──
+
+export interface EfficiencySubScores {
+  offenseScore: number;       // [-1,+1]
+  defenseScore: number;       // [-1,+1]
+  speedScore: number;         // [-1,+1]
+  typingScore: number;        // [-1,+1]
+  movepoolScore: number;      // [-1,+1]
+  megaScore: number;          // [-1,+1]
+  // Diagnostic fields
+  isOHKO: boolean;
+  is2HKO: boolean;
+  coverageDepth: number;      // [0,1] fraction of A's moves SE vs B
+  survivalMargin: number;     // [-1,+1] (100 - reversePct)/100
+  trickRoomFavor: number;     // [-1,+1]
+  priorityNet: number;        // [-1,+1]
+  coverageTypes: number;      // [0,1] distinct offensive types / 5
+  statusThreatNet: number;    // [-1,+1]
+  setupPotentialNet: number;  // [-1,+1]
+}
+
+export interface EfficiencyEntry extends MatchupEntry {
+  subScores: EfficiencySubScores;
+  efficiency: number;          // [-1,+1] composite coefficient
+  metaWeight: number;          // [0,1] defender usage-based weight
+  isMeta: boolean;             // defender has Pikalytics data
+}
+
 export const DEFAULT_FIELD: FieldConditions = {
   weather: null,
   terrain: null,

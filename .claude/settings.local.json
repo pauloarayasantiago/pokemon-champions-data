@@ -27,7 +27,8 @@
       "WebFetch(domain:deepwiki.com)",
       "Bash(git clone:*)",
       "Bash(node -e \"const t = JSON.parse\\(require\\('fs'\\).readFileSync\\('lib/translations.json','utf8'\\)\\); console.log\\('Keys:', Object.keys\\(t\\)\\); console.log\\('Moves count:', Object.keys\\(t.moves || {}\\).length\\); console.log\\('Items count:', Object.keys\\(t.items || {}\\).length\\); console.log\\('Abilities count:', Object.keys\\(t.abilities || {}\\).length\\);\")",
-      "Bash(grep -ri \"clear amulet\\\\|throat spray\\\\|expert belt\\\\|booster energy\" data/knowledge/*.md CLAUDE.md)"
+      "Bash(grep -ri \"clear amulet\\\\|throat spray\\\\|expert belt\\\\|booster energy\" data/knowledge/*.md CLAUDE.md)",
+      "Bash(python -c \"import yt_dlp; import youtube_transcript_api; print\\('deps ok'\\)\")"
     ]
   }
 }

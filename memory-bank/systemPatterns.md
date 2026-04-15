@@ -14,7 +14,7 @@
 │   │   ├── calc.md             /calc skill — ad-hoc damage calculations
 │   │   └── research.md         /research skill — web-based competitive data gathering
 │   └── settings.local.json     Permissions for scrapers, npm, git
-├── .lancedb/                   Vector database (Apache Arrow format, ~1,800 chunks)
+├── .lancedb/                   Vector database (Apache Arrow format, ~1,891 chunks)
 │   └── index-meta.json         Staleness metadata (mtimes, model, chunk count)
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap, Pikalytics translation)
@@ -29,6 +29,7 @@
 │       ├── stats.ts            Champions Stat Points calculator (66 total, 32 max, all IVs=31)
 │       ├── damage.ts           Damage engine: ordered modifier chain, ~25 ability handlers
 │       ├── matchup.ts          Standard set gen (Pikalytics + heuristic), matchup scorer, matrix builder
+│       ├── efficiency.ts       Efficiency coefficient: 6 sub-scores, composite E(A,B), matrix builder, CSV export
 │       └── index.ts            Barrel export
 ├── scripts/
 │   ├── index-data.ts           Chunks all files → embeds → stores in LanceDB (glob discovery, 52 files, FTS+scalar indexes)
@@ -49,7 +50,7 @@
 │   │   ├── meta_snapshot.md    Top 20 usage, WR, cores, archetypes, S-tier Megas
 │   │   ├── speed_tiers.md      Lv50 benchmarks, TR tiers, weather/Tailwind speeds
 │   │   └── champions_rules.md  Reg M-A rules, timer, bans, bugs, event schedule
-│   └── transcripts/            YouTube creator transcripts (24 markdown files, 868KB, auto-discovered)
+│   └── transcripts/            YouTube creator transcripts (43 markdown files, auto-discovered)
 ├── research/                   External AI research documents (3 files, auto-discovered)
 │   ├── claude-research.md
 │   ├── Gemini.txt
@@ -69,6 +70,7 @@
 ├── pikalytics_usage.csv        80 Pokémon: usage %, rank, top moves/items/abilities/teammates
 ├── tournament_teams.csv        136 teams: team ID, player, Pokemon, items, tournament info
 ├── matchup_matrix.csv          59,292 matchup pairs: attacker, defender, best_move, damage_pct, score
+├── efficiency_matrix.csv       59,292 efficiency entries: 26 columns (6 sub-scores + composite E + meta weight + diagnostics)
 ├── status_conditions.txt       Freeze/Paralysis/Sleep mechanic changes
 ├── training_mechanics.txt      VP costs for customization
 ├── package.json                Node.js deps (lancedb, huggingface, csv-parse)
@@ -82,7 +84,8 @@
 - `items.csv` Mega Stones → correspond to Pokémon with Mega Evolutions
 - `updated_attacks.csv` → shows what changed from S/V for moves in `moves.csv`
 - `pikalytics_usage.csv` → Italian names translated via `lib/translations.json` at chunk time
-- `matchup_matrix.csv` → computed from pokemon_champions.csv + mega_evolutions.csv + moves.csv + pikalytics_usage.csv via `lib/calc/`
+- `matchup_matrix.csv` → computed from pokemon_champions.csv + mega_evolutions.csv + moves.csv + pikalytics_usage.csv via `lib/calc/matchup.ts`
+- `efficiency_matrix.csv` → extends matchup_matrix with 6 sub-scores via `lib/calc/efficiency.ts`, also uses pikalytics_usage.csv for meta weights
 - `data/transcripts/*.md` → content creator opinions, indexed as markdown chunks
 - `research/*.md` → deep competitive analysis, indexed as markdown chunks
 

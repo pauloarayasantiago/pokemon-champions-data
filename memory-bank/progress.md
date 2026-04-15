@@ -205,8 +205,42 @@ Executed in order: Phase 8 → 5 → 6 → 7, single `--force` reindex at end.
   - `.claude/commands/team.md` — Added whitelist+blacklist item validation, redesigned Build/Fill output to advisory format with Mega options, slot alternatives, and Workshop Notes
   - `memory-bank/productContext.md` — Removed Expert Belt reference
 
+### Efficiency Coefficient Matrix (2026-04-14)
+- **Designed composite efficiency coefficient** E(A,B) on [-1, +1] combining 6 weighted sub-scores
+- **Created `lib/calc/efficiency.ts`** — 6 sub-score calculators + composite formula + matrix builder + CSV exporter
+  - Offense (0.30): damage % (150% cap), OHKO/2HKO flags, coverage depth (SE move fraction)
+  - Defense (0.25): survival margin, bulk ratio vs median (physical/special), STAB type resistance count
+  - Speed (0.20): continuous speed diff, Trick Room favorability, priority access, speed control moves
+  - Typing (0.10): log2 STAB effectiveness differential, resistance balance
+  - Movepool (0.10): coverage type diversity, context-dependent status threats, setup potential
+  - Mega (0.05): opportunity cost, ability bonuses (Shadow Tag, Magic Bounce, Multiscale)
+- **Modified `lib/calc/types.ts`** — added `EfficiencySubScores` and `EfficiencyEntry` interfaces
+- **Modified `scripts/build-matchup-matrix.ts`** — added `--efficiency` flag, meta-weighted ranking output
+- **Output**: `efficiency_matrix.csv` — 59,292 rows, 26 columns, ~9.6 MB
+  - First 8 columns match existing `matchup_matrix.csv` for backward compatibility
+  - 6 sub-score columns + composite E + meta weight + isMeta flag + 9 diagnostic columns
+- **Build**: `npx tsx scripts/build-matchup-matrix.ts --efficiency` (~15s full, ~1.4s --top-only)
+- **Verification**:
+  - Distribution: Mean=-0.040, StdDev=0.219, Range=[-0.720, +0.603]
+  - Anti-symmetry: Corr(E(A,B), -E(B,A)) = 0.792
+  - Top meta-weighted Pokemon: Mega Dragonite, Mega Aggron, Mega Gyarados, Mega Garchomp, Archaludon
+
+### Session Initialization + YouTube Transcript Expansion (2026-04-14)
+
+- **LanceDB rebuilt from scratch** — index was missing at session start, `/reindex --force` rebuilt 1,815 chunks from 53 files
+- **Froslass Snow team built** as live `/team` skill test — verified full research→validate→output pipeline works end-to-end
+- **YouTube scraper re-run** after diagnosing that `scraper_youtube.py` (yt-dlp + youtube-transcript-api) is the correct approach — no browser/API key needed
+  - Installed `yt-dlp` + `youtube-transcript-api` Python deps (were missing)
+  - Ran `python scraper_youtube.py --max 10` — checked 155 videos, saved 18 new transcripts
+  - YouTube IP-blocked transcript API after ~55 fetches (100 failed); safe to re-run after ~1-24hr cooldown
+- **Transcript corpus**: 25 → **43 files** from 16 → **31 unique channels**
+- **New channels captured**: ADrive, False Swipe Gaming, Moxie Boosted, Nivag, PokeAimMD, Poplove Gaming, TrickRubyVGC, 13Yoshi37, Solemn PKM, Temp6T + new videos from CybertronVGC, Kneeckoh, PanfroGames, SkrawVGC, ThatSaVGC
+- **Incremental reindex**: 1,819 → 1,891 chunks (+72)
+- **Agent prompt investigation**: Determined that web-search/WebFetch agents can't retrieve YouTube transcripts — the Python scraper is the only viable approach
+
 ## Pending
-- YouTube scraper re-run when IP cooldown lifts
+- YouTube scraper re-run when IP cooldown lifts (`python scraper_youtube.py --max 10` — auto-deduplicates)
+- WolfeyVGC daily April series (April 11–30) — ~18 videos still uncaptured
 
 ## Known Issues
 - Castform shows Normal/Fire because Serebii lists its form types together
