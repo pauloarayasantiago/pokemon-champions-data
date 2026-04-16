@@ -29,15 +29,15 @@
 - `calc:test` — `npx tsx scripts/test-calc.ts` (24-test validation suite)
 
 ## Embedding Model
-- **Current**: `onnx-community/embeddinggemma-300m-ONNX` (308M params, 768-dim, q8 quantization)
-  - Does NOT support fp16 — use fp32, q8, or q4
-  - Requires task prefixes: queries = `task: search result | query: <text>`, documents = `title: none | text: <text>`
-  - Apache 2.0 license, proven Transformers.js support
-  - `embed(texts, mode)` — mode is `"query"` or `"document"` (default `"document"`)
-  - Batch size: 16 (reduced from 64 for larger model)
-- Download: ~300MB (first run, cached locally in `~/.cache/huggingface/hub/`)
-- Normalization: L2 for cosine distance
-- **Previous**: `Xenova/all-MiniLM-L6-v2` (22M params, 384-dim) — replaced in Phase 5
+- **Current**: `Xenova/all-MiniLM-L6-v2` (22M params, 384-dim, fp32)
+  - No task prefixes needed — raw text embedded directly
+  - Apache 2.0 license, Transformers.js support
+  - `embed(texts, mode)` — mode parameter retained for API compatibility but MiniLM treats both identically
+  - Batch size: 64
+  - ~4× faster indexing than EmbeddingGemma, ~4× smaller download
+- Download: ~80MB (first run, cached locally in `~/.cache/huggingface/hub/`)
+- Normalization: L2 for cosine distance (pooling: mean, normalize: true)
+- **Previous**: `onnx-community/embeddinggemma-300m-ONNX` (308M params, 768-dim, q8) — replaced for performance reasons (too resource-heavy)
 
 ## RAG Architecture (Post-Phase 8 Overhaul)
 - **Hybrid search**: LanceDB native FTS (BM25 via Tantivy) + vector search + RRF reranker (k=60)
@@ -61,7 +61,8 @@
 - **Staleness detection**: `checkStaleness()` in `rag.ts` reads `.lancedb/index-meta.json`, compares file mtimes, warns on stderr if stale (runs once per process)
 - **Matchup intent**: `isMatchupQuery` detection + MATCHUP_KEYWORDS + category boosting (+0.06 matchup data, +0.06 Pokemon name match)
 - **Eval**: 25 test cases, `npx tsx scripts/eval.ts` — current: 100% pass, MRR 0.958
-- **Comprehensive test suite**: `npx tsx scripts/test-suite.ts` — 51 tests across embedding, translation, search quality, overlap, lifecycle, scraper
+- **Comprehensive test suite**: `npx tsx scripts/test-suite.ts` — 74 tests across embedding, translation, search quality, realistic queries (15 natural-language tests), overlap, lifecycle, scraper
+- **Intent classification enhancements**: Move/item queries with Pokemon name now also pull "usage" category; "vs" added to MATCHUP_KEYWORDS; "most popular" added to USAGE_KEYWORDS
 
 ## Damage Calculator (`lib/calc/`)
 - **Custom TypeScript engine** — no external deps beyond csv-parse (already in project)

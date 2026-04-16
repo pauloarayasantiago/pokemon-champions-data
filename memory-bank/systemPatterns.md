@@ -14,11 +14,11 @@
 │   │   ├── calc.md             /calc skill — ad-hoc damage calculations
 │   │   └── research.md         /research skill — web-based competitive data gathering
 │   └── settings.local.json     Permissions for scrapers, npm, git
-├── .lancedb/                   Vector database (Apache Arrow format, ~1,891 chunks)
+├── .lancedb/                   Vector database (Apache Arrow format, ~1,910 chunks)
 │   └── index-meta.json         Staleness metadata (mtimes, model, chunk count)
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap, Pikalytics translation)
-│   ├── embed.ts                EmbeddingGemma 300M (768-dim, q8, query/document prefixes)
+│   ├── embed.ts                MiniLM-L6-v2 (384-dim, fp32, no prefixes, batch 64)
 │   ├── rag.ts                  Hybrid search (FTS+Vector+RRF) + intent classification + structured queries + re-ranking + staleness
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
 │   ├── eval-data.ts            25 eval test cases across 8 categories
@@ -36,7 +36,7 @@
 │   ├── search.ts               CLI: npx tsx scripts/search.ts "query" [topK]
 │   ├── eval.ts                 Eval harness: Recall@5, MRR, pass rate, per-category breakdown
 │   ├── build-translations.ts   Fetches PokeAPI IT→EN name mappings → lib/translations.json
-│   ├── test-suite.ts           Comprehensive 51-test suite (embedding, translation, search, overlap, lifecycle)
+│   ├── test-suite.ts           Comprehensive 74-test suite (embedding, translation, search, realistic queries, overlap, lifecycle)
 │   ├── debug-db.ts             DB inspection utility (temporary)
 │   ├── calc.ts                 CLI damage calculator ("Garchomp EQ vs Incineroar" → damage range)
 │   ├── build-matchup-matrix.ts 244×244 matchup matrix builder → matchup_matrix.csv
@@ -60,17 +60,17 @@
 ├── scraper_pikalytics.py       Python: Pikalytics usage scraper (Accept-Language: en header)
 ├── scraper_sheets.py           Python: VGCPastes tournament team scraper (Google Sheets API)
 ├── scraper_youtube.py          Python: YouTube transcript scraper (yt-dlp + youtube-transcript-api)
-├── pokemon_champions.csv       186 Pokémon: name, types, abilities, moves, stats
+├── pokemon_champions.csv       191 Pokémon: name, types, abilities, moves, stats (186 base + 5 Rotom forms)
 ├── mega_evolutions.csv         59 Mega forms: pokemon, mega_name, types, ability, stats
 ├── items.csv                   138 items: name, effect, location
 ├── moves.csv                   494 moves: name, type, category, pp, power, accuracy, effect
 ├── updated_attacks.csv         21 changed moves: Champions vs S/V stats
 ├── new_abilities.csv           4 new abilities: name, effect
 ├── mega_abilities.csv          23 megas with new abilities
-├── pikalytics_usage.csv        80 Pokémon: usage %, rank, top moves/items/abilities/teammates
+├── pikalytics_usage.csv        84 Pokémon: usage %, rank, top moves/items/abilities/teammates
 ├── tournament_teams.csv        136 teams: team ID, player, Pokemon, items, tournament info
-├── matchup_matrix.csv          59,292 matchup pairs: attacker, defender, best_move, damage_pct, score
-├── efficiency_matrix.csv       59,292 efficiency entries: 26 columns (6 sub-scores + composite E + meta weight + diagnostics)
+├── matchup_matrix.csv          61,752 matchup pairs: attacker, defender, best_move, damage_pct, score
+├── efficiency_matrix.csv       61,752 efficiency entries: 26 columns (6 sub-scores + composite E + meta weight + diagnostics)
 ├── status_conditions.txt       Freeze/Paralysis/Sleep mechanic changes
 ├── training_mechanics.txt      VP costs for customization
 ├── package.json                Node.js deps (lancedb, huggingface, csv-parse)
@@ -101,7 +101,7 @@
 ## RAG Pipeline (Post-Phase 8 Overhaul)
 1. **Discover** — `scripts/index-data.ts` uses glob patterns to auto-discover markdown files in `data/knowledge/`, `research/`, `data/transcripts/`, `memory-bank/`. CSVs/text files remain hardcoded (have specific chunker functions)
 2. **Chunk** — `lib/chunker.ts` converts each data type to NL text chunks with `data_category` tags. Pikalytics chunks translated IT→EN. Markdown chunks get trailing-paragraph overlap
-3. **Embed** — `lib/embed.ts` uses EmbeddingGemma 300M (768-dim, q8, batch size 16). Documents prefixed with `title: none | text: `, queries with `task: search result | query: `
+3. **Embed** — `lib/embed.ts` uses MiniLM-L6-v2 (384-dim, fp32, batch size 64). No prefixes — raw text embedded directly
 4. **Store** — LanceDB table "chunks" with: id, text, source, source_type, data_category, metadata, vector, plus top-level stat columns (pokemon_name, col_type1/2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst — null for non-Pokemon)
 5. **Index** — FTS index on text (BM25/Tantivy, stemmed English), scalar index on data_category
 6. **Meta** — `.lancedb/index-meta.json` written after reindex with file mtimes for staleness detection

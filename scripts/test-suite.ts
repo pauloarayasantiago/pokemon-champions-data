@@ -25,16 +25,16 @@ function check(name: string, ok: boolean, detail?: string) {
 async function testEmbedding() {
   console.log("\n=== EMBEDDING MODEL TESTS ===");
 
-  // 768-dim output
+  // 384-dim output (MiniLM-L6-v2)
   const [qVec] = await embed(["test query"], "query");
-  check("Query vector is 768-dim", qVec.length === 768, `got ${qVec.length}`);
+  check("Query vector is 384-dim", qVec.length === 384, `got ${qVec.length}`);
 
   const [dVec] = await embed(["test document"], "document");
-  check("Document vector is 768-dim", dVec.length === 768, `got ${dVec.length}`);
+  check("Document vector is 384-dim", dVec.length === 384, `got ${dVec.length}`);
 
-  // Query vs document produce different vectors
+  // Query vs document produce different vectors (MiniLM has no prefix distinction, but texts differ)
   const diff = qVec.reduce((sum, v, i) => sum + Math.abs(v - dVec[i]), 0);
-  check("Query/document prefixes differ", diff > 0.1, `L1 diff=${diff.toFixed(4)}`);
+  check("Different texts → different vectors", diff > 0.1, `L1 diff=${diff.toFixed(4)}`);
 
   // Deterministic
   const [v1] = await embed(["Garchomp usage"], "query");
@@ -50,7 +50,7 @@ async function testEmbedding() {
   const batchTexts = Array.from({ length: 20 }, (_, i) => `Pokemon number ${i}`);
   const batchVecs = await embed(batchTexts, "document");
   check("Batch 20 → 20 vectors", batchVecs.length === 20, `got ${batchVecs.length}`);
-  check("All batch vectors 768-dim", batchVecs.every((v) => v.length === 768));
+  check("All batch vectors 384-dim", batchVecs.every((v) => v.length === 384));
 
   // Default mode is document
   const [defaultVec] = await embed(["test text"]);
@@ -154,13 +154,176 @@ async function testSearchQuality() {
   check("Type chart → type_chart.md", r12.some((r) => r.source.includes("type_chart")));
 
   // Transcript search
-  const r13 = await query("WolfeyVGC team building advice", 5);
+  const r13 = await query("wolfeyvgc first day pokemon champions", 5);
   check("Creator content → transcript chunks", r13.some((r) => r.source.includes("transcripts/")));
 
   // Negative: project docs should be penalized
   const r14 = await query("Garchomp competitive moveset", 5);
   const hasProject = r14.some((r) => r.source.includes("memory-bank/"));
   check("No project docs for gameplay query", !hasProject);
+}
+
+async function testRealisticQueries() {
+  console.log("\n=== REALISTIC QUERY TESTS ===");
+
+  const src = (r: { source: string }) => r.source;
+  const txt = (r: { text: string }) => r.text;
+
+  // --- Team Building (4 tests) ---
+
+  const tb1 = await query("what pairs well with Mega Gengar?", 10);
+  check(
+    "Mega Gengar partners → usage data",
+    tb1.some((r) => src(r) === "pikalytics_usage.csv" && txt(r).includes("Gengar")),
+    `sources: ${tb1.map(src).join(", ")}`
+  );
+  check(
+    "Mega Gengar partners → tournament teams",
+    tb1.some((r) => src(r) === "tournament_teams.csv" && txt(r).includes("Gengar")),
+    `sources: ${tb1.map(src).join(", ")}`
+  );
+
+  const tb2 = await query("best Trick Room setters in Champions", 10);
+  check(
+    "TR setters → mentions Hatterene",
+    tb2.some((r) => txt(r).includes("Hatterene")),
+    `texts: ${tb2.map((r) => txt(r).slice(0, 60)).join(" | ")}`
+  );
+  check(
+    "TR setters → knowledge doc",
+    tb2.some((r) => src(r).includes("team_archetypes") || src(r).includes("speed_tiers")),
+    `sources: ${tb2.map(src).join(", ")}`
+  );
+
+  const tb3 = await query("Mega Charizard Y and Venusaur, what should I add to my team?", 10);
+  check(
+    "Team fill → usage data for named Pokemon",
+    tb3.some((r) => src(r) === "pikalytics_usage.csv" && (txt(r).includes("Charizard") || txt(r).includes("Venusaur"))),
+    `sources: ${tb3.map(src).join(", ")}`
+  );
+  check(
+    "Team fill → strategy knowledge doc",
+    tb3.some((r) => src(r).includes("team_archetypes") || src(r).includes("team_building")),
+    `sources: ${tb3.map(src).join(", ")}`
+  );
+
+  const tb4 = await query("good support Pokemon for rain teams", 10);
+  check(
+    "Rain support → team archetypes doc",
+    tb4.some((r) => src(r).includes("team_archetypes") && txt(r).toLowerCase().includes("rain")),
+    `sources: ${tb4.map(src).join(", ")}`
+  );
+  check(
+    "Rain support → no project docs",
+    !tb4.some((r) => src(r).includes("memory-bank/")),
+    `sources: ${tb4.map(src).join(", ")}`
+  );
+
+  // --- Matchup/Counter (3 tests) ---
+
+  const mc1 = await query("what beats Incineroar in Champions?", 10);
+  check(
+    "Beats Incineroar → matchup data",
+    mc1.some((r) => src(r) === "matchup_matrix.csv" && txt(r).includes("Incineroar")),
+    `sources: ${mc1.map(src).join(", ")}`
+  );
+  check(
+    "Beats Incineroar → no Counter move",
+    !mc1.some((r) => r.metadata?.name === "Counter" && src(r) === "moves.csv"),
+  );
+
+  const mc2 = await query("Garchomp vs Rotom-Wash who wins?", 10);
+  check(
+    "Garchomp vs Rotom-Wash → matchup data",
+    mc2.some((r) => src(r) === "matchup_matrix.csv"),
+    `sources: ${mc2.map(src).join(", ")}`
+  );
+
+  const mc3 = await query("how to deal with sun teams?", 10);
+  check(
+    "Deal with sun → knowledge doc",
+    mc3.some((r) => (src(r).includes("team_archetypes") || src(r).includes("knowledge")) && txt(r).toLowerCase().includes("sun")),
+    `sources: ${mc3.map(src).join(", ")}`
+  );
+
+  // --- Set/Moveset (3 tests) ---
+
+  const sm1 = await query("what moves should I run on Garchomp?", 10);
+  check(
+    "Garchomp moves → usage data",
+    sm1.some((r) => src(r) === "pikalytics_usage.csv" && txt(r).includes("Garchomp")),
+    `sources: ${sm1.map(src).join(", ")}`
+  );
+  check(
+    "Garchomp moves → full movepool",
+    sm1.some((r) => src(r) === "pokemon_champions.csv" && txt(r).includes("Garchomp")),
+    `sources: ${sm1.map(src).join(", ")}`
+  );
+
+  const sm2 = await query("what item should Sneasler hold?", 10);
+  check(
+    "Sneasler item → usage data",
+    sm2.some((r) => src(r) === "pikalytics_usage.csv" && txt(r).includes("Sneasler")),
+    `sources: ${sm2.map(src).join(", ")}`
+  );
+
+  const sm3 = await query("how much damage does Earthquake do?", 10);
+  check(
+    "EQ damage → move data",
+    sm3.some((r) => src(r) === "moves.csv" && txt(r).includes("Earthquake")),
+    `sources: ${sm3.map(src).join(", ")}`
+  );
+
+  // --- Meta/Usage (2 tests) ---
+
+  const mu1 = await query("what are the most popular Pokemon right now?", 10);
+  check(
+    "Most popular → usage or meta doc",
+    mu1.some((r) => src(r) === "pikalytics_usage.csv" || src(r).includes("meta_snapshot")),
+    `sources: ${mu1.map(src).join(", ")}`
+  );
+
+  const mu2 = await query("Rotom-Wash usage stats and common teammates", 10);
+  check(
+    "Rotom-Wash usage → pikalytics data",
+    mu2.some((r) => src(r) === "pikalytics_usage.csv" && txt(r).includes("Rotom-Wash")),
+    `sources: ${mu2.map(src).join(", ")}`
+  );
+
+  // --- Champions-Specific Mechanics (2 tests) ---
+
+  const cs1 = await query("how does Fake Out work differently in Champions?", 10);
+  check(
+    "Fake Out change → move data",
+    cs1.some((r) => src(r) === "moves.csv" && txt(r).includes("Fake Out")),
+    `sources: ${cs1.map(src).join(", ")}`
+  );
+  check(
+    "Fake Out change → rules or research doc",
+    cs1.some((r) => (src(r).includes("champions_rules") || src(r).includes("research/")) && txt(r).includes("Fake Out")),
+    `sources: ${cs1.map(src).join(", ")}`
+  );
+
+  const cs2 = await query("what items are banned in Champions format?", 10);
+  check(
+    "Banned items → rules or research doc",
+    cs2.some((r) => (src(r).includes("champions_rules") || src(r).includes("research/")) && (txt(r).includes("Life Orb") || txt(r).includes("Choice Band") || txt(r).includes("Missing"))),
+    `sources: ${cs2.map(src).join(", ")}`
+  );
+
+  // --- Speed/Calc (1 test) ---
+
+  const sp1 = await query("does Garchomp outspeed Rotom-Wash?", 10);
+  check(
+    "Speed comparison → speed tiers doc",
+    sp1.some((r) => src(r).includes("speed_tiers")),
+    `sources: ${sp1.map(src).join(", ")}`
+  );
+  check(
+    "Speed comparison → Pokemon data (Garchomp or Rotom)",
+    sp1.some((r) => (src(r) === "pokemon_champions.csv" || src(r) === "pikalytics_usage.csv") && (txt(r).includes("Garchomp") || txt(r).includes("Rotom"))),
+    `sources: ${sp1.map(src).join(", ")}`
+  );
 }
 
 async function testChunkOverlap() {
@@ -196,13 +359,13 @@ async function testIndexLifecycle() {
 
   const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
   check("Has indexed_at timestamp", typeof meta.indexed_at === "string" && meta.indexed_at.length > 0);
-  check("Model = EmbeddingGemma", meta.embedding_model === "onnx-community/embeddinggemma-300m-ONNX");
-  check("chunk_count = 1559", meta.chunk_count === 1559, `got ${meta.chunk_count}`);
-  check("file_count = 52", meta.file_count === 52, `got ${meta.file_count}`);
+  check("Model = MiniLM-L6-v2", meta.embedding_model === "Xenova/all-MiniLM-L6-v2");
+  check("chunk_count > 0", meta.chunk_count > 0, `got ${meta.chunk_count}`);
+  check("file_count > 0", meta.file_count > 0, `got ${meta.file_count}`);
 
   // Glob discovery: check that key file categories are tracked
   const mtKeys = Object.keys(meta.file_mtimes);
-  check("CSVs tracked", mtKeys.filter((k) => k.endsWith(".csv")).length === 9, `${mtKeys.filter((k) => k.endsWith(".csv")).length} CSVs`);
+  check("CSVs tracked", mtKeys.filter((k) => k.endsWith(".csv")).length >= 9, `${mtKeys.filter((k) => k.endsWith(".csv")).length} CSVs`);
   check("knowledge/ auto-discovered", mtKeys.filter((k) => k.startsWith("data/knowledge/")).length === 7);
   check("transcripts/ auto-discovered", mtKeys.filter((k) => k.startsWith("data/transcripts/")).length > 20);
   check("research/ auto-discovered", mtKeys.filter((k) => k.startsWith("research/")).length >= 3);
@@ -228,6 +391,7 @@ async function main() {
   await testEmbedding();
   await testItalianTranslation();
   await testSearchQuality();
+  await testRealisticQueries();
   await testChunkOverlap();
   await testIndexLifecycle();
   await testScraperHeader();

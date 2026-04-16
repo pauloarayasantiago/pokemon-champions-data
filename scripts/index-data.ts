@@ -261,7 +261,7 @@ async function main() {
   }
   const meta = {
     indexed_at: new Date().toISOString(),
-    embedding_model: "onnx-community/embeddinggemma-300m-ONNX",
+    embedding_model: "Xenova/all-MiniLM-L6-v2",
     chunk_count: allChunks.length,
     file_count: FILES.length,
     file_mtimes: fileMtimes,

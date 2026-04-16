@@ -114,7 +114,7 @@ export interface QueryIntent {
 
 const USAGE_KEYWORDS = [
   "usage", "competitive stats", "statistics", "ranked",
-  "most used", "tournament usage", "top moves", "top items",
+  "most used", "most popular", "tournament usage", "top moves", "top items",
   "top abilities", "teammates", "pikalytics", "usage rate",
   "pick rate", "usage stats",
 ];
@@ -155,7 +155,7 @@ const MATCHUP_KEYWORDS = [
   "matchup", "matchups", "beats", "walls", "checks", "counters",
   "what beats", "who beats", "loses to", "weak to", "strong against",
   "favored", "unfavored", "best matchup", "worst matchup",
-  "ohko", "one-shot", "damage calc",
+  "ohko", "one-shot", "damage calc", "vs",
 ];
 
 export function classifyQuery(question: string): QueryIntent {
@@ -221,13 +221,15 @@ export function classifyQuery(question: string): QueryIntent {
   else if (isCounterQuery || isMatchupQuery) {
     categories.push("matchup", "pokemon", "knowledge", "usage");
   }
-  // 4. Item query
+  // 4. Item query — if asking about a specific Pokemon's item, also pull usage data
   else if (hasItemKeyword) {
     categories.push("item", "knowledge");
+    if (pokemonName) categories.push("usage", "pokemon");
   }
-  // 5. Move query
+  // 5. Move query — if asking about a specific Pokemon's moves, also pull usage data
   else if (hasMoveKeyword) {
     categories.push("move", "pokemon", "knowledge");
+    if (pokemonName) categories.push("usage");
   }
   // 6. Team query
   else if (hasTeamKeyword) {

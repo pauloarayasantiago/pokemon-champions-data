@@ -20,6 +20,7 @@ At Lv50 with 31 IVs: Speed = floor(((2 * Base + 31) * 50 / 100 + 5) * Nature)
 ## Key Speed Benchmarks
 These are the speeds that matter most for offensive and defensive calcs:
 - 102: Garchomp base speed — THE defining speed tier. Outspeeding Garchomp is critical.
+- 86: Rotom forms (Wash/Heat/Frost/Fan/Mow) — midrange, can be outsped or tailored for Trick Room.
 - 80: Dragonite base (and Mega). Often needs Dragon Dance or Tailwind.
 - 60: Incineroar base — very slow, often outsped. Good in Trick Room.
 - 150: Sneasler base — one of the fastest non-Mega Pokemon.

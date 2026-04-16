@@ -1,89 +1,66 @@
-# Active Context (2026-04-14)
+# Active Context (2026-04-15)
 
-## Current State: Efficiency Coefficient Matrix Complete
+## Current State: Embedding Model Switch + Realistic Tests + Rotom Forms Complete
 
-All planned systems are production-ready. This session designed and built a comprehensive efficiency coefficient matrix extending the matchup matrix with 6 weighted sub-scores across all 59,292 Pokemon pairs.
+All planned systems are production-ready. This session completed three major changes: Rotom form variants across the full data pipeline, embedding model migration to MiniLM-L6-v2, and realistic search quality tests that exposed and fixed intent classification gaps.
 
-### What Was Done (2026-04-14 — this session)
+### What Was Done (2026-04-15 — this session)
 
-**Efficiency Coefficient Matrix:**
-- Designed and implemented `lib/calc/efficiency.ts` — composite coefficient E(A,B) on [-1, +1]
-- Formula: `E = 0.30*offense + 0.25*defense + 0.20*speed + 0.10*typing + 0.10*movepool + 0.05*mega`
-- 6 sub-scores, each [-1, +1]: Offensive Threat, Defensive Resilience, Speed Dynamics, Type Advantage, Move Pool Flexibility, Mega Context
-- Added `EfficiencySubScores` and `EfficiencyEntry` types to `lib/calc/types.ts`
-- Added `--efficiency` flag to `scripts/build-matchup-matrix.ts`
-- Output: `efficiency_matrix.csv` (59,292 rows, 26 columns, ~9.6 MB, builds in ~15s)
-- Verification: Mean=-0.040, StdDev=0.219, Range=[-0.720, +0.603], Anti-symmetry corr=0.792
-- Meta-weighted rankings: Mega Dragonite, Mega Aggron, Mega Gyarados, Mega Garchomp, Archaludon top 5
+**Rotom Form Variants (5 appliance forms):**
+- Added Rotom-Wash/Heat/Frost/Fan/Mow as separate rows in `pokemon_champions.csv` (191 rows, was 186)
+- Stats: 50/65/107/105/107/86 (520 BST), type2 varies (Water/Fire/Ice/Flying/Grass), Levitate
+- Move pools: base Rotom's 42 moves + form-specific signature (Hydro Pump/Overheat/Blizzard/Air Slash/Leaf Storm)
+- Re-scraped Pikalytics: 84 rows (Rotom-Wash #10 at 16%, Rotom-Heat #43 at 2%)
+- Rebuilt matchup + efficiency matrices: 61,752 pairs from 249 sets
+- Verified Levitate immunity (Garchomp EQ vs Rotom-Wash = no effect)
+- Added Rotom forms to speed_tiers.md (base 86 speed tier)
 
-### What Was Done (2026-04-14 — previous session: Transcripts)
+**Embedding Model Migration (EmbeddingGemma → MiniLM-L6-v2):**
+- Switched from `onnx-community/embeddinggemma-300m-ONNX` (768-dim, ~300MB, q8) to `Xenova/all-MiniLM-L6-v2` (384-dim, ~80MB, fp32)
+- Rewrote `lib/embed.ts`: removed query/document prefixes, removed dtype, batch size 16→64
+- Updated `scripts/index-data.ts` model name in metadata
+- Updated `scripts/test-suite.ts`: 768→384 dim checks, model name assertions
+- Reindexed: 1,910 chunks across 72 files — ~4× faster than EmbeddingGemma
+- All search quality preserved with the re-ranker compensating for smaller model
 
-**Project Initialization:**
-- LanceDB index was missing on session start — rebuilt from scratch with `/reindex --force`
-- 1,815 chunks indexed across 53 files; embedding model downloaded (~300MB, `onnx-community/embeddinggemma-300m-ONNX`)
-- Verified `/lookup` functional with smoke test
+**Realistic Search Quality Tests (15 tests, 23 assertions):**
+- Added `testRealisticQueries()` to `scripts/test-suite.ts` with natural-language queries
+- 6 categories: Team Building (4), Matchup/Counter (3), Set/Moveset (3), Meta/Usage (2), Champions Mechanics (2), Speed/Calc (1)
+- Initial run: 69/74 — 5 failures exposed real intent classification gaps
 
-**YouTube Transcript Expansion:**
-- Diagnosed transcript gap: `scraper_youtube.py` uses `yt-dlp` + `youtube-transcript-api` — no browser/API key needed
-- Installed missing Python deps: `yt-dlp`, `youtube-transcript-api`
-- Ran `python scraper_youtube.py --max 10` — checked 155 videos across 21 queries
-- **18 new transcripts saved** (was 25, now 43 total)
-- New channels added: ADrive, CybertronVGC (new video), False Swipe Gaming, Kneeckoh (new video), Moxie Boosted, Nivag, PanfroGames (new video), PokeAimMD+JoeUX9 collab, Poplove Gaming, SkrawVGC (new video), ThatSaVGC (new video), TrickRubyVGC, 13Yoshi37, Solemn PKM, Temp6T
-- YouTube IP-blocked the transcript API after ~55 fetches (100 failed); safe to re-run after cooldown
-- Incremental reindex: 1,819 → 1,891 chunks (+72)
-
-**Notable new content found:**
-- `adrive-all-13-new-mega-abilities-for-pokemon-champions.md` — Mega ability deep-dive
-- `cybertronvgc-counter-the-top-5-pokémon-dominating-pokemon-champions-vgc.md` — Counter guide
-- `moxie-boosted-the-pokemon-champions-item-tier-list.md` — Item tier list
-- `trickrubyvgc-how-to-trick-room-in-pokemon-champions.md` — TR archetype guide
-- `skraw-vgc-are-the-za-megas-good-in-pokemon-champions.md` — Mega tier update
-- `pokeaimmd-and-joeux9-top-5-underrated-megas-in-pokemon-champions.md` — Underrated Megas collab
-- `false-swipe-gaming-top-5-winners-losers-of-pokemon-champions.md` — Meta winners/losers
-
-### What Was Fixed (2026-04-14 — previous session)
-
-**Item Data Accuracy:**
-- Expanded MISSING ITEMS blacklist in CLAUDE.md from 14 to 24+ items
-- Removed phantom items (Clear Amulet, Throat Spray, Expert Belt, Gems, Booster Energy, Metronome) from all knowledge docs
-- Added whitelist+blacklist validation to `/team` skill (items.csv + Serebii as ground truth)
-- Removed Expert Belt + Gem calc logic from `lib/calc/damage.ts`
-- Fixed Clear Amulet → White Herb in team_building_theory.md and meta_snapshot.md
-- Verified: items.csv (138 items) matches Serebii exactly
-
-**Phantom Item Sources Identified:**
-- AI-authored research files hallucinated S/V items into Champions
-- Pikalytics "Champions Preview" = Showdown simulator data with unrestricted items
-- Dexerto listed datamined sprites as "confirmed" (not obtainable in-game)
-
-**Team Skill Output Redesign:**
-- Build/Fill modes now use advisory/workshop format with 2-3 Mega options, slot alternatives, and Workshop Notes
-- Core/glue Pokemon presented as clear picks; flex slots get 2-3 candidates with pros/cons
+**Intent Classification Fixes in `lib/rag.ts`:**
+- Move queries + Pokemon name now include "usage" category (e.g., "what moves should I run on Garchomp?" → pikalytics data surfaces)
+- Item queries + Pokemon name now include "usage" + "pokemon" categories (e.g., "what item should Sneasler hold?" → usage data surfaces)
+- Added "vs" to MATCHUP_KEYWORDS (head-to-head comparisons)
+- Added "most popular" to USAGE_KEYWORDS (meta queries)
+- After fixes: 74/74 all tests pass
 
 ### Systems Status
-- **RAG system**: 25/25 eval (100%), MRR 0.958, 8 phases complete; **1,891 chunks across 54 files**
-- **Transcripts**: **43 files** from 31 unique channels (was 25 from 16 channels)
-- **Damage calculator**: Custom TypeScript engine in `lib/calc/`, Expert Belt + Gem logic removed
-- **Matchup matrix**: 244×244 (59,292 pairs) in `matchup_matrix.csv`
-- **Efficiency matrix**: 244×244 (59,292 pairs, 26 columns) in `efficiency_matrix.csv` — composite coefficient + 6 sub-scores + meta weight
+- **RAG system**: 1,910 chunks across 72 files; MiniLM-L6-v2 (384-dim, ~80MB)
+- **Test suite**: **74/74** RAG tests + **24/24** calc tests = **98/98 total**
+- **Pokemon data**: 191 Pokemon (186 base + 5 Rotom forms)
+- **Matrices**: 249 sets × 249 = 61,752 matchup + efficiency pairs
+- **Pikalytics**: 84 Pokemon with tournament data
+- **Transcripts**: 43 files from 31 unique channels
 - **Skills**: `/lookup`, `/team`, `/calc`, `/research`, `/refresh`, `/reindex` all operational
 
 ### Running Tests
 ```bash
-npx tsx scripts/eval.ts          # 25/25 RAG eval suite
-npx tsx scripts/test-suite.ts    # 51-test comprehensive suite
+npx tsx scripts/test-suite.ts    # 74-test comprehensive suite (embedding, translation, search quality, realistic queries, overlap, lifecycle, scraper)
 npx tsx scripts/test-calc.ts     # 24-test damage calc suite
+npx tsx scripts/eval.ts          # 25/25 RAG eval suite
 npx tsx scripts/calc.ts "Garchomp Earthquake vs Incineroar"  # CLI smoke test
 ```
 
 ### Known Issues
 - Floette has no base stats (Serebii page layout issue — 1/186 affected)
-- 106/186 Pokemon have no Pikalytics data (insufficient tournament appearances)
+- 102/191 Pokemon have no Pikalytics data (insufficient tournament appearances)
 - Mr. Rime has no Pikalytics page (slug format unknown)
+- Alolan Ninetales forms still outstanding (noted in errors.md)
 - LanceDB scalar index bug: workaround in place (omit category from structured WHERE)
 
 ### What's Next
-- YouTube scraper re-run when IP cooldown lifts (run `python scraper_youtube.py --max 10` — auto-skips already-downloaded)
-- WolfeyVGC daily series (April 11–30) still mostly uncaptured — high-value target for next scrape
+- Alolan Ninetales form variants (same pattern as Rotom forms)
+- YouTube scraper re-run when IP cooldown lifts
+- WolfeyVGC daily series (April 11-30) still mostly uncaptured
 - Meta evolution: new regulations, balance patches, data refreshes via `/refresh`
-- Matrix can be rebuilt any time with `npm run calc:matrix` after data changes

@@ -1,40 +1,34 @@
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 
-const MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX";
-const BATCH_SIZE = 16;
-const QUERY_PREFIX = "task: search result | query: ";
-const DOCUMENT_PREFIX = "title: none | text: ";
+const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
+const BATCH_SIZE = 64;
 
 let extractor: FeatureExtractionPipeline | null = null;
 
 async function getExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractor) {
-    console.log(`Loading embedding model ${MODEL_ID} (first run downloads ~300MB)...`);
-    extractor = await pipeline("feature-extraction", MODEL_ID, {
-      dtype: "q8",
-    }) as FeatureExtractionPipeline;
+    console.log(`Loading embedding model ${MODEL_ID} (first run downloads ~80MB)...`);
+    extractor = await pipeline("feature-extraction", MODEL_ID) as FeatureExtractionPipeline;
     console.log("Embedding model loaded.");
   }
   return extractor;
 }
 
 /**
- * Embed an array of texts into 768-dim normalized vectors.
- * Processes in batches of 16 to stay within memory limits.
+ * Embed an array of texts into 384-dim normalized vectors.
+ * Processes in batches of 64 to stay within memory limits.
  *
- * @param mode - "query" for search queries, "document" for indexing text chunks.
- *               Each mode applies a different prefix required by EmbeddingGemma.
+ * MiniLM-L6-v2 does not use task/document prefixes — raw text is embedded directly.
  */
 export async function embed(
   texts: string[],
   mode: "query" | "document" = "document"
 ): Promise<number[][]> {
   const ext = await getExtractor();
-  const prefix = mode === "query" ? QUERY_PREFIX : DOCUMENT_PREFIX;
   const results: number[][] = [];
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-    const batch = texts.slice(i, i + BATCH_SIZE).map((t) => prefix + t);
+    const batch = texts.slice(i, i + BATCH_SIZE);
     const output = await ext(batch, { pooling: "mean", normalize: true });
     const nested: number[][] = output.tolist();
     results.push(...nested);

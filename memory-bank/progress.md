@@ -238,9 +238,36 @@ Executed in order: Phase 8 → 5 → 6 → 7, single `--force` reindex at end.
 - **Incremental reindex**: 1,819 → 1,891 chunks (+72)
 - **Agent prompt investigation**: Determined that web-search/WebFetch agents can't retrieve YouTube transcripts — the Python scraper is the only viable approach
 
+### Rotom Form Variants + Embedding Migration + Realistic Tests (2026-04-15)
+
+**Rotom Form Data Pipeline:**
+- Added 5 Rotom appliance forms (Wash/Heat/Frost/Fan/Mow) to `pokemon_champions.csv` as separate rows (191 total, was 186)
+- Each form: correct type2, Levitate, stats 50/65/107/105/107/86 (520 BST), base Rotom's 42 moves + signature move
+- Re-scraped Pikalytics: 84 Pokemon (Rotom-Wash #10 at 16%, Rotom-Heat #43 at 2%, others 404)
+- Rebuilt matchup + efficiency matrices: 61,752 pairs from 249 sets
+- Verified Levitate immunity, speed tiers, search resolution — zero code changes needed (existing form pattern)
+- Updated `memory-bank/errors.md` (resolved), `data/knowledge/speed_tiers.md` (base 86 tier)
+
+**Embedding Model Migration:**
+- `onnx-community/embeddinggemma-300m-ONNX` (768-dim, ~300MB, q8) → `Xenova/all-MiniLM-L6-v2` (384-dim, ~80MB, fp32)
+- Motivation: EmbeddingGemma too resource-heavy for indexing (slow, high memory)
+- Rewrote `lib/embed.ts`: removed query/document prefixes, removed `dtype: "q8"`, batch 16→64
+- Updated `scripts/index-data.ts` (model name in metadata), `scripts/test-suite.ts` (384-dim, model name)
+- Reindexed 1,910 chunks — ~4× faster, search quality preserved via re-ranker
+
+**Realistic Search Quality Tests:**
+- Added `testRealisticQueries()` to `scripts/test-suite.ts` — 15 tests (23 assertions) using natural player queries
+- 6 categories: Team Building (4), Matchup/Counter (3), Set/Moveset (3), Meta/Usage (2), Champions Mechanics (2), Speed/Calc (1)
+- Initial run exposed 5 failures → fixed 2 intent classification gaps in `lib/rag.ts`:
+  - Move queries + Pokemon name now include "usage" category (Garchomp moves → pikalytics surfaces)
+  - Item queries + Pokemon name now include "usage" + "pokemon" categories (Sneasler item → usage data surfaces)
+  - Added "vs" to MATCHUP_KEYWORDS, "most popular" to USAGE_KEYWORDS
+- Final: **74/74 RAG tests + 24/24 calc tests = 98/98 total**
+
 ## Pending
+- Alolan Ninetales form variants (same pattern as Rotom)
 - YouTube scraper re-run when IP cooldown lifts (`python scraper_youtube.py --max 10` — auto-deduplicates)
-- WolfeyVGC daily April series (April 11–30) — ~18 videos still uncaptured
+- WolfeyVGC daily April series (April 11-30) — ~18 videos still uncaptured
 
 ## Known Issues
 - Castform shows Normal/Fire because Serebii lists its form types together
