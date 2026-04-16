@@ -36,7 +36,11 @@ const POKEMON_TYPES = [
 
 function extractTypes(query: string): string[] {
   const q = query.toLowerCase();
-  return POKEMON_TYPES.filter((t) => q.includes(t.toLowerCase()));
+  // Use word boundary regex to avoid matching substrings (e.g. "water" in "waterproof")
+  return POKEMON_TYPES.filter((t) => {
+    const pattern = new RegExp(`\\b${t.toLowerCase()}\\b`);
+    return pattern.test(q);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -84,10 +88,11 @@ function extractStatConditions(query: string): StatCondition[] {
     conditions.push({ column: "stat_speed", operator: "<=", value: SPEED_THRESHOLDS.slow });
   }
 
-  // "bulky" / "bulkiest"
+  // "bulky" / "bulkiest" — competitive bulk means both physical and special
   if (q.includes("bulk")) {
     conditions.push({ column: "stat_hp", operator: ">=", value: 80 });
     conditions.push({ column: "stat_defense", operator: ">=", value: 80 });
+    conditions.push({ column: "stat_sp_def", operator: ">=", value: 80 });
   }
 
   // "high/good [stat]", "highest [stat]"
@@ -120,7 +125,10 @@ function extractStatConditions(query: string): StatCondition[] {
     } else if (before.includes("high") || before.includes("good") || before.includes("strong")) {
       conditions.push({ column, operator: ">=", value: STAT_THRESHOLDS.high });
       matchedPositions.push([idx, end]);
-    } else if (before.includes("low") || before.includes("weak")) {
+    } else if (before.includes("lowest") || before.includes("worst")) {
+      conditions.push({ column, operator: "<=", value: STAT_THRESHOLDS.lowest });
+      matchedPositions.push([idx, end]);
+    } else if (before.includes("low") || before.includes("weak") || before.includes("bad")) {
       conditions.push({ column, operator: "<=", value: STAT_THRESHOLDS.low });
       matchedPositions.push([idx, end]);
     }

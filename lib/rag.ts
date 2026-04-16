@@ -110,6 +110,10 @@ export interface QueryIntent {
   isCounterQuery: boolean;
   /** Whether user is asking about matchups/damage calcs */
   isMatchupQuery: boolean;
+  /** Whether query mentions item-related keywords */
+  hasItemKeyword: boolean;
+  /** Whether query mentions team-related keywords */
+  hasTeamKeyword: boolean;
 }
 
 const USAGE_KEYWORDS = [
@@ -250,6 +254,8 @@ export function classifyQuery(question: string): QueryIntent {
     isUsageQuery,
     isCounterQuery,
     isMatchupQuery,
+    hasItemKeyword,
+    hasTeamKeyword,
   };
 }
 
@@ -406,10 +412,22 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
       }
     }
 
-    // Knowledge docs boost for counter/strategy queries only
+    // Knowledge docs boost for counter/strategy/usage queries
     // (not item/move lookups where the actual data chunk should rank first)
-    if (isKnowledgeChunk && intent.isCounterQuery) {
-      boost += 0.015;
+    if (isKnowledgeChunk) {
+      if (intent.isCounterQuery || intent.isMatchupQuery) {
+        boost += 0.015;
+      }
+    }
+
+    // Item chunk boost when query has item intent
+    if (r.dataCategory === "item" && intent.hasItemKeyword) {
+      boost += 0.03;
+    }
+
+    // Penalize team chunks for non-team queries (prevent drowning entity data)
+    if (isTeamChunk && !intent.hasTeamKeyword) {
+      boost -= 0.015;
     }
 
     // Penalize memory-bank/project docs (rarely what users want)

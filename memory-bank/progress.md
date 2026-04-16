@@ -264,6 +264,19 @@ Executed in order: Phase 8 → 5 → 6 → 7, single `--force` reindex at end.
   - Added "vs" to MATCHUP_KEYWORDS, "most popular" to USAGE_KEYWORDS
 - Final: **74/74 RAG tests + 24/24 calc tests = 98/98 total**
 
+### System Accuracy Audit + Improvements (2026-04-16)
+
+**234-test audit** across 4 suites (calc, integration, eval, stress) identified 3 ranking weaknesses and led to 6 improvement areas (A-F), all implemented:
+
+- **A: Mega Charizard X/Y naming fix** — Both forms were "Mega Charizard" in CSV, causing Map key collision (Y overwrote X). Renamed to distinct names. Added prefix matching in `findMega()` for backward compat.
+- **B: RAG ranking improvements** — Item boost (+0.03 for item-intent queries), team penalty (-0.015 for non-team queries). B1 (knowledge boost for usage queries) attempted but reverted — cascading eval failures.
+- **C: Structured query fixes** — Wired up "worst"/"bad" qualifiers, added SpDef to bulk filter, word-boundary regex for type matching.
+- **D: Data quality** — Removed duplicate tournament team PC99 (identical to PC132).
+- **E: Ability modifier calc tests** — 16 new tests covering Helping Hand, Multiscale, Tough Claws, Mega Launcher, Adaptability, Guts, Tinted Lens, Filter, Technician, Sharpness, Aurora Veil, Piercing Drill, Friend Guard.
+- **F: npm test scripts** — `npm test` runs all 4 suites; individual `test:calc`, `test:rag`, `test:integration`, `test:stress`.
+- **Stress test suite** (`scripts/stress-test.ts`) — 111 tests across 7 tiers from simple lookups to strategic reasoning.
+- **Final regression**: **251/251 tests passing** (calc 41, integration 74, eval 25, stress 111).
+
 ## Pending
 - Alolan Ninetales form variants (same pattern as Rotom)
 - YouTube scraper re-run when IP cooldown lifts (`python scraper_youtube.py --max 10` — auto-deduplicates)

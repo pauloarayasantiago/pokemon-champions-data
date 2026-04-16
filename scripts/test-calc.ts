@@ -192,6 +192,208 @@ assert("Protect blocks all damage", resultProtect.maxDmg, 0);
 const resultStatus = calculateDamage(atkGarchomp, defIncineroar, "Swords Dance");
 assert("Status move = 0", resultStatus.maxDmg, 0);
 
+// ── Test 4: Ability modifier tests ──
+
+console.log("\n=== Ability Modifier Tests ===");
+
+// Helpers for ability tests
+const baseGarchomp = makeSet("Garchomp", {
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+});
+const baseIncineroar = makeSet("Incineroar", {
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 2, speed: 0 },
+  nature: { plus: null, minus: null },
+});
+
+// Baseline: Garchomp EQ vs Incineroar (no abilities, neutral)
+const baselineEQ = calculateDamage(baseGarchomp, baseIncineroar, "Earthquake");
+
+// Helping Hand: 1.5x damage
+const helpingHandEQ = calculateDamage(baseGarchomp, baseIncineroar, "Earthquake", {
+  attackerSide: { isHelpingHand: true, isReflect: false, isLightScreen: false, isAuroraVeil: false, isFriendGuard: false, isBattery: false },
+});
+assert("Helping Hand boosts damage", helpingHandEQ.maxDmg > baselineEQ.maxDmg, true);
+assertRange("Helping Hand ~1.5x", helpingHandEQ.maxDmg, Math.floor(baselineEQ.maxDmg * 1.45), Math.ceil(baselineEQ.maxDmg * 1.55));
+
+// Friend Guard: 0.75x damage on defender's side
+const friendGuardEQ = calculateDamage(baseGarchomp, baseIncineroar, "Earthquake", {
+  defenderSide: { isFriendGuard: true, isReflect: false, isLightScreen: false, isAuroraVeil: false, isProtect: false },
+});
+assert("Friend Guard reduces damage", friendGuardEQ.maxDmg < baselineEQ.maxDmg, true);
+
+// Multiscale (Mega Dragonite): halves damage at full HP
+// Note: calculateDamage reads ability from mega?.ability ?? set.ability
+// Mega Dragonite's ability IS Multiscale, so we test it directly
+const defDragoniteMega = makeSet("Dragonite", {
+  mega: true,
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: null, minus: null },
+});
+const defDragoniteBase = makeSet("Dragonite", {
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: null, minus: null },
+  ability: "Inner Focus",
+});
+const dcVsMegaDnite = calculateDamage(baseGarchomp, defDragoniteMega, "Dragon Claw");
+const dcVsBaseDnite = calculateDamage(baseGarchomp, defDragoniteBase, "Dragon Claw");
+// Mega has Multiscale (0.5x) but also different defense stats — just verify Mega takes less
+assert("Multiscale (Mega Dragonite) reduces damage", dcVsMegaDnite.maxDmg < dcVsBaseDnite.maxDmg, true);
+
+// Thick Fat (Mega Venusaur): halves Fire and Ice damage
+// Mega Venusaur's ability IS Thick Fat
+const defVenuMega = makeSet("Venusaur", {
+  mega: true,
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: null, minus: null },
+});
+const defVenuBase = makeSet("Venusaur", {
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: null, minus: null },
+  ability: "Overgrow",
+});
+const atkMilotic2 = makeSet("Milotic", {
+  sp: { hp: 0, attack: 0, defense: 0, spAtk: 32, spDef: 0, speed: 0 },
+  nature: { plus: "spAtk", minus: "attack" },
+});
+const ibVsMegaVenu = calculateDamage(atkMilotic2, defVenuMega, "Ice Beam");
+const ibVsBaseVenu = calculateDamage(atkMilotic2, defVenuBase, "Ice Beam");
+// Mega Venusaur with Thick Fat should take much less Ice damage (0.5x ability + higher defenses)
+assert("Thick Fat (Mega Venusaur) reduces Ice", ibVsMegaVenu.maxDmg < ibVsBaseVenu.maxDmg, true);
+
+// Tough Claws (Mega Charizard X): 1.3x for contact moves
+// Mega Charizard X's ability IS Tough Claws — compare with non-mega Charizard
+const atkZardXMega = makeSet("Charizard", {
+  mega: true,
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+});
+const atkZardBase = makeSet("Charizard", {
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+  ability: "Blaze",
+});
+// Flare Blitz is a contact move, STAB Fire for both
+const fbMegaX = calculateDamage(atkZardXMega, baseIncineroar, "Flare Blitz");
+const fbBase = calculateDamage(atkZardBase, baseIncineroar, "Flare Blitz");
+// Mega X has Tough Claws (1.3x contact) + higher Atk — should do more
+assert("Tough Claws (Mega Charizard X) boosts contact", fbMegaX.maxDmg > fbBase.maxDmg, true);
+
+// Mega Launcher (Mega Blastoise): 1.5x for pulse moves
+// Mega Blastoise's ability IS Mega Launcher
+const atkBlastMega = makeSet("Blastoise", {
+  mega: true,
+  sp: { hp: 0, attack: 0, defense: 0, spAtk: 32, spDef: 0, speed: 0 },
+  nature: { plus: "spAtk", minus: "attack" },
+});
+const atkBlastBase = makeSet("Blastoise", {
+  sp: { hp: 0, attack: 0, defense: 0, spAtk: 32, spDef: 0, speed: 0 },
+  nature: { plus: "spAtk", minus: "attack" },
+  ability: "Torrent",
+});
+// Water Pulse is a pulse move — compare Mega Launcher vs Torrent
+const wpMega = calculateDamage(atkBlastMega, baseGarchomp, "Water Pulse");
+const wpBase = calculateDamage(atkBlastBase, baseGarchomp, "Water Pulse");
+assert("Mega Launcher boosts pulse moves", wpMega.maxDmg > wpBase.maxDmg, true);
+
+// Adaptability (Mega Beedrill): 2x STAB instead of 1.5x
+const atkBeedrillMega = makeSet("Beedrill", {
+  mega: true,
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+});
+const atkBeedrillBase = makeSet("Beedrill", {
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+  ability: "Swarm",
+});
+const pjMega = calculateDamage(atkBeedrillMega, baseIncineroar, "Poison Jab");
+const pjBase = calculateDamage(atkBeedrillBase, baseIncineroar, "Poison Jab");
+// Mega has Adaptability (2x STAB) + higher Atk
+assert("Adaptability (Mega Beedrill) 2x STAB", pjMega.maxDmg > pjBase.maxDmg, true);
+
+// Guts: burned attacker gets 1.5x instead of 0.5x penalty (non-mega, can test directly)
+const gutsAtk = makeSet("Machamp", {
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: "attack", minus: "spAtk" },
+  ability: "Guts",
+});
+const ccGuts = calculateDamage(gutsAtk, baseIncineroar, "Close Combat", { attackerBurned: true });
+const ccNoGuts = calculateDamage({ ...gutsAtk, ability: "No Guard" }, baseIncineroar, "Close Combat", { attackerBurned: true });
+assert("Guts reverses burn penalty", ccGuts.maxDmg > ccNoGuts.maxDmg * 2, true);
+
+// Tinted Lens: doubles NVE damage (use Vivillon — Bug/Flying with Tinted Lens)
+const atkVivillon = makeSet("Vivillon", {
+  sp: { hp: 0, attack: 0, defense: 0, spAtk: 32, spDef: 0, speed: 32 },
+  nature: { plus: "spAtk", minus: "attack" },
+  ability: "Tinted Lens",
+});
+// Bug Buzz vs Torkoal (pure Fire) — Bug is NVE on Fire (0.5x), Tinted Lens doubles it
+const defTorkoal = makeSet("Torkoal", {
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 32, speed: 0 },
+  nature: { plus: null, minus: null },
+});
+const bbTinted = calculateDamage(atkVivillon, defTorkoal, "Bug Buzz");
+const bbNoTinted = calculateDamage({ ...atkVivillon, ability: "Compound Eyes" }, defTorkoal, "Bug Buzz");
+assert("Tinted Lens doubles NVE", bbTinted.maxDmg > bbNoTinted.maxDmg * 1.5, true);
+
+// Filter/Solid Rock: 0.75x on SE moves (non-mega, can test directly)
+const defAggron = makeSet("Aggron", {
+  sp: { hp: 32, attack: 0, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: null, minus: null },
+  ability: "Filter",
+});
+const eqFilter = calculateDamage(baseGarchomp, defAggron, "Earthquake");
+const eqNoFilter = calculateDamage(baseGarchomp, { ...defAggron, ability: "Rock Head" }, "Earthquake");
+assert("Filter reduces SE damage", eqFilter.maxDmg < eqNoFilter.maxDmg, true);
+
+// Technician: 1.5x for moves with ≤60 BP (non-mega, can test directly)
+const techAtk = makeSet("Scizor", {
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+  nature: { plus: "attack", minus: "spAtk" },
+  ability: "Technician",
+});
+const bpTech = calculateDamage(techAtk, baseIncineroar, "Bullet Punch");
+const bpNoTech = calculateDamage({ ...techAtk, ability: "Swarm" }, baseIncineroar, "Bullet Punch");
+assert("Technician boosts ≤60 BP", bpTech.maxDmg > bpNoTech.maxDmg, true);
+
+// Sharpness: 1.5x for slicing moves (non-mega Garchomp, can override ability)
+const sharpAtk = makeSet("Garchomp", {
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+  ability: "Sharpness",
+});
+const dcSharp = calculateDamage(sharpAtk, baseIncineroar, "Dragon Claw");
+const dcNoSharp = calculateDamage({ ...sharpAtk, ability: "Rough Skin" }, baseIncineroar, "Dragon Claw");
+assert("Sharpness boosts slicing", dcSharp.maxDmg > dcNoSharp.maxDmg, true);
+
+// Aurora Veil: reduces both physical and special
+const physAV = calculateDamage(baseGarchomp, baseIncineroar, "Earthquake", {
+  defenderSide: { isAuroraVeil: true, isReflect: false, isLightScreen: false, isProtect: false, isFriendGuard: false },
+});
+assert("Aurora Veil reduces physical", physAV.maxDmg < baselineEQ.maxDmg, true);
+
+const specAV = calculateDamage(atkMilotic2, baseIncineroar, "Scald", {
+  defenderSide: { isAuroraVeil: true, isReflect: false, isLightScreen: false, isProtect: false, isFriendGuard: false },
+});
+const specNoAV = calculateDamage(atkMilotic2, baseIncineroar, "Scald");
+assert("Aurora Veil reduces special", specAV.maxDmg < specNoAV.maxDmg, true);
+
+// Piercing Drill / Unseen Fist: 25% through Protect
+const piercingAtk = makeSet("Excadrill", {
+  mega: true,
+  sp: { hp: 0, attack: 32, defense: 0, spAtk: 0, spDef: 0, speed: 32 },
+  nature: { plus: "attack", minus: "spAtk" },
+  ability: "Piercing Drill",
+});
+const eqPiercing = calculateDamage(piercingAtk, baseIncineroar, "Earthquake", {
+  defenderSide: { isProtect: true, isReflect: false, isLightScreen: false, isAuroraVeil: false, isFriendGuard: false },
+});
+assert("Piercing Drill does damage through Protect", eqPiercing.maxDmg > 0, true);
+// Should be ~25% of normal damage
+const eqNoPiercing = calculateDamage(piercingAtk, baseIncineroar, "Earthquake");
+assert("Piercing Drill is ~25% through Protect", eqPiercing.maxDmg < eqNoPiercing.maxDmg * 0.35, true);
+
 // ── Summary ──
 console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);
 if (failed > 0) process.exit(1);

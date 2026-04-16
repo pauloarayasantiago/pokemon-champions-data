@@ -14,7 +14,7 @@
 │   │   ├── calc.md             /calc skill — ad-hoc damage calculations
 │   │   └── research.md         /research skill — web-based competitive data gathering
 │   └── settings.local.json     Permissions for scrapers, npm, git
-├── .lancedb/                   Vector database (Apache Arrow format, ~1,910 chunks)
+├── .lancedb/                   Vector database (Apache Arrow format, ~1,911 chunks)
 │   └── index-meta.json         Staleness metadata (mtimes, model, chunk count)
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap, Pikalytics translation)
@@ -40,7 +40,8 @@
 │   ├── debug-db.ts             DB inspection utility (temporary)
 │   ├── calc.ts                 CLI damage calculator ("Garchomp EQ vs Incineroar" → damage range)
 │   ├── build-matchup-matrix.ts 244×244 matchup matrix builder → matchup_matrix.csv
-│   └── test-calc.ts            24-test validation suite (stats, type chart, damage, abilities)
+│   ├── test-calc.ts            41-test validation suite (stats, type chart, damage, 16 ability modifiers)
+│   └── stress-test.ts          111-test stress suite (7 tiers: lookups, mechanics, absence, calc, multi-entity, intent, strategic)
 ├── data/
 │   ├── knowledge/              Structured competitive knowledge (7 files, auto-discovered)
 │   │   ├── type_chart.md       18-type offensive + defensive matchups
@@ -68,7 +69,7 @@
 ├── new_abilities.csv           4 new abilities: name, effect
 ├── mega_abilities.csv          23 megas with new abilities
 ├── pikalytics_usage.csv        84 Pokémon: usage %, rank, top moves/items/abilities/teammates
-├── tournament_teams.csv        136 teams: team ID, player, Pokemon, items, tournament info
+├── tournament_teams.csv        135 teams: team ID, player, Pokemon, items, tournament info
 ├── matchup_matrix.csv          61,752 matchup pairs: attacker, defender, best_move, damage_pct, score
 ├── efficiency_matrix.csv       61,752 efficiency entries: 26 columns (6 sub-scores + composite E + meta weight + diagnostics)
 ├── status_conditions.txt       Freeze/Paralysis/Sleep mechanic changes
@@ -108,7 +109,8 @@
 7. **Classify** — Rule-based `classifyQuery()` detects intent (usage, counter, stat, item, move, team) via word-boundary matching against keyword sets + Pokemon name dictionary + move name dictionary
 8. **Search** — Hybrid: vector + BM25 FTS fused via RRF reranker (k=60), with `where()` category pre-filter based on intent
 9. **Structured** — If stat query detected, parallel SQL path: `buildStatFilter()` → type/speed/attack WHERE predicates → `table.query().where(filter)`. **No data_category in WHERE** (LanceDB scalar index bug)
-10. **Merge + Re-rank** — Deduplicate hybrid + structured results, apply 6 additive boosts (structured +0.1, usage +0.1/0.05, exact Pokemon name +0.04, exact move name +0.04, counter knowledge +0.015, project -0.08), sort by score, return topK
+10. **Merge + Re-rank** — Deduplicate hybrid + structured results, apply 8 additive boosts (structured +0.1, usage +0.1/0.05, exact Pokemon name +0.04, exact move name +0.04, counter knowledge +0.015, item intent +0.03, team penalty -0.015, project -0.08), sort by score, return topK
 11. **Staleness** — `checkStaleness()` runs once per process, compares current file mtimes to stored, warns on stderr
-12. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 0.958
+12. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 1.000
 13. **Incremental** — index-data.ts checks existing chunk IDs, only inserts new ones (--force rebuilds all + recreates indexes + writes meta)
+14. **Full test suite** — 251 tests via `npm test`: calc (41), integration (74), eval (25), stress (111)

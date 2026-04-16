@@ -1,7 +1,7 @@
 base_pokemon,mega_name,type1,type2,ability,hp,attack,defense,sp_atk,sp_def,speed,bst
 Venusaur,Mega Venusaur,Grass,Poison,Thick Fat,80,100,123,122,120,80,625
-Charizard,Mega Charizard,Fire,Dragon,Tough Claws,78,130,111,130,85,100,634
-Charizard,Mega Charizard,Fire,Flying,Drought,78,104,78,159,115,100,634
+Charizard,Mega Charizard X,Fire,Dragon,Tough Claws,78,130,111,130,85,100,634
+Charizard,Mega Charizard Y,Fire,Flying,Drought,78,104,78,159,115,100,634
 Blastoise,Mega Blastoise,Water,,Mega Launcher,79,103,120,135,115,78,630
 Beedrill,Mega Beedrill,Bug,Poison,Adaptability,65,150,40,15,80,145,495
 Pidgeot,Mega Pidgeot,Normal,Flying,No Guard,83,80,80,135,80,121,579

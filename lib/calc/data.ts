@@ -287,15 +287,20 @@ export function findPokemon(name: string): PokemonData | undefined {
 
 export function findMega(name: string): MegaData | undefined {
   const megas = getMegas();
+  const lower = name.toLowerCase();
   // Try exact match first
-  let mega = megas.get(name.toLowerCase());
+  let mega = megas.get(lower);
   if (mega) return mega;
   // Try "Mega X" format
-  mega = megas.get(`mega ${name}`.toLowerCase());
+  mega = megas.get(`mega ${lower}`);
   if (mega) return mega;
+  // Try prefix match (e.g. "Mega Charizard" matches "Mega Charizard X")
+  for (const [key, m] of megas.entries()) {
+    if (key.startsWith(lower) && key !== lower) return m;
+  }
   // Search by base pokemon name
   for (const m of megas.values()) {
-    if (m.basePokemon.toLowerCase() === name.toLowerCase()) return m;
+    if (m.basePokemon.toLowerCase() === lower) return m;
   }
   return undefined;
 }
