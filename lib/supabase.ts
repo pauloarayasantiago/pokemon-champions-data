@@ -46,8 +46,11 @@ function getUrl(): string {
 let _server: SupabaseClient | null = null;
 export function supabaseServer(): SupabaseClient {
   if (_server) return _server;
-  const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_SECRET;
-  if (!key) throw new Error("Supabase service key missing: set SUPABASE_SERVICE_KEY or SUPABASE_SECRET");
+  const key =
+    process.env.SUPABASE_SECRET_KEY ??
+    process.env.SUPABASE_SECRET ??
+    process.env.SUPABASE_SERVICE_KEY;
+  if (!key) throw new Error("Supabase secret key missing: set SUPABASE_SECRET_KEY (or SUPABASE_SECRET)");
   _server = createClient(getUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -57,8 +60,11 @@ export function supabaseServer(): SupabaseClient {
 let _anon: SupabaseClient | null = null;
 export function supabaseAnon(): SupabaseClient {
   if (_anon) return _anon;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!key) throw new Error("Supabase anon key missing: set NEXT_PUBLIC_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_KEY");
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!key) throw new Error("Supabase publishable key missing: set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or VITE_SUPABASE_PUBLISHABLE_KEY)");
   _anon = createClient(getUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
