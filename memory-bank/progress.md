@@ -277,15 +277,71 @@ Executed in order: Phase 8 → 5 → 6 → 7, single `--force` reindex at end.
 - **Stress test suite** (`scripts/stress-test.ts`) — 111 tests across 7 tiers from simple lookups to strategic reasoning.
 - **Final regression**: **251/251 tests passing** (calc 41, integration 74, eval 25, stress 111).
 
+### Full Data Refresh + Knowledge Updates (2026-04-18)
+
+**Refresh executed:**
+- `scraper_youtube.py --max 20` — 20 new transcripts added (43 → 63 total).
+- `scraper_pikalytics.py` — rebuilt usage CSV (80 → 84 Pokemon tracked).
+- `scraper_sheets.py` — rebuilt tournament teams (135 → 314 teams, +178).
+- `scripts/index-data.ts --force` — full LanceDB rebuild.
+
+**New channels/videos captured (20):**
+- AngrySlowbroPlus (69-min definitive F–S tier list, top 5: Sinistcha/Dragonite/Gengar/Incineroar/Archaludon)
+- TheDelybird (top 15 teams with EV pastes + Mega Golurk TR tournament winner)
+- PanFro Games (counter guide for top 10 threats)
+- PuppyPown (in-game team-building UI walkthrough)
+- MrSteelix & Yourgirl (30-Pokemon list — ⚠️ recommends banned items)
+- Osirus Champions (10 QoL tips incl. Type Affinity Tickets)
+- HoshinJosh (2 Singles ladder videos)
+- iStarlyTV (Singles Master Ball top 10 usage)
+- WolfeyVGC (rank #1 challenge + intro to competitive primer)
+- TimStuh, Moxie Boosted, Skraw VGC, ThatsAVGC (shorter takes/reactions)
+
+**Knowledge base updates from refresh:**
+- `data/knowledge/team_archetypes.md` — added Basculegion Adaptability section (non-rain teams prefer Adaptability over Swift Swim).
+- `data/knowledge/team_building_theory.md` — added detailed Priority Blocking section (Armor Tail blocks Fake Out, Sucker Punch, Bullet Punch, Shadow Sneak, Aqua Jet, Quick Attack, Extreme Speed, Ice Shard, Mach Punch, Vacuum Wave, plus Prankster status). Added King's Shield clarification.
+- `updated_attacks.csv` — added King's Shield entry (-1 Attack drop, nerfed from -2 in S/V).
+- `data/knowledge/validation_notes.md` — NEW file flagging MrSteelix / Skraw / Moxie Boosted transcripts with banned-item or off-topic content, provides item substitution guide.
+
+**Key meta findings (not yet codified in KB):**
+- Sinistcha displaces Incineroar as #1 in AngrySlowbroPlus tier list.
+- Mega Floette called "strongest Mega" by top players; adoption slow due to Legends Z-A deposit requirement.
+- Singles meta diverges hard from Doubles — top 10 very different (Garchomp / Primarina / Charizard-Y / Corviknight / Duraludon / Hippowdon / Gengar / Scizor / Kingambit / Aegislash).
+- 532-entrant tournament (Jimothy Cool) — largest Champions event recorded.
+- Mega Golurk Trick Room team won a recent online tournament.
+- Bulky Sneasler spreads appearing on ladder.
+- Champion tier restricted to top 300 Master Ball players, unlocks 1 week after season start.
+
+### Vector Store Migration: LanceDB → Supabase pgvector (2026-04-18)
+
+Replaces the 30-50MB bundled LanceDB native binary with a managed Postgres+pgvector backend. Unblocks Vercel cold-start performance and aligns the webapp with the existing Supabase project shared with `pokeke.shop`.
+
+- **Schema**: Added `pc_*`-namespaced tables in `public` (`pc_chunks`, `pc_index_meta`) via Supabase MCP `apply_migration`.
+  - `pc_chunks`: id PK, text, `embedding VECTOR(384)`, source, source_type, data_category, metadata JSONB, Pokemon stat columns (preserved from LanceDB names), `text_tsv TSVECTOR GENERATED ALWAYS AS STORED`, created_at
+  - Indexes: HNSW (`vector_cosine_ops`), GIN (text_tsv), btree (data_category, pokemon_name)
+  - RLS enabled with anon/authenticated SELECT; writes via service role
+- **RPC**: `pc_hybrid_search(p_embedding, p_query, p_categories, p_fetch_k, p_rrf_k)` fuses vector ANN + `websearch_to_tsquery` FTS via RRF in a single round-trip.
+- **Client**: new `lib/supabase.ts` — `supabaseServer()` / `supabaseAnon()` factories with manual root-`.env` loader (scripts work without dotenv); accepts both Next (`NEXT_PUBLIC_*`, `SUPABASE_SERVICE_KEY`) and Vite (`VITE_*`, `SUPABASE_SECRET`) env var names.
+- **Query path** (`lib/rag.ts`): replaced `table.vectorSearch().fullTextSearch().rerank(RRF)` with `supabase.rpc('pc_hybrid_search', ...)`. Structured filter path rewritten as supabase-js query builder chain (`.or()` per type, `.gte()/.lte()` per stat).
+- **Staleness**: `checkStaleness()` now async, reads `pc_index_meta` row `file_mtimes` instead of `.lancedb/index-meta.json`.
+- **Indexer** (`scripts/index-data.ts`): LanceDB `db.openTable().add()` → Supabase `from('pc_chunks').upsert()` in batches of 200. Incremental mode paginates existing IDs. Meta written to `pc_index_meta` (5 keys). `--force` wipes pc_chunks.
+- **One-shot migration**: copied all 2,224 existing 384-dim vectors from `.lancedb/chunks` (no re-embedding).
+- **Cutover**: removed `@lancedb/lancedb` + `apache-arrow` from both root and webapp `package.json`; dropped from `serverExternalPackages` in `webapp/next.config.ts`. Rewrote `scripts/debug-db.ts` and `scripts/test-suite.ts`' `testIndexLifecycle` against Supabase. Historical references kept in `memory-bank/progress.md`, `webapp/HANDOVER.md`, `lookup-reindex-system-prompt.txt`.
+- **Parity verified**: 5 canonical queries (counters, structured stat, usage, move, archetype) all return sensible top-K with `rrf_score`; incremental reindex returns "Nothing to index. Done."; structured filter still fires on "highest attack water types" → Gyarados/Sharpedo/Quaquaval/Mega Gyarados/Mega Feraligatr.
+
 ## Pending
 - Alolan Ninetales form variants (same pattern as Rotom)
-- YouTube scraper re-run when IP cooldown lifts (`python scraper_youtube.py --max 10` — auto-deduplicates)
-- WolfeyVGC daily April series (April 11-30) — ~18 videos still uncaptured
+- WolfeyVGC daily April series — some videos still uncaptured
+- Consider creating `data/knowledge/singles_meta.md` (Singles diverging from Doubles, no KB coverage)
+- Reconcile `meta_snapshot.md` with AngrySlowbroPlus tier list (Sinistcha-first vs Incineroar-first)
+- Codify TheDelybird's 5 template archetypes with EV pastes
+- Resolve webapp Tailwind 4 CSS blocker (unrelated to vector-store migration)
+- Run full `npm test` regression against Supabase backend (251 tests) — only smoke-tested so far
+- Vercel preview deploy to confirm cold-start improvement from removing the LanceDB native binary
 
 ## Known Issues
 - Castform shows Normal/Fire because Serebii lists its form types together
 - Lycanroc shows 6 abilities (combines all 3 form abilities)
 - Training mechanics page has minimal content (just VP costs)
 - YouTube transcript API rate-limited — IP block with no documented cooldown duration
-- LanceDB scalar index bug: combining scalar-indexed column with non-indexed columns in WHERE returns incomplete results — workaround in place
 - Floette has no base stats (Serebii page layout issue — 1/186 affected)

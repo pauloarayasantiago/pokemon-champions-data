@@ -1,29 +1,34 @@
-import { connect, rerankers } from "@lancedb/lancedb";
-import { resolve } from "node:path";
-import { readFileSync, statSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { readFileSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
 import { embed } from "./embed.js";
-import { buildStatFilter } from "./structured-query.js";
+import { extractTypes, extractStatConditions } from "./structured-query.js";
+import { supabaseServer } from "./supabase.js";
 
-const PROJECT_ROOT = resolve(import.meta.dirname, "..");
-const DB_PATH = resolve(PROJECT_ROOT, ".lancedb");
-const TABLE_NAME = "chunks";
-const INDEX_META_PATH = resolve(DB_PATH, "index-meta.json");
+const PROJECT_ROOT = process.env.POKEMON_DATA_ROOT
+  ? resolve(process.env.POKEMON_DATA_ROOT)
+  : resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 // ---------------------------------------------------------------------------
-// Staleness detection
+// Staleness detection (reads pc_index_meta.file_mtimes)
 // ---------------------------------------------------------------------------
 
 let _stalenessChecked = false;
 
-function checkStaleness(): void {
+async function checkStaleness(): Promise<void> {
   if (_stalenessChecked) return;
   _stalenessChecked = true;
 
-  if (!existsSync(INDEX_META_PATH)) return;
   try {
-    const meta = JSON.parse(readFileSync(INDEX_META_PATH, "utf-8"));
-    const mtimes: Record<string, string> = meta.file_mtimes ?? {};
+    const { data, error } = await supabaseServer()
+      .from("pc_index_meta")
+      .select("value")
+      .eq("key", "file_mtimes")
+      .maybeSingle();
+    if (error || !data) return;
+
+    const mtimes = (data.value ?? {}) as Record<string, string>;
     const staleFiles: string[] = [];
 
     for (const [relPath, indexedMtime] of Object.entries(mtimes)) {
@@ -43,7 +48,7 @@ function checkStaleness(): void {
       );
     }
   } catch {
-    // Malformed meta — ignore
+    // Network / table missing — ignore
   }
 }
 
@@ -91,6 +96,20 @@ function getMoveNames(): Set<string> {
   return _moveNames;
 }
 
+let _itemNames: Set<string> | null = null;
+
+function getItemNames(): Set<string> {
+  if (_itemNames) return _itemNames;
+  try {
+    const csv = readFileSync(resolve(PROJECT_ROOT, "items.csv"), "utf-8");
+    const rows: Array<{ name: string }> = parse(csv, { columns: true, skip_empty_lines: true });
+    _itemNames = new Set(rows.map((r) => r.name.toLowerCase()));
+  } catch {
+    _itemNames = new Set();
+  }
+  return _itemNames;
+}
+
 // ---------------------------------------------------------------------------
 // Query intent classification
 // ---------------------------------------------------------------------------
@@ -104,6 +123,8 @@ export interface QueryIntent {
   pokemonName: string | null;
   /** Extracted move name (lowercase) if any */
   moveName: string | null;
+  /** Extracted item name (lowercase) if any */
+  itemName: string | null;
   /** Whether user is asking about competitive usage data */
   isUsageQuery: boolean;
   /** Whether user is asking about countering/beating something */
@@ -139,6 +160,7 @@ const STAT_KEYWORDS = [
 const STAT_QUALIFIERS = [
   "high", "highest", "low", "lowest", "good", "best", "worst",
   "above", "below", "greater", "over", "under", "at least",
+  "fastest", "slowest", "bulkiest",
 ];
 
 const MOVE_KEYWORDS = [
@@ -188,8 +210,21 @@ export function classifyQuery(question: string): QueryIntent {
     }
   }
 
-  // Word-boundary matching to avoid "attackers" matching "attack"
-  const words = new Set(q.split(/\s+/));
+  // Extract item name (longest match first, skip collisions with pokemon/move)
+  const items = getItemNames();
+  let itemName: string | null = null;
+  const sortedItems = [...items].sort((a, b) => b.length - a.length);
+  for (const name of sortedItems) {
+    if (name === pokemonName || name === moveName) continue;
+    if (q.includes(name)) {
+      itemName = name;
+      break;
+    }
+  }
+
+  // Word-boundary matching to avoid "attackers" matching "attack".
+  // Split on non-word chars so trailing punctuation ("team?") doesn't break matching.
+  const words = new Set(q.split(/\W+/).filter(Boolean));
   const matchKeyword = (kw: string) => {
     // Multi-word keywords use substring match
     if (kw.includes(" ")) return q.includes(kw);
@@ -202,7 +237,15 @@ export function classifyQuery(question: string): QueryIntent {
   const isMatchupQuery = MATCHUP_KEYWORDS.some(matchKeyword);
   const hasMoveKeyword = MOVE_KEYWORDS.some(matchKeyword);
   const hasItemKeyword = ITEM_KEYWORDS.some(matchKeyword);
-  const hasTeamKeyword = TEAM_KEYWORDS.some(matchKeyword);
+  // Count distinct Pokemon mentions — 2+ names in one query strongly
+  // implies team-building context even without explicit "team" / "pair" words
+  // (e.g. "I have Garchomp Incineroar Whimsicott, what should I add").
+  let pokemonMentionCount = 0;
+  for (const name of names) {
+    if (q.includes(name)) pokemonMentionCount++;
+    if (pokemonMentionCount >= 2) break;
+  }
+  const hasTeamKeyword = TEAM_KEYWORDS.some(matchKeyword) || pokemonMentionCount >= 2;
   const hasStatKeyword = STAT_KEYWORDS.some(matchKeyword);
   const hasStatQualifier = STAT_QUALIFIERS.some(matchKeyword);
 
@@ -251,6 +294,7 @@ export function classifyQuery(question: string): QueryIntent {
     isStructured,
     pokemonName,
     moveName,
+    itemName,
     isUsageQuery,
     isCounterQuery,
     isMatchupQuery,
@@ -260,86 +304,102 @@ export function classifyQuery(question: string): QueryIntent {
 }
 
 // ---------------------------------------------------------------------------
-// Score extraction: hybrid search returns _relevance_score, vector returns _distance
-// ---------------------------------------------------------------------------
-
-function extractScore(row: Record<string, unknown>): number {
-  if (typeof row._relevance_score === "number") return row._relevance_score;
-  if (typeof row._distance === "number") return 1 - row._distance;
-  return 0;
-}
-
-// ---------------------------------------------------------------------------
 // Main query function
 // ---------------------------------------------------------------------------
 
+async function runStructuredFilter(question: string, limit: number): Promise<Record<string, unknown>[]> {
+  const types = extractTypes(question);
+  const stats = extractStatConditions(question);
+  if (types.length === 0 && stats.length === 0) return [];
+
+  let q = supabaseServer().from("pc_chunks").select("*");
+
+  if (types.length > 0) {
+    // Each type expands to "(col_type1=X OR col_type2=X)". Multiple types → AND of those.
+    // supabase-js .or() only unions within one call, so chain per type via .or().
+    for (const t of types) {
+      q = q.or(`col_type1.eq.${t},col_type2.eq.${t}`);
+    }
+  }
+  for (const c of stats) {
+    if (c.operator === ">=") q = q.gte(c.column, c.value);
+    else q = q.lte(c.column, c.value);
+  }
+  q = q.not("pokemon_name", "is", null).limit(limit);
+
+  const { data, error } = await q;
+  if (error) {
+    console.error("Structured query failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as Record<string, unknown>[];
+}
+
 export async function query(question: string, topK = 5): Promise<Result[]> {
-  checkStaleness();
+  await checkStaleness();
   const [vector] = await embed([question], "query");
   const intent = classifyQuery(question);
+  const supabase = supabaseServer();
 
-  const db = await connect(DB_PATH);
-  const table = await db.openTable(TABLE_NAME);
+  // Always fetch a healthy candidate pool so rerank boosts can surface the
+  // right chunk even when topK is small (e.g. Protect in moves.csv can sit
+  // outside the raw RRF top-20 but #1 after move-name boost).
+  const fetchK = Math.max(topK * 8, 80);
 
-  const fetchK = topK * 4; // wider net for filtering
-
-  // Build category filter SQL
-  const categoryFilter = intent.categories.length > 0
-    ? intent.categories.map((c) => `data_category = '${c}'`).join(" OR ")
-    : null;
-
-  // Hybrid search: vector + FTS with RRF reranking
-  let raw: Record<string, unknown>[];
-  try {
-    const reranker = await rerankers.RRFReranker.create(60);
-    let q = table
-      .vectorSearch(vector)
-      .distanceType("cosine")
-      .fullTextSearch(question)
-      .rerank(reranker);
-
-    if (categoryFilter) {
-      q = q.where(categoryFilter);
-    }
-
-    raw = await q.limit(fetchK).toArray();
-  } catch {
-    // Fallback to vector-only if FTS index doesn't exist
-    let q = table.vectorSearch(vector).distanceType("cosine");
-    if (categoryFilter) q = q.where(categoryFilter);
-    raw = await q.limit(fetchK).toArray();
+  const { data: hybridRaw, error: hybridErr } = await supabase.rpc("pc_hybrid_search", {
+    p_embedding: vector,
+    p_query: question,
+    p_categories: intent.categories.length > 0 ? intent.categories : null,
+    p_fetch_k: fetchK,
+    p_rrf_k: 60,
+  });
+  if (hybridErr) {
+    throw new Error(`pc_hybrid_search RPC failed: ${hybridErr.message}`);
   }
+  const raw = (hybridRaw ?? []) as Record<string, unknown>[];
 
-  // If structured query, also run SQL-based filtering
   let structuredResults: Record<string, unknown>[] = [];
   if (intent.isStructured) {
-    const statFilter = buildStatFilter(question);
-    if (statFilter) {
-      try {
-        structuredResults = await table
-          .query()
-          .where(statFilter)
-          .limit(topK)
-          .toArray();
-        if (process.env.RAG_DEBUG) {
-          console.error(`[DEBUG] Structured filter: ${statFilter}`);
-          console.error(`[DEBUG] Structured results: ${structuredResults.length}`);
-          for (const r of structuredResults) {
-            console.error(`[DEBUG]   ${r.pokemon_name} Spe:${r.stat_speed} SpA:${r.stat_sp_atk}`);
-          }
-        }
-      } catch (err) {
-        console.error("Structured query failed:", (err as Error).message);
+    structuredResults = await runStructuredFilter(question, topK);
+    if (process.env.RAG_DEBUG) {
+      console.error(`[DEBUG] Structured results: ${structuredResults.length}`);
+      for (const r of structuredResults) {
+        console.error(`[DEBUG]   ${r.pokemon_name} Spe:${r.stat_speed} SpA:${r.stat_sp_atk}`);
       }
-    } else if (process.env.RAG_DEBUG) {
-      console.error("[DEBUG] buildStatFilter returned null");
     }
   } else if (process.env.RAG_DEBUG) {
     console.error("[DEBUG] Not structured query");
   }
 
-  // Merge structured results with hybrid results
-  const allRaw = [...structuredResults, ...raw];
+  // Force-include champions_rules.md chunks when the query asks about
+  // mechanic changes / bans. The rules doc is an authoritative delta list
+  // from S/V, but its chunks tend to dense-match many transcripts in FTS
+  // and fall outside the RRF fetch pool. We inject them directly so the
+  // rerank boost can place them.
+  let rulesResults: Record<string, unknown>[] = [];
+  if (/\b(change|changed|differ|different|differently|banned|unavailable|missing|nerf|nerfed|how does)\b/i.test(question)) {
+    // Extract content words (drop stopwords & short tokens) and OR-join them
+    // for a loose FTS match against the rules doc. websearch parsing of the
+    // raw question too often yields zero hits because every token must match.
+    const stop = new Set(["how","does","what","when","where","which","who","work","works","the","and","for","with","from","are","was","were","been","this","that","these","those","but","not","you","your","their","our","champions","champion","in","on","of","to","is","it","a","an","do","did"]);
+    const terms = question
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !stop.has(w));
+    if (terms.length > 0) {
+      const { data: rulesRows } = await supabase
+        .from("pc_chunks")
+        .select("*")
+        .eq("source", "data/knowledge/champions_rules.md")
+        .textSearch("text_tsv", terms.join(" | "), { config: "english" })
+        .limit(5);
+      rulesResults = (rulesRows ?? []) as Record<string, unknown>[];
+    }
+  }
+
+  const structuredIds = new Set(structuredResults.map((r) => r.id as string));
+  const allRaw = [...structuredResults, ...rulesResults, ...raw];
 
   // Deduplicate by id
   const seen = new Set<string>();
@@ -350,22 +410,64 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
     return true;
   });
 
-  const parsed = deduped.map((r: Record<string, unknown>) => ({
-    text: r.text as string,
-    source: r.source as string,
-    score: extractScore(r),
-    sourceType: r.source_type as string,
-    dataCategory: r.data_category as string,
-    metadata: JSON.parse(r.metadata as string),
-    isStructuredResult: structuredResults.includes(r),
-  }));
+  const parsed = deduped.map((r: Record<string, unknown>) => {
+    const rawMeta = r.metadata;
+    const metadata: Record<string, unknown> =
+      typeof rawMeta === "string"
+        ? JSON.parse(rawMeta)
+        : (rawMeta as Record<string, unknown>) ?? {};
+    const id = r.id as string;
+    return {
+      text: r.text as string,
+      source: r.source as string,
+      score: typeof r.rrf_score === "number" ? r.rrf_score : Number(r.rrf_score ?? 0),
+      sourceType: r.source_type as string,
+      dataCategory: r.data_category as string,
+      metadata,
+      isStructuredResult: structuredIds.has(id),
+    };
+  });
 
-  // Apply domain-specific boosts (calibrated to RRF score scale ~0.02-0.035)
+  // Apply domain-specific boosts (calibrated to RRF score scale ~0.02-0.035).
+  //
+  // Tiered data hierarchy (small baseline nudges, applied on top of
+  // intent-specific boosts below):
+  //   1. Tournament teams   (+0.020)  — ground truth competitive pastes
+  //   2. Pikalytics usage   (+0.015)  — aggregate ladder statistics
+  //   3. YouTube transcripts (+0.010) — creator analysis / commentary
+  //   4. Matchup matrix     (-0.005)  — derived from above, treat as support
+  //   5. Older references   (-0.020)  — validation notes / unsorted md
   const boosted = parsed.map((r) => {
     let boost = 0;
     const isUsageChunk = r.dataCategory === "usage";
     const isKnowledgeChunk = r.dataCategory === "knowledge";
     const isTeamChunk = r.dataCategory === "team";
+    const isTranscriptChunk = r.dataCategory === "transcript";
+    const isMatchupChunk = r.dataCategory === "matchup";
+    const isOlderReference = r.source === "data/knowledge/validation_notes.md";
+
+    // Tier baselines. Knowledge docs (curated strategy) ride above the data
+    // tiers when relevant — but only when the query isn't a pure entity
+    // lookup (e.g. "Mega Dragonite"), otherwise generic knowledge docs
+    // displace the specific Pokemon/mega chunk.
+    const isStrategicIntent =
+      intent.isCounterQuery || intent.isMatchupQuery || intent.hasTeamKeyword;
+    const isEntityLookup =
+      (intent.pokemonName || intent.moveName || intent.itemName) && !isStrategicIntent;
+
+    // Small tier nudges — meant to break ties between equally-relevant
+    // chunks, not override quality. Intent-specific boosts (below) do the
+    // heavy lifting.
+    if (isKnowledgeChunk && !isEntityLookup) boost += 0.020;
+    else if (isTeamChunk && intent.hasTeamKeyword) boost += 0.010;
+    else if (isUsageChunk && (intent.hasTeamKeyword || intent.isUsageQuery)) boost += 0.007;
+    else if (isTranscriptChunk) boost += 0.003;
+    else if (isMatchupChunk && !(intent.isCounterQuery || intent.isMatchupQuery)) boost -= 0.003;
+    if (isOlderReference) boost -= 0.02;
+
+    // Demote team chunks on non-team queries so tournament pastes don't
+    // crowd entity/mechanic/strategic lookups.
+    if (isTeamChunk && !intent.hasTeamKeyword) boost -= 0.015;
 
     // Structured results get priority (they matched SQL stat filters exactly)
     if (r.isStructuredResult) {
@@ -392,6 +494,17 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
       if (chunkName === intent.pokemonName || chunkPokemon === intent.pokemonName) {
         boost += 0.04;
       }
+      // Mega chunks carry metadata like `base_pokemon: "Meganium"` and
+      // `mega_name: "Mega Meganium"`. Match those so "Mega Meganium ability"
+      // surfaces the mega row.
+      else if (r.dataCategory === "mega") {
+        const basePokemon = (r.metadata.base_pokemon as string)?.toLowerCase();
+        const megaName = (r.metadata.mega_name as string)?.toLowerCase();
+        if (basePokemon === intent.pokemonName || megaName?.includes(intent.pokemonName) ||
+            chunkPokemon?.includes(intent.pokemonName)) {
+          boost += 0.04;
+        }
+      }
     }
 
     // Exact move name match — boost the specific move chunk
@@ -402,9 +515,19 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
       }
     }
 
-    // Matchup data boost for counter/matchup queries
+    // Exact item name match — boost the specific item chunk
+    if (intent.itemName && r.dataCategory === "item") {
+      const chunkName = (r.metadata.name as string)?.toLowerCase();
+      if (chunkName === intent.itemName) {
+        boost += 0.04;
+      }
+    }
+
+    // Matchup data boost for counter/matchup queries. Keep modest so
+    // matchup_matrix.csv rows don't monopolize all 10 slots on counter
+    // queries where a curated knowledge doc is the better answer.
     if (r.dataCategory === "matchup" && (intent.isCounterQuery || intent.isMatchupQuery)) {
-      boost += 0.06;
+      boost += 0.03;
       // Extra boost if matching Pokemon name
       if (intent.pokemonName) {
         const chunkPokemon = (r.metadata.pokemon as string)?.toLowerCase();
@@ -412,12 +535,28 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
       }
     }
 
-    // Knowledge docs boost for counter/strategy/usage queries
-    // (not item/move lookups where the actual data chunk should rank first)
+    // Knowledge docs boost for strategic query types.
+    //  - Counter/matchup: curated knowledge usually beats a matchup-matrix slice.
+    //  - Team queries without a Pokemon name: strategic doc beats team rows.
+    //  - Team queries *with* a Pokemon name (e.g. "partners for Gengar"):
+    //    the user wants concrete team/usage data, so don't crowd those out.
     if (isKnowledgeChunk) {
-      if (intent.isCounterQuery || intent.isMatchupQuery) {
-        boost += 0.015;
-      }
+      if (intent.isCounterQuery || intent.isMatchupQuery) boost += 0.04;
+      else if (intent.hasTeamKeyword && !intent.pokemonName) boost += 0.04;
+      else if (intent.hasTeamKeyword) boost += 0.025;
+    }
+
+    // Rules/format docs: boost champions_rules.md when the query is about
+    // mechanic *changes* (the rules doc summarizes every S/V delta).
+    const isRulesDoc = r.source === "data/knowledge/champions_rules.md";
+    if (isRulesDoc && /\b(change|changed|differ|different|differently|banned|unavailable|missing|nerf|nerfed|how does)\b/i.test(question)) {
+      boost += 0.035;
+    }
+
+    // Speed tiers doc: boost on any speed-benchmark question
+    const isSpeedTiers = r.source === "data/knowledge/speed_tiers.md";
+    if (isSpeedTiers && /\b(speed tier|speed tiers|outspeed|outspeeds|faster than|slower than)\b/i.test(question)) {
+      boost += 0.035;
     }
 
     // Item chunk boost when query has item intent
@@ -425,9 +564,11 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
       boost += 0.03;
     }
 
-    // Penalize team chunks for non-team queries (prevent drowning entity data)
-    if (isTeamChunk && !intent.hasTeamKeyword) {
-      boost -= 0.015;
+    // Team query: boost usage + tournament-team chunks so "partners / pairs with X"
+    // surfaces Pikalytics teammates and tournament team rows.
+    if (intent.hasTeamKeyword) {
+      if (isUsageChunk) boost += 0.03;
+      if (isTeamChunk) boost += 0.03;
     }
 
     // Penalize memory-bank/project docs (rarely what users want)

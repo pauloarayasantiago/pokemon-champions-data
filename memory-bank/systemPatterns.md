@@ -7,19 +7,20 @@
 ├── CLAUDE.md                   Always-on expert persona (Champions VGC specialist)
 ├── .claude/
 │   ├── commands/
-│   │   ├── lookup.md           /lookup skill — semantic search against LanceDB
+│   │   ├── lookup.md           /lookup skill — semantic search against Supabase pc_chunks
 │   │   ├── reindex.md          /reindex skill — rebuild vector index
 │   │   ├── refresh.md          /refresh skill — re-scrape Pikalytics + Sheets + reindex
 │   │   ├── team.md             /team skill — team building (build/fill/evaluate/counter/sets)
 │   │   ├── calc.md             /calc skill — ad-hoc damage calculations
 │   │   └── research.md         /research skill — web-based competitive data gathering
 │   └── settings.local.json     Permissions for scrapers, npm, git
-├── .lancedb/                   Vector database (Apache Arrow format, ~1,911 chunks)
-│   └── index-meta.json         Staleness metadata (mtimes, model, chunk count)
+├── supabase/
+│   └── migrations/             pc_chunks + pc_index_meta schema, pc_hybrid_search RPC
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap, Pikalytics translation)
 │   ├── embed.ts                MiniLM-L6-v2 (384-dim, fp32, no prefixes, batch 64)
-│   ├── rag.ts                  Hybrid search (FTS+Vector+RRF) + intent classification + structured queries + re-ranking + staleness
+│   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking + staleness
+│   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
 │   ├── eval-data.ts            25 eval test cases across 8 categories
 │   ├── translations.json       2,383 IT→EN translations (moves, items, abilities) — auto-generated
@@ -32,7 +33,7 @@
 │       ├── efficiency.ts       Efficiency coefficient: 6 sub-scores, composite E(A,B), matrix builder, CSV export
 │       └── index.ts            Barrel export
 ├── scripts/
-│   ├── index-data.ts           Chunks all files → embeds → stores in LanceDB (glob discovery, 52 files, FTS+scalar indexes)
+│   ├── index-data.ts           Chunks all files → embeds → upserts to pc_chunks (glob discovery, incremental + --force modes)
 │   ├── search.ts               CLI: npx tsx scripts/search.ts "query" [topK]
 │   ├── eval.ts                 Eval harness: Recall@5, MRR, pass rate, per-category breakdown
 │   ├── build-translations.ts   Fetches PokeAPI IT→EN name mappings → lib/translations.json
@@ -74,7 +75,7 @@
 ├── efficiency_matrix.csv       61,752 efficiency entries: 26 columns (6 sub-scores + composite E + meta weight + diagnostics)
 ├── status_conditions.txt       Freeze/Paralysis/Sleep mechanic changes
 ├── training_mechanics.txt      VP costs for customization
-├── package.json                Node.js deps (lancedb, huggingface, csv-parse)
+├── package.json                Node.js deps (@supabase/supabase-js, huggingface, csv-parse)
 └── tsconfig.json               TypeScript config (ES2022, Node16, resolveJsonModule)
 ```
 
@@ -99,18 +100,18 @@
   - Auto-skips previously downloaded transcripts
   - Filters out wrong-game content (S/V, Sword/Shield, Unite, etc.)
 
-## RAG Pipeline (Post-Phase 8 Overhaul)
+## RAG Pipeline (Post-Supabase Migration)
 1. **Discover** — `scripts/index-data.ts` uses glob patterns to auto-discover markdown files in `data/knowledge/`, `research/`, `data/transcripts/`, `memory-bank/`. CSVs/text files remain hardcoded (have specific chunker functions)
 2. **Chunk** — `lib/chunker.ts` converts each data type to NL text chunks with `data_category` tags. Pikalytics chunks translated IT→EN. Markdown chunks get trailing-paragraph overlap
 3. **Embed** — `lib/embed.ts` uses MiniLM-L6-v2 (384-dim, fp32, batch size 64). No prefixes — raw text embedded directly
-4. **Store** — LanceDB table "chunks" with: id, text, source, source_type, data_category, metadata, vector, plus top-level stat columns (pokemon_name, col_type1/2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst — null for non-Pokemon)
-5. **Index** — FTS index on text (BM25/Tantivy, stemmed English), scalar index on data_category
-6. **Meta** — `.lancedb/index-meta.json` written after reindex with file mtimes for staleness detection
+4. **Store** — Supabase `pc_chunks`: id (PK), text, embedding VECTOR(384), source, source_type, data_category, metadata JSONB, pokemon_name, col_type1/2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst (null for non-Pokemon), text_tsv TSVECTOR GENERATED
+5. **Index** — HNSW on embedding (`vector_cosine_ops`), GIN on text_tsv, btree on data_category + pokemon_name
+6. **Meta** — `pc_index_meta` upserted after reindex (keys: indexed_at, embedding_model, chunk_count, file_count, file_mtimes)
 7. **Classify** — Rule-based `classifyQuery()` detects intent (usage, counter, stat, item, move, team) via word-boundary matching against keyword sets + Pokemon name dictionary + move name dictionary
-8. **Search** — Hybrid: vector + BM25 FTS fused via RRF reranker (k=60), with `where()` category pre-filter based on intent
-9. **Structured** — If stat query detected, parallel SQL path: `buildStatFilter()` → type/speed/attack WHERE predicates → `table.query().where(filter)`. **No data_category in WHERE** (LanceDB scalar index bug)
+8. **Search** — Single RPC `pc_hybrid_search(p_embedding, p_query, p_categories, p_fetch_k, p_rrf_k=60)` fuses pgvector ANN + Postgres FTS via RRF in one round-trip
+9. **Structured** — If stat query detected, parallel supabase-js query: `.or()` per type + `.gte()/.lte()` per stat + `.not('pokemon_name','is',null)`
 10. **Merge + Re-rank** — Deduplicate hybrid + structured results, apply 8 additive boosts (structured +0.1, usage +0.1/0.05, exact Pokemon name +0.04, exact move name +0.04, counter knowledge +0.015, item intent +0.03, team penalty -0.015, project -0.08), sort by score, return topK
-11. **Staleness** — `checkStaleness()` runs once per process, compares current file mtimes to stored, warns on stderr
+11. **Staleness** — `checkStaleness()` runs once per process, reads `pc_index_meta.file_mtimes`, compares against disk, warns on stderr
 12. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 1.000
-13. **Incremental** — index-data.ts checks existing chunk IDs, only inserts new ones (--force rebuilds all + recreates indexes + writes meta)
+13. **Incremental** — index-data.ts paginates `SELECT id FROM pc_chunks` into a Set, skips already-indexed chunks (--force wipes pc_chunks before re-upsert)
 14. **Full test suite** — 251 tests via `npm test`: calc (41), integration (74), eval (25), stress (111)

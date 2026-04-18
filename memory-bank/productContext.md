@@ -27,7 +27,7 @@ The agent should be a knowledgeable but approachable Pokémon Champions VGC spec
 2. **Research** — External AI agent research in `research/` folder
 3. **Structure** — CSVs, markdown, and text files
 4. **Calculate** — `lib/calc/` damage engine + `matchup_matrix.csv` (59,292 pairs)
-5. **Index** — LanceDB vector database via `scripts/index-data.ts`
+5. **Index** — Supabase pgvector (`pc_chunks`) via `scripts/index-data.ts`
 6. **Query** — RAG retrieval via `/lookup` skill
 7. **Advise** — AI reasoning layer via `/team` skill + CLAUDE.md expert persona + `/calc` for damage verification
 

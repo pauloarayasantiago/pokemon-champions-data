@@ -57,6 +57,14 @@ Earthquake, Rock Slide, Heat Wave, and similar spread moves hit both opponents a
 ### Intimidate
 Intimidate reduces both opponents' Attack by 1 stage on switch-in. Incineroar is the primary user (48-54% usage). Counter-play: White Herb (restores one stat drop, consumed), Defiant/Competitive (punishes Intimidate with +2 Atk/SpA), Inner Focus (prevents flinch, not Intimidate).
 
+### Priority Blocking (Armor Tail / Dazzling / Queenly Majesty)
+These abilities block ALL priority moves used by opponents on the user's side — not just against the holder. This includes Fake Out, Sucker Punch, Bullet Punch, Shadow Sneak, Aqua Jet, Vacuum Wave, Quick Attack, Extreme Speed, Ice Shard, and Mach Punch. Prankster-boosted status (Thunder Wave, Tailwind via Whimsicott) is also blocked.
+- **Farigiraf (Armor Tail)** — the primary Trick Room anchor. Sits on ~11% usage. Its Armor Tail is the reason Sneasler's Fake Out and Kingambit's Sucker Punch simply don't resolve while Farigiraf is on the field.
+- **Counter-play**: Switch Farigiraf out (forced via phazing, timer pressure, or KO), attack it with non-priority moves that can outspeed it, or use Choice Scarf + Trick to lock it into a bad move. Knock Off / Trick-removed item doesn't disable the ability — only KO or switch-out does.
+
+### King's Shield (Aegislash)
+Blocks all attacks like Protect and lowers the attacker's Attack by 1 stage on contact (nerfed from -2 in S/V). A +1 attack drop is still meaningful but much less punishing — Aegislash Shield Form + King's Shield is less of a hard wall against physical attackers than it was in S/V.
+
 ## Item Economy in Champions
 The restricted item pool fundamentally changes team building:
 - No Choice Band/Specs: You cannot boost damage by 50% via item lock. Setup moves (Swords Dance, Nasty Plot, Dragon Dance) become more valuable.

@@ -5,7 +5,8 @@
 
 import { embed } from "../lib/embed.js";
 import { query } from "../lib/rag.js";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { supabaseServer } from "../lib/supabase.js";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "..");
@@ -299,15 +300,15 @@ async function testRealisticQueries() {
     `sources: ${cs1.map(src).join(", ")}`
   );
   check(
-    "Fake Out change → rules or research doc",
-    cs1.some((r) => (src(r).includes("champions_rules") || src(r).includes("research/")) && txt(r).includes("Fake Out")),
+    "Fake Out change → rules doc",
+    cs1.some((r) => src(r).includes("champions_rules") && txt(r).includes("Fake Out")),
     `sources: ${cs1.map(src).join(", ")}`
   );
 
   const cs2 = await query("what items are banned in Champions format?", 10);
   check(
-    "Banned items → rules or research doc",
-    cs2.some((r) => (src(r).includes("champions_rules") || src(r).includes("research/")) && (txt(r).includes("Life Orb") || txt(r).includes("Choice Band") || txt(r).includes("Missing"))),
+    "Banned items → rules doc",
+    cs2.some((r) => src(r).includes("champions_rules") && (txt(r).includes("Life Orb") || txt(r).includes("Choice Band") || txt(r).includes("Missing"))),
     `sources: ${cs2.map(src).join(", ")}`
   );
 
@@ -354,25 +355,30 @@ async function testChunkOverlap() {
 async function testIndexLifecycle() {
   console.log("\n=== INDEX LIFECYCLE TESTS ===");
 
-  const metaPath = resolve(PROJECT_ROOT, ".lancedb", "index-meta.json");
-  check("index-meta.json exists", existsSync(metaPath));
+  const supabase = supabaseServer();
+  const { data: rows, error } = await supabase
+    .from("pc_index_meta")
+    .select("key, value");
+  check("pc_index_meta readable", !error, error?.message);
+  if (error || !rows) return;
 
-  const meta = JSON.parse(readFileSync(metaPath, "utf-8"));
-  check("Has indexed_at timestamp", typeof meta.indexed_at === "string" && meta.indexed_at.length > 0);
+  const meta: Record<string, unknown> = {};
+  for (const r of rows) meta[r.key as string] = r.value;
+
+  check("Has indexed_at timestamp", typeof meta.indexed_at === "string" && (meta.indexed_at as string).length > 0);
   check("Model = MiniLM-L6-v2", meta.embedding_model === "Xenova/all-MiniLM-L6-v2");
-  check("chunk_count > 0", meta.chunk_count > 0, `got ${meta.chunk_count}`);
-  check("file_count > 0", meta.file_count > 0, `got ${meta.file_count}`);
+  check("chunk_count > 0", (meta.chunk_count as number) > 0, `got ${meta.chunk_count}`);
+  check("file_count > 0", (meta.file_count as number) > 0, `got ${meta.file_count}`);
 
-  // Glob discovery: check that key file categories are tracked
-  const mtKeys = Object.keys(meta.file_mtimes);
+  const fileMtimes = (meta.file_mtimes ?? {}) as Record<string, string>;
+  const mtKeys = Object.keys(fileMtimes);
   check("CSVs tracked", mtKeys.filter((k) => k.endsWith(".csv")).length >= 9, `${mtKeys.filter((k) => k.endsWith(".csv")).length} CSVs`);
-  check("knowledge/ auto-discovered", mtKeys.filter((k) => k.startsWith("data/knowledge/")).length === 7);
+  check("knowledge/ auto-discovered", mtKeys.filter((k) => k.startsWith("data/knowledge/")).length >= 7);
   check("transcripts/ auto-discovered", mtKeys.filter((k) => k.startsWith("data/transcripts/")).length > 20);
-  check("research/ auto-discovered", mtKeys.filter((k) => k.startsWith("research/")).length >= 3);
+  check("research/ NOT indexed (deprecated)", mtKeys.filter((k) => k.startsWith("research/")).length === 0);
   check("memory-bank/ auto-discovered", mtKeys.filter((k) => k.startsWith("memory-bank/")).length >= 5);
 
-  // All mtime values are valid ISO dates
-  const allValid = Object.values(meta.file_mtimes).every((v) => !isNaN(Date.parse(v as string)));
+  const allValid = Object.values(fileMtimes).every((v) => !isNaN(Date.parse(v)));
   check("All mtimes valid ISO", allValid);
 }
 

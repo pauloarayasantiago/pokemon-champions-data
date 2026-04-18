@@ -1,11 +1,12 @@
 import { readFileSync } from "fs";
 import { parse } from "csv-parse/sync";
-import { join, dirname } from "path";
+import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { PokemonData, MegaData, MoveData, BaseStats } from "./types.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..", "..");
+const ROOT = process.env.POKEMON_DATA_ROOT
+  ? resolve(process.env.POKEMON_DATA_ROOT)
+  : join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 // ── Lazy-loaded singletons ──
 

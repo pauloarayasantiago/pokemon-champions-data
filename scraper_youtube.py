@@ -3,7 +3,7 @@ YouTube transcript scraper for Pokemon Champions competitive content.
 
 Searches YouTube for recent Pokemon Champions videos (post-release only:
 April 8, 2026+), extracts auto-generated transcripts, and saves them as
-markdown files for indexing into the LanceDB knowledge base.
+markdown files for indexing into the Supabase pgvector knowledge base.
 
 Usage:
     python scraper_youtube.py                    # default search

@@ -1,25 +1,39 @@
 /**
- * Quick DB inspection utility for debugging LanceDB queries.
+ * Quick DB inspection utility for debugging the Supabase chunk index.
  * Usage: npx tsx scripts/debug-db.ts
  */
-import { connect } from "@lancedb/lancedb";
-import { resolve } from "node:path";
+import { supabaseServer } from "../lib/supabase.js";
 
 async function main() {
-  const db = await connect(resolve(import.meta.dirname, "..", ".lancedb"));
-  const table = await db.openTable("chunks");
+  const supabase = supabaseServer();
 
-  const allRows = await table.query().limit(2000).toArray();
-  console.log("Total rows:", allRows.length);
+  const { count, error: countErr } = await supabase
+    .from("pc_chunks")
+    .select("*", { count: "exact", head: true });
+  if (countErr) throw new Error(countErr.message);
+  console.log("Total rows:", count);
 
   const cats = new Map<string, number>();
-  for (const r of allRows) {
-    const cat = r.data_category as string;
-    cats.set(cat, (cats.get(cat) ?? 0) + 1);
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("pc_chunks")
+      .select("data_category")
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) break;
+    for (const r of data) {
+      const cat = r.data_category as string;
+      cats.set(cat, (cats.get(cat) ?? 0) + 1);
+    }
+    if (data.length < pageSize) break;
+    offset += pageSize;
   }
+
   console.log("\nCategory distribution:");
-  for (const [cat, count] of [...cats.entries()].sort((a, b) => b[1] - a[1])) {
-    console.log(`  ${cat}: ${count}`);
+  for (const [cat, n] of [...cats.entries()].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${cat}: ${n}`);
   }
 }
 

@@ -16,11 +16,19 @@
 
 ## TypeScript / Node.js Dependencies
 - `@huggingface/transformers` (^4.0.0) — Local embedding model
-- `@lancedb/lancedb` (^0.27.2) — Vector database
-- `apache-arrow` (^18.1.0) — Data serialization
+- `@supabase/supabase-js` (^2.x) — Supabase client (pgvector-backed vector store)
 - `csv-parse` (^6.2.1) — CSV parsing
 - `tsx` (^4.21.0) — TypeScript executor
 - `typescript` (^6.0.2)
+
+## Supabase Project
+- Project: `store-and-dashboard` (ref `xvddfzeimjmfzznhqutb`), shared with `pokeke.shop`
+- Namespace: all project tables prefixed `pc_` (pc_chunks, pc_index_meta)
+- Env vars (accepted in either form — root `.env` or `webapp/.env.local`):
+  - URL: `NEXT_PUBLIC_SUPABASE_URL` or `VITE_SUPABASE_URL`
+  - Anon: `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_KEY`
+  - Service: `SUPABASE_SERVICE_KEY` or `SUPABASE_SECRET`
+- Client factory: `lib/supabase.ts` → `supabaseServer()` / `supabaseAnon()`; manually loads root `.env` once at startup so CLI scripts work without dotenv
 
 ## npm Scripts
 - `calc` — `npx tsx scripts/calc.ts` (CLI damage calculator)
@@ -44,15 +52,18 @@
 - Normalization: L2 for cosine distance (pooling: mean, normalize: true)
 - **Previous**: `onnx-community/embeddinggemma-300m-ONNX` (308M params, 768-dim, q8) — replaced for performance reasons (too resource-heavy)
 
-## RAG Architecture (Post-Phase 8 Overhaul)
-- **Hybrid search**: LanceDB native FTS (BM25 via Tantivy) + vector search + RRF reranker (k=60)
-  - Import: `import { connect, rerankers } from "@lancedb/lancedb"` (NOT from subpath `/rerankers`)
-  - Chained: `table.vectorSearch(vector).distanceType("cosine").fullTextSearch(question).rerank(reranker).limit(k)`
-  - RRF scores are ~0.02-0.035 scale (not 0-1)
+## RAG Architecture (Post-Supabase Migration)
+- **Storage**: Supabase `pc_chunks` (pgvector HNSW, `vector_cosine_ops`, 384-dim) + `pc_index_meta`
+  - Generated `text_tsv TSVECTOR` column + GIN index for Postgres FTS
+  - HNSW index on embedding for ANN
+  - RLS on with anon/authenticated SELECT; writes via service role (bypasses RLS)
+- **Hybrid search**: Single RPC `pc_hybrid_search(p_embedding, p_query, p_categories, p_fetch_k, p_rrf_k)` — combines ANN + FTS via RRF in one round-trip, returns `rrf_score` (~0.02-0.035 scale)
+  - Uses `websearch_to_tsquery('english', p_query)` for FTS
+  - CTEs for vec + fts rankings, `RANK() OVER` → `1/(k+rank)` combined
 - **Intent classification**: Rule-based `classifyQuery()` in `lib/rag.ts` — detects usage/counter/stat/item/move/team queries via word-boundary matching against keyword sets + Pokemon name dictionary + move name dictionary
-- **Source filtering**: `data_category` column with scalar index, applied as `where()` predicate
-- **Structured queries**: `lib/structured-query.ts` — NL→SQL for stat-based filtering (type, speed, attack, etc.)
-  - **IMPORTANT**: Do NOT combine `data_category` scalar index with non-indexed stat columns in WHERE — LanceDB returns incomplete results. Stat columns are null for non-Pokemon chunks, so category filter is redundant.
+- **Source filtering**: `data_category` array passed to the RPC (`ANY(p_categories)`)
+- **Structured queries**: `lib/structured-query.ts` + `runStructuredFilter()` in `lib/rag.ts` — NL→supabase-js query builder chain (`.or()` per type, `.gte()/.lte()` per stat, `.not('pokemon_name','is',null)`)
+  - Runs as a second round-trip alongside the hybrid RPC; results merged and deduped in TS
 - **Multi-signal re-ranking**: 8 additive boosts calibrated to RRF scale:
   - Structured results: +0.1
   - Usage intent + matching Pokemon: +0.1
@@ -65,7 +76,7 @@
   - Project docs penalty: -0.08
 - **Translation layer**: Italian→English translations applied at chunk time for Pikalytics data (`lib/translations.json`, 2,383 entries)
 - **Chunk overlap**: Trailing-paragraph overlap for markdown chunks split on paragraph breaks (last 3 lines of previous paragraph prepended)
-- **Staleness detection**: `checkStaleness()` in `rag.ts` reads `.lancedb/index-meta.json`, compares file mtimes, warns on stderr if stale (runs once per process)
+- **Staleness detection**: `checkStaleness()` in `rag.ts` reads `pc_index_meta` row `file_mtimes`, compares against current filesystem mtimes, warns on stderr if stale (runs once per process)
 - **Matchup intent**: `isMatchupQuery` detection + MATCHUP_KEYWORDS + category boosting (+0.06 matchup data, +0.06 Pokemon name match)
 - **Eval**: 25 test cases, `npx tsx scripts/eval.ts` — current: 100% pass, MRR 1.000
 - **Comprehensive test suite**: `npx tsx scripts/test-suite.ts` — 74 tests across embedding, translation, search quality, realistic queries (15 natural-language tests), overlap, lifecycle, scraper

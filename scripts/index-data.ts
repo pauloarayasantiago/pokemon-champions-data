@@ -1,6 +1,5 @@
-import { connect, Index } from "@lancedb/lancedb";
 import { resolve } from "node:path";
-import { readdirSync, statSync, writeFileSync, existsSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import {
   chunkPokemonCsv,
   chunkMegaEvolutionsCsv,
@@ -17,11 +16,11 @@ import {
   type Chunk,
 } from "../lib/chunker.js";
 import { embed } from "../lib/embed.js";
+import { supabaseServer } from "../lib/supabase.js";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "..");
-const DB_PATH = resolve(PROJECT_ROOT, ".lancedb");
-const TABLE_NAME = "chunks";
 const EMBED_BATCH = 64;
+const UPSERT_BATCH = 200;
 
 interface FileEntry {
   path: string;
@@ -59,8 +58,6 @@ const STATIC_FILES: FileEntry[] = [
 // Glob patterns for auto-discovered markdown/text files
 const GLOB_DIRS: Array<{ dir: string; ext: string; type: FileEntry["type"] }> = [
   { dir: "memory-bank", ext: ".md", type: "markdown" },
-  { dir: "research", ext: ".md", type: "markdown" },
-  { dir: "research", ext: ".txt", type: "plain-text" },
   { dir: "data/knowledge", ext: ".md", type: "markdown" },
   { dir: "data/transcripts", ext: ".md", type: "markdown" },
 ];
@@ -155,22 +152,33 @@ async function main() {
 
   console.log(`Total chunks: ${allChunks.length}`);
 
-  // 2. Connect to LanceDB
-  const db = await connect(DB_PATH);
-  const tableNames = await db.tableNames();
-  const tableExists = tableNames.includes(TABLE_NAME);
+  // 2. Connect to Supabase
+  const supabase = supabaseServer();
 
-  if (force && tableExists) {
-    console.log("--force: dropping existing table...");
-    await db.dropTable(TABLE_NAME);
+  // 3. Force mode: delete all rows (per-source would be safer but full wipe preserves prior semantics)
+  if (force) {
+    console.log("--force: deleting all rows from pc_chunks...");
+    const { error } = await supabase.from("pc_chunks").delete().neq("id", "__sentinel__");
+    if (error) throw new Error(`Force delete failed: ${error.message}`);
   }
 
-  // 3. Determine which chunks are new (incremental mode)
+  // 4. Determine which chunks are new (incremental mode)
   let chunksToInsert = allChunks;
-  if (!force && tableExists) {
-    const table = await db.openTable(TABLE_NAME);
-    const existing = await table.query().select(["id"]).toArray();
-    const existingIds = new Set(existing.map((r: { id: string }) => r.id));
+  if (!force) {
+    const existingIds = new Set<string>();
+    const pageSize = 1000;
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("pc_chunks")
+        .select("id")
+        .range(offset, offset + pageSize - 1);
+      if (error) throw new Error(`Existing-ID fetch failed: ${error.message}`);
+      if (!data || data.length === 0) break;
+      for (const r of data) existingIds.add(r.id as string);
+      if (data.length < pageSize) break;
+      offset += pageSize;
+    }
     chunksToInsert = allChunks.filter((c) => !existingIds.has(c.id));
     console.log(
       `Existing: ${existingIds.size}, new: ${chunksToInsert.length}, skipped: ${allChunks.length - chunksToInsert.length}`
@@ -182,7 +190,7 @@ async function main() {
     return;
   }
 
-  // 4. Embed in batches
+  // 5. Embed in batches
   console.log(`\nEmbedding ${chunksToInsert.length} chunks...`);
   const vectors: number[][] = [];
   for (let i = 0; i < chunksToInsert.length; i += EMBED_BATCH) {
@@ -194,7 +202,7 @@ async function main() {
     );
   }
 
-  // 5. Build records for LanceDB (with top-level stat columns for structured queries)
+  // 6. Build records (top-level stat columns for structured queries)
   const records = chunksToInsert.map((c, i) => {
     const meta = c.metadata as Record<string, unknown>;
     const isPokemon = c.data_category === "pokemon" || c.data_category === "mega";
@@ -204,9 +212,8 @@ async function main() {
       source: c.source,
       source_type: c.sourceType,
       data_category: c.data_category,
-      metadata: JSON.stringify(c.metadata),
-      vector: vectors[i],
-      // Top-level stat columns for SQL filtering (null for non-Pokemon chunks)
+      metadata: c.metadata,
+      embedding: vectors[i],
       pokemon_name: isPokemon ? (meta.name ?? meta.mega_name ?? null) as string | null : null,
       col_type1: isPokemon ? (meta.type1 ?? null) as string | null : null,
       col_type2: isPokemon ? (meta.type2 ?? null) as string | null : null,
@@ -220,36 +227,16 @@ async function main() {
     };
   });
 
-  // 6. Insert into LanceDB
-  if (!force && tableExists) {
-    const table = await db.openTable(TABLE_NAME);
-    await table.add(records);
-    console.log(`\nAdded ${records.length} new chunks to existing table.`);
-  } else {
-    await db.createTable(TABLE_NAME, records);
-    console.log(`\nCreated table "${TABLE_NAME}" with ${records.length} chunks.`);
+  // 7. Upsert to Supabase in batches
+  console.log(`\nUpserting ${records.length} chunks to pc_chunks...`);
+  for (let i = 0; i < records.length; i += UPSERT_BATCH) {
+    const batch = records.slice(i, i + UPSERT_BATCH);
+    const { error } = await supabase.from("pc_chunks").upsert(batch, { onConflict: "id" });
+    if (error) throw new Error(`Upsert batch ${i}-${i + batch.length} failed: ${error.message}`);
+    console.log(`  Upserted ${Math.min(i + UPSERT_BATCH, records.length)}/${records.length}`);
   }
 
-  // 7. Create indexes (FTS for hybrid search + scalar for category filtering)
-  const idxTable = await db.openTable(TABLE_NAME);
-  console.log("\nCreating FTS index on text column...");
-  await idxTable.createIndex("text", {
-    config: Index.fts({
-      withPosition: true,
-      lowercase: true,
-      stem: true,
-      language: "English",
-    }),
-    replace: true,
-  });
-  console.log("FTS index created.");
-
-  console.log("Creating scalar index on data_category...");
-  await idxTable.createIndex("data_category", { replace: true });
-  console.log("Scalar index created.");
-
-  // 8. Write index metadata for staleness detection
-  const metaPath = resolve(DB_PATH, "index-meta.json");
+  // 8. Write index metadata to pc_index_meta
   const fileMtimes: Record<string, string> = {};
   for (const entry of FILES) {
     try {
@@ -259,15 +246,24 @@ async function main() {
       // File may have been skipped
     }
   }
-  const meta = {
-    indexed_at: new Date().toISOString(),
-    embedding_model: "Xenova/all-MiniLM-L6-v2",
-    chunk_count: allChunks.length,
-    file_count: FILES.length,
-    file_mtimes: fileMtimes,
-  };
-  writeFileSync(metaPath, JSON.stringify(meta, null, 2), "utf-8");
-  console.log(`Index metadata written to ${metaPath}`);
+
+  const { count: totalAfter, error: countErr } = await supabase
+    .from("pc_chunks")
+    .select("*", { count: "exact", head: true });
+  if (countErr) throw new Error(`Count failed: ${countErr.message}`);
+
+  const metaRows = [
+    { key: "indexed_at", value: new Date().toISOString() },
+    { key: "embedding_model", value: "Xenova/all-MiniLM-L6-v2" },
+    { key: "chunk_count", value: totalAfter ?? 0 },
+    { key: "file_count", value: FILES.length },
+    { key: "file_mtimes", value: fileMtimes },
+  ];
+  const { error: metaErr } = await supabase
+    .from("pc_index_meta")
+    .upsert(metaRows, { onConflict: "key" });
+  if (metaErr) throw new Error(`pc_index_meta upsert failed: ${metaErr.message}`);
+  console.log(`Index metadata written to pc_index_meta (${metaRows.length} keys).`);
 
   console.log("Done.");
 }

@@ -1,4 +1,4 @@
-Rebuild the LanceDB vector search index for the project.
+Rebuild the Supabase pgvector search index for the project.
 
 ## What to do
 
@@ -27,7 +27,7 @@ Run this at the end of any session where:
 ## Technical details
 
 - Index script: `scripts/index-data.ts`
-- Database: `.lancedb/` (LanceDB, Apache Arrow format)
+- Database: Supabase `pc_chunks` (pgvector HNSW + Postgres FTS) + `pc_index_meta`
 - Embedding model: `Xenova/all-MiniLM-L6-v2` (384-dim, ~80MB first download)
-- `--force` drops the existing table and rebuilds from scratch
+- `--force` wipes `pc_chunks` and rebuilds from scratch
 - Without `--force`, only new chunks are added (incremental)

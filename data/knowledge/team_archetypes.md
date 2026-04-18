@@ -4,12 +4,15 @@ All four weather types are simultaneously viable in Champions — a first for mo
 
 ## Rain Teams
 Weather setter: Pelipper (Drizzle). Rain boosts Water moves 1.5x, weakens Fire 0.5x.
-Key abusers: Basculegion (Swift Swim sweeper), Archaludon (Electro Shot needs no charge in rain).
+Key abusers: Basculegion (Swift Swim sweeper on rain, Adaptability on non-rain), Archaludon (Electro Shot needs no charge in rain).
 Core pairs: Pelipper + Basculegion (55.2% WR, 21.4% usage), Archaludon + Pelipper (55.8% WR, 20.8% usage).
 Thunder and Hurricane never miss in rain. Electro Shot gets free +1 SpA and fires immediately.
 Strengths: Strong offensive pressure, good speed control via Swift Swim, Electro Shot + Rain is a powerful combo.
 Weaknesses: Grass types (especially Venusaur), opposing weather (Tyranitar Sand Stream, Torkoal Drought), Electric types.
 Sample core 6: Pelipper, Basculegion, Archaludon, Kingambit, Sneasler, Mega (flex: Mega Starmie for Huge Power water, or Mega Greninja).
+
+### Basculegion ability choice (rain vs non-rain)
+Basculegion is increasingly run on non-rain teams as a Goodstuffs/Tailwind attacker — in that context **Adaptability** is preferred over Swift Swim because there's no rain to double Speed. Adaptability turns Last Respects + Wave Crash STAB from 1.5x into 2x, compensating for the missing weather boost. Rain teams still prefer Swift Swim for the 260 Speed tier. On ladder, Pikalytics shows Last Respects (97.6%) / Wave Crash (94.4%) / Aqua Jet (86.7%) / Flip Turn (74.5%) — a spread equally viable with either ability depending on the team shell.
 
 ## Sun Teams
 Weather setter: Torkoal (Drought), Mega Charizard Y (Drought on Mega), Mega Meganium (Mega Sol sets Sun on Mega entry).

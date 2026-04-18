@@ -1,8 +1,8 @@
 /**
- * Natural language → SQL filter parser for stat-based Pokemon queries.
+ * Natural language → structured filter parser for stat-based Pokemon queries.
  *
  * Converts queries like "fast Water type with high special attack" into
- * SQL WHERE predicates that LanceDB can execute directly.
+ * typed conditions the Supabase query builder can apply.
  */
 
 // ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ const POKEMON_TYPES = [
   "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy",
 ];
 
-function extractTypes(query: string): string[] {
+export function extractTypes(query: string): string[] {
   const q = query.toLowerCase();
   // Use word boundary regex to avoid matching substrings (e.g. "water" in "waterproof")
   return POKEMON_TYPES.filter((t) => {
@@ -47,7 +47,7 @@ function extractTypes(query: string): string[] {
 // Stat extraction
 // ---------------------------------------------------------------------------
 
-interface StatCondition {
+export interface StatCondition {
   column: string;
   operator: ">=" | "<=";
   value: number;
@@ -72,7 +72,7 @@ const STAT_NAMES: Record<string, string> = {
   "base stat": "stat_bst",
 };
 
-function extractStatConditions(query: string): StatCondition[] {
+export function extractStatConditions(query: string): StatCondition[] {
   const q = query.toLowerCase();
   const conditions: StatCondition[] = [];
 
@@ -142,7 +142,7 @@ function extractStatConditions(query: string): StatCondition[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Parse a natural language stat query into a LanceDB SQL WHERE predicate.
+ * Parse a natural language stat query into a Postgres SQL WHERE predicate.
  * Returns null if the query doesn't contain stat-based conditions.
  */
 export function buildStatFilter(question: string): string | null {
@@ -153,11 +153,8 @@ export function buildStatFilter(question: string): string | null {
 
   const parts: string[] = [];
 
-  // NOTE: We intentionally skip the data_category filter here.
-  // LanceDB has a bug where combining the scalar-indexed data_category column
-  // with non-indexed columns (col_type1, stat_*) in a single WHERE clause
-  // returns incomplete results. Since only Pokemon/Mega rows have non-null
-  // stat columns, the stat filters naturally exclude other categories.
+  // NOTE: data_category is not filtered here — only Pokemon/Mega rows have
+  // non-null stat columns, so the stat filters naturally exclude other categories.
 
   // Type filter
   for (const type of types) {

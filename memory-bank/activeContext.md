@@ -1,71 +1,77 @@
-# Active Context (2026-04-16)
+# Active Context (2026-04-18)
 
-## Current State: System Accuracy Audit Complete + All Improvements Implemented
+## Next Steps (2026-04-18, post-regression triage)
 
-234-test audit identified 3 ranking weaknesses and 6 improvement areas. All recommendations (A-F) implemented and validated. Full regression: **251/251 tests passing** across 4 test suites.
+- **Data priority hierarchy** implemented in `lib/rag.ts` rerank (see tier baseline block):
+  1. Tournament data (`tournament_teams.csv`) — +0.010 on team-intent queries
+  2. Usage data (`pikalytics_usage.csv`) — +0.007 on team/usage-intent queries
+  3. YouTube transcripts (`data/transcripts/*.md`) — +0.003 baseline
+  4. Matrices (`matchup_matrix.csv`) — −0.003 off-intent (still +0.03 on counter)
+  5. Older references (`validation_notes.md`) — −0.020 hard demote
+  Knowledge docs (curated `data/knowledge/*.md`) sit orthogonal: +0.020 baseline
+  only when the query is **not** a pure entity lookup (pokemon/move/item
+  name without strategic intent). Intent-specific boosts layered on top.
+- Test baseline after hierarchy: **247/251** (calc 41, integration 73,
+  stress 111, eval 22). Remaining failures are test-data nits (eval expects
+  `team_building_theory.md` for Fake Out / item queries where items.csv is
+  clearly more relevant) and one semantic-mismatch case (TR setters query
+  where TR transcripts dominate over the TR section of team_archetypes.md).
+- Deploy webapp to Vercel preview (per plan step #2).
+- Fix Tailwind 4 CSS blocker in webapp.
+- Author `data/knowledge/singles_meta.md` from hoshinjosh / istarlytv transcripts.
+- Reconcile `meta_snapshot.md` with AngrySlowbroPlus tier list (Sinistcha vs Incineroar #1).
+- Codify TheDelybird's 5 template archetypes (sun / Floette-balance / rain / sand / snow) into `team_archetypes.md`.
 
-### What Was Done (2026-04-16 — this session)
+## Current State: Vector Store Migrated to Supabase pgvector
 
-**A. Mega Charizard X/Y Data Fix:**
-- Renamed both forms in `mega_evolutions.csv` from "Mega Charizard" to "Mega Charizard X" / "Mega Charizard Y"
-- Added prefix matching in `lib/calc/data.ts` `findMega()` so "Mega Charizard" still resolves (to X)
-- Fixed critical bug: both X and Y shared Map key "mega charizard", Y overwrote X — Mega Charizard X was completely inaccessible in damage calc
+LanceDB is fully retired. All RAG retrieval and indexing now run against a managed Supabase project shared with `pokeke.shop`, using `pc_`-namespaced tables. Everything else (embedding model, intent classifier, RRF hybrid, boosts, structured stat filters) is unchanged.
 
-**B. RAG Ranking Improvements (lib/rag.ts):**
-- Added `hasItemKeyword` and `hasTeamKeyword` to QueryIntent interface
-- Item chunk boost: +0.03 when query has item intent
-- Team chunk penalty: -0.015 for non-team queries (prevents tournament teams drowning entity data)
-- B1 (knowledge boost for usage queries) was attempted but reverted — cascading failures across eval/test suites; the boost was too aggressive for the RRF score scale
+### What Was Done (2026-04-18 — migration session)
 
-**C. Structured Query Fixes (lib/structured-query.ts):**
-- C1: Wired up "worst"/"bad" stat qualifiers (were in STAT_QUALIFIERS but not extractStatConditions)
-- C2: Added SpDef to "bulky" filter (was only HP + Def)
-- C3: Word-boundary regex for type matching (prevents "water" matching "waterproof")
-
-**D. Data Quality:**
-- Removed duplicate tournament team PC99 (identical to PC132, same replica code SNE72HTH6T)
-
-**E. Ability Modifier Calc Tests (scripts/test-calc.ts):**
-- Added 16 new ability tests: Helping Hand (1.5x), Friend Guard (0.75x), Multiscale (Mega Dragonite), Thick Fat (Mega Venusaur), Tough Claws (Mega Charizard X), Mega Launcher (Mega Blastoise), Adaptability (Mega Beedrill), Guts (Machamp), Tinted Lens (Vivillon), Filter (Aggron), Technician (Scizor), Sharpness (Garchomp), Aurora Veil (phys+spec), Piercing Drill (Mega Excadrill)
-- Tests use mega-vs-base comparison pattern (mega?.ability takes precedence over set.ability)
-
-**F. npm Test Scripts (package.json):**
-- `npm test` — runs all 4 suites sequentially
-- `npm run test:calc` / `test:rag` / `test:integration` / `test:stress` — individual suites
-
-**Stress Test Suite (scripts/stress-test.ts):**
-- 111 tests across 7 tiers: Simple Lookups (23), Champions Mechanics (10), Negative/Absence (29), Damage Calc Edge Cases (19), Complex Multi-Entity (10), Intent Classification (10), Strategic Reasoning (10)
+- Enabled `vector` extension; applied `create_pc_schema` migration (pc_chunks + pc_index_meta + 6 indexes + RLS policies) via `supabase_pokeke` MCP.
+- Created `pc_hybrid_search` RPC — single-round-trip RRF over pgvector ANN + Postgres `websearch_to_tsquery` FTS.
+- New `lib/supabase.ts` client factory (manual root-`.env` loader, accepts both Next and Vite env names, ref project `xvddfzeimjmfzznhqutb`).
+- Rewrote `lib/rag.ts` query path against the RPC; `runStructuredFilter()` uses supabase-js query builder. `checkStaleness()` now async, reads from `pc_index_meta`.
+- Rewrote `scripts/index-data.ts` storage: batched upserts to `pc_chunks`, pagination for incremental mode, meta upserted to `pc_index_meta`.
+- Rewrote `scripts/debug-db.ts` + `scripts/test-suite.ts`'s `testIndexLifecycle` against Supabase.
+- Copied 2,224 existing vectors from `.lancedb/chunks` → `pc_chunks` (no re-embedding).
+- Removed `@lancedb/lancedb` and `apache-arrow` from root and webapp `package.json`; cleaned `webapp/next.config.ts serverExternalPackages`.
+- Updated `CLAUDE.md`, `.claude/commands/lookup.md`, `.claude/commands/reindex.md`, `scraper_youtube.py` docstring, memory-bank tech/system docs.
 
 ### Systems Status
-- **RAG system**: 1,911 chunks across 72 files; MiniLM-L6-v2 (384-dim, ~80MB)
-- **Test suites**: **251/251 total** — calc 41/41, integration 74/74, eval 25/25, stress 111/111
-- **Pokemon data**: 191 Pokemon (186 base + 5 Rotom forms)
-- **Tournament teams**: 135 teams (was 136, removed duplicate)
-- **Matrices**: 249 sets × 249 = 61,752 matchup + efficiency pairs
-- **Pikalytics**: 84 Pokemon with tournament data
-- **Transcripts**: 43 files from 31 unique channels
-- **Skills**: `/lookup`, `/team`, `/calc`, `/research`, `/refresh`, `/reindex` all operational
+- **RAG system**: Supabase pc_chunks with 2,224 chunks. HNSW (cosine) + GIN FTS. Structured filter + hybrid RPC both verified.
+- **Env**: root `.env` holds Vite-style vars; `webapp/.env.local` holds Next-style vars; both work.
+- **Pokemon data**: 191 Pokemon (186 base + 5 Rotom forms).
+- **Tournament teams**: 314 teams. **Pikalytics**: 84 Pokemon. **Transcripts**: 63 files. **Knowledge files**: 8.
+- **Skills**: `/lookup`, `/team`, `/calc`, `/research`, `/refresh`, `/reindex` all operational against Supabase.
+
+### Smoke-tested
+- `scripts/debug-db.ts` → 2224 rows, category distribution unchanged from LanceDB.
+- `scripts/search.ts "highest attack water types"` → structured filter fires, top results: Gyarados, Sharpedo, Quaquaval, Mega Gyarados, Mega Feraligatr.
+- `scripts/index-data.ts` (incremental) → "Nothing to index. Done." Zero new chunks.
+- Webapp `/api/search` hit during migration returned Supabase-backed results with `rrf_score` scoring.
 
 ### Running Tests
 ```bash
-npm test                          # All 251 tests (calc + integration + eval + stress)
-npm run test:calc                 # 41-test calc suite (stats, damage, abilities)
-npm run test:integration          # 74-test RAG suite (embedding, translation, search, lifecycle)
-npm run test:rag                  # 25-test eval suite (recall, MRR, per-category)
-npm run test:stress               # 111-test stress suite (7 tiers of accuracy)
-npx tsx scripts/calc.ts "Garchomp Earthquake vs Incineroar"  # CLI smoke test
+npm test                          # All 251 tests (calc + integration + eval + stress) — NOT YET RUN against Supabase
+npm run test:calc                 # 41-test calc suite (unaffected by migration)
+npm run test:integration          # 74-test RAG suite (exercises pc_chunks + pc_index_meta)
+npm run test:rag                  # 25-test eval suite
+npm run test:stress               # 111-test stress suite
 ```
 
 ### Known Issues
-- Floette has no base stats (Serebii page layout issue — 1/186 affected)
-- 102/191 Pokemon have no Pikalytics data (insufficient tournament appearances)
-- Mr. Rime has no Pikalytics page (slug format unknown)
-- Alolan Ninetales forms still outstanding
-- LanceDB scalar index bug: workaround in place (omit category from structured WHERE)
-- Vague meta queries ("what's good in the meta") return transcripts instead of meta_snapshot — known ranking gap, B1 fix reverted due to cascading failures
+- Floette has no base stats (Serebii page layout issue — 1/186 affected).
+- ~107/191 Pokemon have no Pikalytics data (insufficient tournament appearances).
+- Mr. Rime has no Pikalytics page (slug format unknown).
+- Vague meta queries ("what's good in the meta") return transcripts instead of meta_snapshot — known ranking gap.
+- `meta_snapshot.md` still lists Incineroar at the top; conflicts with Sinistcha #1 claim from AngrySlowbroPlus — needs reconciliation.
+- Webapp has a separate Tailwind 4 CSS blocker (unrelated to vector store migration).
 
-### What's Next
-- Alolan Ninetales form variants (same pattern as Rotom forms)
-- YouTube scraper re-run when IP cooldown lifts
-- WolfeyVGC daily series (April 11-30) still mostly uncaptured
-- Meta evolution: new regulations, balance patches, data refreshes via `/refresh`
+### What's Next (concrete, ordered by leverage)
+1. **Run full `npm test` against Supabase** — confirm no regressions vs the LanceDB-era 251/251 baseline. First real validation beyond smoke tests.
+2. **Deploy webapp to Vercel preview** — the whole point of this migration. Confirm cold-start improvement now that the 30-50MB LanceDB native binary is gone.
+3. **Resolve webapp Tailwind 4 CSS blocker** — tracked in `webapp/HANDOVER.md`; separate task the user deferred.
+4. **Create `data/knowledge/singles_meta.md`** — Singles ladder is diverging from Doubles and has no KB coverage (iStarlyTV + HoshinJosh transcripts already indexed).
+5. **Reconcile `meta_snapshot.md`** with AngrySlowbroPlus tier list (Sinistcha #1 vs Incineroar #1 drift).
+6. **Codify TheDelybird's 5 template team archetypes** (sun / Floette-balance / rain / sand / snow) with EV pastes — transcripts already indexed, needs structured extraction.

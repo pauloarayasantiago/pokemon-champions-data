@@ -20,3 +20,4 @@ Infernal Parade,Ghost,Special,16,65,100,Has a 30% chance of burning the target. 
 Revival Blessing,Normal,Status,,--,--,Revives a Pokémon in the user's party that has fainted and restores 1/2 of that Pokémon's max HP.,0,,1,--,101,0
 Double Shock,Electric,Physical,,--,--,The user loses the Electric type. This move fails unless it is used by an Electric type.,0,,5,120,100,0
 Syrup Bomb,Grass,Special,12,60,90,Gives the target the Syrupy status for 3 turns.,100,,10,60,85,100
+King's Shield,Steel,Status,16,--,--,Protects the user from attacks. Contact moves that make contact lower the attacker's Attack stat by 1 stage (nerfed from 2 stages in S/V). Fails if used in succession.,0,,10,--,--,0

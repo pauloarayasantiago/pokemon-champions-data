@@ -1,6 +1,6 @@
 Search the project's vector database before reading files.
 
-This project has a LanceDB vector index containing all Pokémon Champions game data, documentation, and project context files — pre-chunked and embedded for semantic search.
+This project has a Supabase pgvector index (`pc_chunks`) containing all Pokémon Champions game data, documentation, and project context files — pre-chunked and embedded for semantic search.
 
 ## How to search
 
@@ -16,7 +16,7 @@ npx tsx scripts/search.ts "<natural language question>" [topK]
 
 ## What's indexed
 
-The index (`scripts/index-data.ts` -> `.lancedb/`) contains:
+The index (`scripts/index-data.ts` -> Supabase `pc_chunks` table) contains:
 
 - **Pokémon** (186): Names, types, abilities, and full move lists from `pokemon_champions.csv`
 - **Mega Evolutions** (59): Base Pokémon, mega form name, types, and abilities from `mega_evolutions.csv`
