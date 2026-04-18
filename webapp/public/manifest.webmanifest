@@ -1,0 +1,38 @@
+{
+  "name": "Champions VGC",
+  "short_name": "ChampionsVGC",
+  "description": "Pokemon Champions (2026) VGC Doubles team-building assistant",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["games", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Team Builder",
+      "short_name": "Team",
+      "url": "/team"
+    },
+    {
+      "name": "Damage Calc",
+      "short_name": "Calc",
+      "url": "/calc"
+    }
+  ]
+}
