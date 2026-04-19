@@ -15,8 +15,9 @@ export interface EvalCase {
   /**
    * Chunk IDs that SHOULD appear in the top-K results.
    * Uses startsWith matching — e.g. "pokemon:charizard" matches "pokemon:charizard".
+   * Optional when expectedSources is used instead.
    */
-  expectedIds: string[];
+  expectedIds?: string[];
   /**
    * Chunk IDs that MUST NOT appear in the top-K results.
    * Uses startsWith matching.
