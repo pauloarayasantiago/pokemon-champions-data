@@ -31,8 +31,11 @@ async function embedLocal(texts: string[]): Promise<number[][]> {
 }
 
 async function hfCall(texts: string[], timeoutMs: number): Promise<Response> {
+  // Use the Inference Providers router — the old
+  // api-inference.huggingface.co/pipeline/feature-extraction/{model} endpoint
+  // returns 404 for sentence-transformers as of late 2024.
   return fetch(
-    `https://api-inference.huggingface.co/pipeline/feature-extraction/${HF_MODEL}`,
+    `https://router.huggingface.co/hf-inference/models/${HF_MODEL}/pipeline/feature-extraction`,
     {
       method: "POST",
       headers: {
