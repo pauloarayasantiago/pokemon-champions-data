@@ -1,0 +1,341 @@
+{
+  "timestamp": "2026-04-19T03:46:59.010Z",
+  "models": [
+    "nemotron-super",
+    "gemma-4-31b"
+  ],
+  "tests": [
+    "tool_workflow",
+    "banned_item",
+    "banned_mech",
+    "team_json",
+    "validate_loop"
+  ],
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "modelKey": "nemotron-super",
+      "pass": false,
+      "reason": "pokedex not called with Dragonite (calls: [])",
+      "latencyMs": 72597,
+      "turns": 7,
+      "toolCallLog": [
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "item": "Dragonium Z",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Extreme Speed",
+              "Protect"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "item": "Dragonium Z",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Extreme Speed",
+              "Protect"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "item": "Weakness Policy",
+            "megaStone": "Dragonium Z",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Extreme Speed",
+              "Protect"
+            ]
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Dragonite item Champions VGC",
+            "topK": 5
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "megaStone": "Dragonium Z",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Extreme Speed",
+              "Protect"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Extreme Speed",
+              "Protect"
+            ]
+          }
+        }
+      ],
+      "contentPreview": "**VGC Doubles – “Mega‑Dragonite” Core (Champions Rules) – 6 Pokémon**\n\n| # | Pokémon (Megas/Forms) | Item | Ability | Moves (4) | Role / Synergy |\n|---|------------------------|------|---------|-----------|----------------|\n| 1 | **Dragonite** (Mega) | **Weakness Policy** | Multiscale | • Dragon Dan"
+    },
+    {
+      "testId": "banned_item",
+      "modelKey": "nemotron-super",
+      "pass": true,
+      "reason": "Did not recommend Life Orb (soft pass — check content manually)",
+      "latencyMs": 15597,
+      "turns": 3,
+      "toolCallLog": [
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "item": "Life Orb",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Fire Punch",
+              "Extreme Speed"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Dragonite",
+            "ability": "Multiscale",
+            "item": "Weakness Policy",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Fire Punch",
+              "Extreme Speed"
+            ]
+          }
+        }
+      ],
+      "contentPreview": "In **Champions** Dragonite (and all other Pokémon) **cannot hold an item** – the format strips items entirely. So you won’t be giving it a Life Orb, Weakness Policy, Choice Band, etc.; the Pokémon simply fights without one.\n\n### What to run instead\n\n**Ability:** **Multiscale** (the only legal abilit"
+    },
+    {
+      "testId": "banned_mech",
+      "modelKey": "nemotron-super",
+      "pass": false,
+      "reason": "Suggested using Terastallization",
+      "latencyMs": 28507,
+      "turns": 1,
+      "toolCallLog": [],
+      "contentPreview": "**Short answer:** No—Terastallizing Dragonite into a Normal‑type will *not* boost Extreme Speed’s power, and the drawbacks generally outweigh any marginal benefit you might get from the change in coverage.\n\n---\n\n## Why Extreme Speed doesn’t get a boost\n\n| Situation | Damage multiplier |\n|-----------"
+    },
+    {
+      "testId": "team_json",
+      "modelKey": "nemotron-super",
+      "pass": false,
+      "reason": "No ```team-json block found in response",
+      "latencyMs": 33783,
+      "turns": 5,
+      "toolCallLog": [
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Pelipper",
+            "ability": "Drizzle",
+            "item": "Damp Rock",
+            "moves": [
+              "Scald",
+              "Hurricane",
+              "U-turn",
+              "Roost"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Pelipper",
+            "ability": "Drizzle",
+            "item": "Damp Rock",
+            "moves": [
+              "Hydro Pump",
+              "Hurricane",
+              "U-turn",
+              "Roost"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Pelipper",
+            "ability": "Drizzle",
+            "item": "Damp Rock",
+            "moves": [
+              "Hydro Pump",
+              "Hurricane",
+              "U-turn",
+              "Roost"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Pelipper",
+            "ability": "Drizzle",
+            "item": "Leftovers",
+            "moves": [
+              "Hydro Pump",
+              "Hurricane",
+              "U-turn",
+              "Roost"
+            ]
+          }
+        }
+      ],
+      "contentPreview": "**Rain‑Team (OU, 6‑Pokémon) – quick, balanced, and ready to storm the battle**\n\n| # | Pokémon | Ability | Item | Moves (type‑coverage) | Role |\n|---|----------|---------|------|------------------------|------|\n| 1 | **Pelipper** | Drizzle | Leftovers | • Hydro Pump <br>• Hurricane <br>• U‑turn <br>•"
+    },
+    {
+      "testId": "validate_loop",
+      "modelKey": "nemotron-super",
+      "pass": true,
+      "reason": "validate_set called 4x",
+      "latencyMs": 65831,
+      "turns": 5,
+      "toolCallLog": [
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Tyranitar",
+            "ability": "Sand Stream",
+            "item": "Choice Band",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Superpower",
+              "Pursuit"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Tyranitar",
+            "ability": "Sand Stream",
+            "item": "Assault Vest",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Superpower",
+              "Earthquake"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Tyranitar",
+            "ability": "Sand Stream",
+            "item": "Choice Band",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Superpower",
+              "Earthquake"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Tyranitar",
+            "ability": "Sand Stream",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Superpower",
+              "Earthquake"
+            ]
+          }
+        }
+      ],
+      "contentPreview": "**Sand‑Rush Team (Champions) – No‑Item, Sand‑Stream Core**\n\nAll of the Pokémon below are legal in the *Champions* format (no held items, standard abilities, and moves that exist in the metagame). The team is built around a permanent **sandstorm** created by **Tyranitar**. With the *Sand Rush* abilit"
+    },
+    {
+      "testId": "tool_workflow",
+      "modelKey": "gemma-4-31b",
+      "pass": false,
+      "reason": "pokedex not called with Dragonite (calls: [])",
+      "latencyMs": 1978,
+      "turns": 1,
+      "toolCallLog": [],
+      "error": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 400,\\n    \\\"message\\\": \\\"API Key not found. Please pass a valid API key.\\\",\\n    \\\"status\\\": \\\"INVALID_ARGUMENT\\\",\\n    \\\"details\\\": [\\n      {\\n        \\\"@type\\\": \\\"type.googleapis.com/googl",
+      "contentPreview": ""
+    },
+    {
+      "testId": "banned_item",
+      "modelKey": "gemma-4-31b",
+      "pass": true,
+      "reason": "Did not recommend Life Orb (soft pass — check content manually)",
+      "latencyMs": 2736,
+      "turns": 1,
+      "toolCallLog": [],
+      "error": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 400,\\n    \\\"message\\\": \\\"API Key not found. Please pass a valid API key.\\\",\\n    \\\"status\\\": \\\"INVALID_ARGUMENT\\\",\\n    \\\"details\\\": [\\n      {\\n        \\\"@type\\\": \\\"type.googleapis.com/googl",
+      "contentPreview": ""
+    },
+    {
+      "testId": "banned_mech",
+      "modelKey": "gemma-4-31b",
+      "pass": true,
+      "reason": "Did not recommend Tera (soft pass — check content manually)",
+      "latencyMs": 325,
+      "turns": 1,
+      "toolCallLog": [],
+      "error": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 400,\\n    \\\"message\\\": \\\"API Key not found. Please pass a valid API key.\\\",\\n    \\\"status\\\": \\\"INVALID_ARGUMENT\\\",\\n    \\\"details\\\": [\\n      {\\n        \\\"@type\\\": \\\"type.googleapis.com/googl",
+      "contentPreview": ""
+    },
+    {
+      "testId": "team_json",
+      "modelKey": "gemma-4-31b",
+      "pass": false,
+      "reason": "No ```team-json block found in response",
+      "latencyMs": 357,
+      "turns": 1,
+      "toolCallLog": [],
+      "error": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 400,\\n    \\\"message\\\": \\\"API Key not found. Please pass a valid API key.\\\",\\n    \\\"status\\\": \\\"INVALID_ARGUMENT\\\",\\n    \\\"details\\\": [\\n      {\\n        \\\"@type\\\": \\\"type.googleapis.com/googl",
+      "contentPreview": ""
+    },
+    {
+      "testId": "validate_loop",
+      "modelKey": "gemma-4-31b",
+      "pass": false,
+      "reason": "validate_set was never called",
+      "latencyMs": 393,
+      "turns": 1,
+      "toolCallLog": [],
+      "error": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 400,\\n    \\\"message\\\": \\\"API Key not found. Please pass a valid API key.\\\",\\n    \\\"status\\\": \\\"INVALID_ARGUMENT\\\",\\n    \\\"details\\\": [\\n      {\\n        \\\"@type\\\": \\\"type.googleapis.com/googl",
+      "contentPreview": ""
+    }
+  ]
+}

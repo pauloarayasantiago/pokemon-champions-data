@@ -15,6 +15,7 @@
     "test:calc": "tsx scripts/test-calc.ts",
     "test:validator": "tsx scripts/test-validator.ts",
     "test:team": "tsx scripts/eval-team.ts",
+    "eval:models": "tsx scripts/eval-models.ts",
     "test:rag": "tsx scripts/eval.ts",
     "test:integration": "tsx scripts/test-suite.ts",
     "test:stress": "tsx scripts/stress-test.ts"

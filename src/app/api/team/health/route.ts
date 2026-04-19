@@ -19,6 +19,7 @@ const PROVIDER_ENV: Record<Provider, string[]> = {
   openrouter: ["OPENROUTER_API_KEY"],
   gemini: ["GOOGLE_GENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"],
   groq: ["GROQ_API_KEY"],
+  ollama: ["OLLAMA_BASE_URL", "OLLAMA_REMOTE_URL"], // Ollama: key-less by default; presence of URL env counts as configured
 };
 
 async function checkSupabase(): Promise<Check> {

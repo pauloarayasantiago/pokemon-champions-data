@@ -68,6 +68,38 @@ function toOpenAITools(tools?: Tool[]) {
   }));
 }
 
+function parseArgFrags(
+  frags: string[],
+): { ok: true; value: Record<string, unknown> } | { ok: false; error: string } {
+  if (frags.length === 0) return { ok: true, value: {} };
+  const tryParse = (s: string) => {
+    try {
+      const v = JSON.parse(s);
+      return v && typeof v === "object" && !Array.isArray(v)
+        ? (v as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  };
+  // Strategy A: concatenate all frags (standard OpenAI streaming).
+  const concat = frags.join("");
+  const concatParsed = tryParse(concat);
+  if (concatParsed) return { ok: true, value: concatParsed };
+  // Strategy B: provider sent full-replacement frags; take the last valid one.
+  for (let i = frags.length - 1; i >= 0; i--) {
+    const p = tryParse(frags[i]);
+    if (p) return { ok: true, value: p };
+  }
+  // Strategy C: skip the first frag (often "{}" starter) and concat the rest.
+  if (frags.length > 1) {
+    const rest = frags.slice(1).join("");
+    const p = tryParse(rest);
+    if (p) return { ok: true, value: p };
+  }
+  return { ok: false, error: `unparseable after ${frags.length} frag(s)` };
+}
+
 function mapFinishReason(reason?: string): FinishReason {
   if (reason === "tool_calls") return "tool_calls";
   if (reason === "length") return "length";
@@ -162,7 +194,7 @@ export async function* compatChatStream(
   let buffer = "";
   const partialTools = new Map<
     number,
-    { id: string; name: string; args: string }
+    { id: string; name: string; argFrags: string[] }
   >();
   let finishReason: FinishReason | null = null;
   let contentEmitted = false;
@@ -184,6 +216,9 @@ export async function* compatChatStream(
         const choice = evt.choices?.[0];
         const delta = choice?.delta;
         const message = choice?.message;
+        if (process.env.LLM_DEBUG === "1") {
+          console.log("[compat-raw]", JSON.stringify(evt).slice(0, 500));
+        }
         if (message?.content && typeof message.content === "string") {
           finalMessageContent = message.content;
         }
@@ -207,19 +242,11 @@ export async function* compatChatStream(
         if (delta.tool_calls) {
           for (const tc of delta.tool_calls) {
             const idx = tc.index ?? 0;
-            const cur = partialTools.get(idx) ?? { id: "", name: "", args: "" };
+            const cur = partialTools.get(idx) ?? { id: "", name: "", argFrags: [] as string[] };
             if (tc.id) cur.id = tc.id;
             if (tc.function?.name) cur.name = tc.function.name;
             if (tc.function?.arguments) {
-              const frag = tc.function.arguments;
-              let fragIsComplete = false;
-              try {
-                JSON.parse(frag);
-                fragIsComplete = true;
-              } catch {
-                fragIsComplete = false;
-              }
-              cur.args = fragIsComplete ? frag : cur.args + frag;
+              cur.argFrags.push(tc.function.arguments);
             }
             partialTools.set(idx, cur);
           }
@@ -242,17 +269,14 @@ export async function* compatChatStream(
 
   for (const t of partialTools.values()) {
     if (!t.name) continue;
-    try {
+    const parsed = parseArgFrags(t.argFrags);
+    if (parsed.ok) {
       yield {
         type: "tool_call",
-        toolCall: {
-          id: t.id,
-          name: t.name,
-          arguments: t.args ? JSON.parse(t.args) : {},
-        },
+        toolCall: { id: t.id, name: t.name, arguments: parsed.value },
       };
-    } catch (e) {
-      yield { type: "error", error: `Bad tool_use JSON: ${(e as Error).message}` };
+    } else {
+      yield { type: "error", error: `Bad tool_use JSON: ${parsed.error} (frags=${JSON.stringify(t.argFrags).slice(0, 300)})` };
     }
   }
   yield { type: "done", finishReason: finishReason ?? "stop" };

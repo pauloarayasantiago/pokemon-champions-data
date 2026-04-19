@@ -1,0 +1,15 @@
+{
+  "model": "nemotron-super",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "from-report",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": false,
+      "error": "Bad tool_use JSON: Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)",
+      "totalMs": 2520,
+      "contentChars": 0,
+      "toolCalls": {}
+    }
+  ]
+}

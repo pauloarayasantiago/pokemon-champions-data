@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-04-19T04:13:28.218Z",
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "banned_mech"
+  ],
+  "results": [
+    {
+      "testId": "banned_mech",
+      "modelKey": "qwen2.5-7b",
+      "pass": true,
+      "reason": "Did not endorse Tera (check content — may be soft pass)",
+      "latencyMs": 34,
+      "turns": 1,
+      "toolCallLog": [],
+      "error": "fetch error: TypeError: fetch failed",
+      "contentPreview": ""
+    }
+  ]
+}

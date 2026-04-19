@@ -340,8 +340,70 @@ Production `/search` on `pokemon-champions-data.vercel.app` first 500'd, then su
 
 Verified end-to-end by the user: `/search?q=incineroar` returns result cards on the live deploy. Auto-memory `project_vercel_embedding_constraint.md` updated with the router URL, the 404 pitfall, and instructions to re-check the HF provider docs if it shifts again.
 
+### Regional Variant Data Integration (2026-04-18)
+
+- **Audit**: Cross-referenced `pokemon_champions.csv` against `tournament_teams.csv` — discovered 10 regional/form variants used in tournaments but missing from the base data.
+- **Added 10 entries** to `pokemon_champions.csv` (201 total, was 191):
+  - `Ninetales-Alola` (Ice/Fairy, Snow Cloak|Snow Warning, 73/67/75/81/100/109)
+  - `Arcanine-Hisui` (Fire/Rock, Intimidate|Flash Fire|Rock Head, 90/115/80/95/80/95)
+  - `Typhlosion-Hisui` (Fire/Ghost, Blaze|Flash Fire|Frisk, 73/84/78/119/85/95)
+  - `Zoroark-Hisui` (Normal/Ghost, Illusion, 55/100/60/125/60/110)
+  - `Goodra-Hisui` (Steel/Dragon, Sap Sipper|Shell Armor|Gooey, 80/100/100/110/150/60)
+  - `Decidueye-Hisui` (Grass/Fighting, Overgrow|Long Reach, 88/112/80/95/95/60)
+  - `Slowking-Galar` (Poison/Psychic, Curious Medicine|Own Tempo|Regenerator, 95/65/80/110/110/30)
+  - `Tauros-Paldea-Aqua` (Water/Fighting, Intimidate|Anger Point|Cud Chew, 75/110/105/30/70/100)
+  - `Tauros-Paldea-Blaze` (Fire/Fighting, Intimidate|Anger Point|Cud Chew, 75/110/105/30/70/100)
+  - `Basculegion-F` (Water/Ghost, same abilities/moves as M-form, 120/92/65/100/75/78)
+- **Line ending fix**: Appended rows had Unix `\n`; original file uses Windows `\r\n`. Fixed with `sed -i` + re-CRLF so CSV parser sees consistent endings. Confirmed 202 chunks generated after fix (was 192 from the broken append).
+- **Reindexed**: `scripts/index-data.ts` → 10 new chunks upserted. Total: 2,074 chunks.
+- **Verified**: Searches for "Zoroark Hisui Normal Ghost" and "Ninetales Alola Snow Warning" both surface the new chunks as top results.
+- **Already in data** (confirmed present before this session): Sneasler, Kleavor, Wyrdeer, Basculegion (M-form).
+- **Pending follow-up**: Rebuild matchup + efficiency matrices to include the 10 new variants; verify move pools against Champions-specific sources.
+
+### Team Output Auto-Save System (2026-04-18)
+
+- **Created `team_outputs/` folder** — archive of all team-building responses from Claude.
+  - First file: `team_outputs/mega-scizor-teams-2026-04-18.md`
+- **Updated `CLAUDE.md`** — added "CRITICAL: Always Save Team Outputs" section instructing Claude to Write team outputs to `team_outputs/[topic]-[YYYY-MM-DD].md` before responding.
+- **Saved feedback memory** at `~/.claude/projects/.../memory/feedback_save_team_outputs.md` for cross-session persistence.
+- **Why not a hook**: `Stop` hook fires after Claude finishes but receives no response content — cannot detect team output patterns. CLAUDE.md instruction is more reliable.
+
+### LLM Provider Evaluation & Multi-Tier Architecture (2026-04-19) — EXPLORATION
+
+**Goal**: Find free/self-hosted alternatives to Claude for the webapp's agentic team-builder.
+
+**Eval harness built** (`scripts/eval-models.ts`):
+- 5 tests covering the critical failure modes observed in practice: tool ordering, banned items, banned mechanics, structured output, validation loop
+- Query-aware search stub returns Champions-specific knowledge so models don't fall back to S/V training data
+- Finalization turn: pushes one extra user message if no `team-json` block found
+- Snapshot output to `snapshots/model-eval-[timestamp].json`
+- `npm run eval:models` — supports `--models`, `--tests`, `--verbose`
+
+**Models evaluated** (two rounds):
+
+| Model | Provider | Score v1 | Score v2 (improved harness) |
+|-------|----------|----------|------------------------------|
+| GPT-OSS 120B | OpenRouter free | 2/5 | 3/5 |
+| Gemma 4 31B IT | OpenRouter free | N/A (auth error) | N/A |
+| Gemma 4 26B A4B | OpenRouter free | 1/5 | 3/5 |
+
+Key findings:
+- GPT-OSS 120B: ignores banned mechanics (Tera) even after search returns the rule; can't emit `team-json`; validate loop works
+- Gemma 4 26B: emits team-json when pushed; loops pokedex obsessively (45x); ignores banned items from training data
+- Gemma 4 31B: auth error (Google API key not provisioned in OpenRouter account)
+
+**Adapter architecture wired** (not in production, all options):
+- `src/lib/llm/ollama.ts` — reuses `openai-compat.ts`, routes local vs remote by model ID prefix
+- `provider: "ollama"` added to type system
+- Local models: `qwen2.5-7b`, `llama3.1-8b` (fit in RTX 2070 SUPER 8GB VRAM)
+- Remote models: `remote-gemma4`, `remote-qwen32b` (placeholders — server GPU unknown)
+- All wired in `MODEL_REGISTRY` and `AVAILABLE_MODELS`
+
+**Bug fixed**: `lib/calc/data.ts` `readCSV()` — CSV parser crashed on a literal `\r` (two ASCII chars `\`+`r`) at end of `pokemon_champions.csv`. Fixed with `relax_column_count: true` + second-column presence filter.
+
+**Nothing decided**: all provider options remain open. Gemini 2.5 Flash is still the production default.
+
 ## Pending
-- Alolan Ninetales form variants (same pattern as Rotom)
 - WolfeyVGC daily April series — some videos still uncaptured
 - Consider creating `data/knowledge/singles_meta.md` (Singles diverging from Doubles, no KB coverage)
 - Reconcile `meta_snapshot.md` with AngrySlowbroPlus tier list (Sinistcha-first vs Incineroar-first)

@@ -14,8 +14,14 @@ let _megas: Map<string, MegaData> | null = null;
 let _moves: Map<string, MoveData> | null = null;
 
 function readCSV(filename: string): Record<string, string>[] {
-  const raw = readFileSync(join(ROOT, filename), "utf-8");
-  return parse(raw, { columns: true, skip_empty_lines: true });
+  const raw = readFileSync(join(ROOT, filename), "utf-8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const rows: Record<string, string>[] = parse(raw, {
+    columns: true,
+    skip_empty_lines: true,
+    relax_quotes: true,
+    relax_column_count: true,
+  });
+  return rows.filter((r) => r.name && r.name.trim().length > 0 && r[Object.keys(r)[1]] !== undefined);
 }
 
 function parseStats(row: Record<string, string>): BaseStats {

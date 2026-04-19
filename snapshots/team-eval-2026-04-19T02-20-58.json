@@ -1,0 +1,15 @@
+{
+  "model": "llama-3.3-70b",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "from-report",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": false,
+      "error": "no team-json fenced block found",
+      "totalMs": 755,
+      "contentChars": 0,
+      "toolCalls": {}
+    }
+  ]
+}

@@ -1,4 +1,73 @@
-# Active Context (2026-04-18)
+# Active Context (2026-04-19, updated post-model-eval session)
+
+## LLM Provider Exploration (2026-04-19) — OPTIONS ONLY, nothing decided
+
+### Context
+Evaluating free/self-hosted alternatives to Claude for the webapp's team-building agent. Two OpenRouter free models were confirmed working (Gemma 4 31B had auth issues). A 5-test eval harness was built (`scripts/eval-models.ts`) and iterated twice.
+
+### Hardware Baseline (user's local machine)
+- GPU: RTX 2070 SUPER (8GB VRAM) — limits local Ollama to 7-9B Q4 models
+- RAM: 32GB system, i7-10700K 8 cores
+- User also manages a remote server (GPU specs TBD)
+
+### Eval Harness (`scripts/eval-models.ts`)
+- 5 tests: `tool_workflow`, `banned_item`, `banned_mech`, `team_json`, `validate_loop`
+- Agentic loop with real `pokedex`/`validate_set` (in-memory), stubbed `search` (query-aware Champions knowledge KB)
+- Finalization turn: if no `team-json` block found, pushes one more message requesting it
+- Supports `--models`, `--tests`, `--verbose` flags
+- Snapshots saved to `snapshots/model-eval-[timestamp].json`
+- `npm run eval:models`
+
+### Latest Eval Results (v2 harness, 2026-04-19)
+| Test             | GPT-OSS 120B (OpenRouter) | Gemma 4 26B A4B (OpenRouter) |
+|------------------|:-------------------------:|:----------------------------:|
+| tool_workflow    | ✓                         | ✓                            |
+| banned_item      | ✓ (soft)                  | ✗ recommends Life Orb        |
+| banned_mech      | ✗ endorses Tera           | ✓                            |
+| team_json        | ✗ never emits block       | ✓ 6-mon Rain team            |
+| validate_loop    | ✓ 5x                      | ✗ calls pokedex 45x, no val  |
+| **Score**        | **3/5**                   | **3/5**                      |
+
+Key behavioral patterns:
+- GPT-OSS: respects some rules but can't emit team-json; validate_loop works but ordered wrong
+- Gemma 4 26B: emits team-json when prompted; calls pokedex obsessively (45x in one test); ignores banned items from training data
+
+### Registered Models (all options, none final)
+```
+OpenRouter hosted (working):
+  nemotron-super   → openai/gpt-oss-120b:free
+  gemma-4-26b      → google/gemma-4-26b-a4b-it
+  gemma-4-31b      → google/gemma-4-31b-it:free  (auth errors — may need Google key in OpenRouter)
+
+Ollama local (wired, not yet tested — needs Ollama install + model pull):
+  qwen2.5-7b       → qwen2.5:7b-instruct-q4_K_M  (fits in 8GB VRAM)
+  llama3.1-8b      → llama3.1:8b-instruct-q4_K_M (fits in 8GB VRAM)
+
+Ollama remote (wired, pending server GPU info):
+  remote-gemma4    → gemma3:27b-it-q4_K_M         (needs ~20GB VRAM)
+  remote-qwen32b   → qwen2.5:32b-instruct-q4_K_M  (needs ~20GB VRAM)
+```
+
+### Adapter Architecture (wired, not deployed to production)
+- `src/lib/llm/ollama.ts` — thin wrapper over `openai-compat.ts`
+  - Local: reads `OLLAMA_BASE_URL` (default `http://localhost:11434`)
+  - Remote: reads `OLLAMA_REMOTE_URL` + `OLLAMA_REMOTE_KEY`
+  - Routes local vs remote by model ID prefix (`remote-*`)
+- `provider: "ollama"` added to Provider type
+- All new model IDs added to `ModelId` union and `MODEL_REGISTRY`
+- `AVAILABLE_MODELS` updated with labels
+
+### Known Issues / Open Questions
+- GPT-OSS 120B endorses Tera despite search stub returning the correct rule — model ignores tool results when they contradict training data
+- Gemma 4 26B loops pokedex calls uncontrollably on validate_loop test (45x, never transitions to validate_set)
+- Gemma 4 31B (free) needs a Google API key provisioned in OpenRouter account — not tested
+- Remote server GPU unknown — `remote-gemma4`/`remote-qwen32b` model names are placeholders
+- Need to test local Ollama (Ollama not yet installed/models not pulled)
+
+### Bug Fixed This Session
+`lib/calc/data.ts` `readCSV()`: CSV parser crashed on trailing literal `\r` (backslash-r text, not carriage return) appended to last row of `pokemon_champions.csv`. Fixed with `relax_column_count: true` + filter on rows missing second column.
+
+---
 
 ## Next Steps (2026-04-18, post-regression triage)
 
@@ -39,9 +108,9 @@ LanceDB is fully retired. All RAG retrieval and indexing now run against a manag
 - Updated `CLAUDE.md`, `.claude/commands/lookup.md`, `.claude/commands/reindex.md`, `scraper_youtube.py` docstring, memory-bank tech/system docs.
 
 ### Systems Status
-- **RAG system**: Supabase pc_chunks with 2,224 chunks. HNSW (cosine) + GIN FTS. Structured filter + hybrid RPC both verified.
+- **RAG system**: Supabase pc_chunks with 2,074 chunks. HNSW (cosine) + GIN FTS. Structured filter + hybrid RPC both verified.
 - **Env**: root `.env` holds Vite-style vars; `webapp/.env.local` holds Next-style vars; both work.
-- **Pokemon data**: 191 Pokemon (186 base + 5 Rotom forms).
+- **Pokemon data**: 201 Pokemon (186 base + 5 Rotom forms + 10 regional/form variants).
 - **Tournament teams**: 314 teams. **Pikalytics**: 84 Pokemon. **Transcripts**: 63 files. **Knowledge files**: 8.
 - **Skills**: `/lookup`, `/team`, `/calc`, `/research`, `/refresh`, `/reindex` all operational against Supabase.
 
@@ -74,3 +143,5 @@ npm run test:stress               # 111-test stress suite
 3. **Create `data/knowledge/singles_meta.md`** — Singles ladder is diverging from Doubles and has no KB coverage (iStarlyTV + HoshinJosh transcripts already indexed).
 4. **Reconcile `meta_snapshot.md`** with AngrySlowbroPlus tier list (Sinistcha #1 vs Incineroar #1 drift).
 5. **Codify TheDelybird's 5 template team archetypes** (sun / Floette-balance / rain / sand / snow) with EV pastes — transcripts already indexed, needs structured extraction.
+6. **Rebuild matchup + efficiency matrices** with the 10 new regional variants included — current matrices only cover the original 191 Pokemon set.
+7. **Verify regional variant move pools** against Champions-specific sources — current moves are based on S/V/Legends Arceus and may diverge.

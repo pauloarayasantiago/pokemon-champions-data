@@ -33,7 +33,14 @@
       "Bash(npm run *)",
       "mcp__5e2406ef-9f6b-4849-b4a6-be3e51ca06a5__get_deployment",
       "mcp__5e2406ef-9f6b-4849-b4a6-be3e51ca06a5__list_deployments",
-      "Bash(grep -iE \"ite$|ite,|stone\" items.csv)"
+      "Bash(grep -iE \"ite$|ite,|stone\" items.csv)",
+      "Bash(npx tsc *)",
+      "Skill(update-config)",
+      "Bash(awk -F',' '{print NR, $1, $2, $3, $6, $7, $8, $9, $10, $11, $12}')",
+      "Bash(node:*)",
+      "Bash(wmic path:*)",
+      "Bash(wmic computersystem:*)",
+      "Bash(wmic cpu:*)"
     ]
   }
 }

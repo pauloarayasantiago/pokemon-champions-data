@@ -1,0 +1,17 @@
+{
+  "model": "gemini-2.5-flash",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "from-report",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": false,
+      "error": "no team-json fenced block found",
+      "totalMs": 19822,
+      "contentChars": 0,
+      "toolCalls": {
+        "pokedex": 1
+      }
+    }
+  ]
+}

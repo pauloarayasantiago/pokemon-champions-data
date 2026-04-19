@@ -46,6 +46,7 @@ interface FixtureResult {
   illegalItems?: Array<{ pokemon: string; item: string; reason: string }>;
   illegalAbilities?: Array<{ pokemon: string; ability: string; reason: string }>;
   megaIssues?: Array<{ pokemon: string; stone: string; reason: string }>;
+  unknownPokemon?: Array<{ pokemon: string; reason: string }>;
   archetypeOk?: boolean;
   requiredMonOk?: boolean;
   legalTeam?: boolean;
@@ -131,7 +132,7 @@ async function runFixture(fixture: Fixture, baseUrl: string, model: string): Pro
       moves: p.moves,
       item: p.item,
       ability: p.ability,
-      megaStone: p.item && /ite( x| y)?$/i.test(p.item) ? p.item : team.megaStone,
+      megaStone: p.item && /ite( x| y)?$/i.test(p.item) ? p.item : undefined,
     }),
   );
 
@@ -139,9 +140,11 @@ async function runFixture(fixture: Fixture, baseUrl: string, model: string): Pro
   const illegalItems: Array<{ pokemon: string; item: string; reason: string }> = [];
   const illegalAbilities: Array<{ pokemon: string; ability: string; reason: string }> = [];
   const megaIssues: Array<{ pokemon: string; stone: string; reason: string }> = [];
+  const unknownPokemon: Array<{ pokemon: string; reason: string }> = [];
 
   validations.forEach((v, i) => {
     const mon = team.pokemon[i].name;
+    if (!v.pokemon.valid) unknownPokemon.push({ pokemon: mon, reason: v.pokemon.reason ?? "" });
     v.moves.filter((m) => !m.valid).forEach((m) => phantomMoves.push({ pokemon: mon, move: m.name, reason: m.reason ?? "" }));
     if (v.item && !v.item.valid) illegalItems.push({ pokemon: mon, item: team.pokemon[i].item ?? "", reason: v.item.reason ?? "" });
     if (v.ability && !v.ability.valid) illegalAbilities.push({ pokemon: mon, ability: team.pokemon[i].ability ?? "", reason: v.ability.reason ?? "" });
@@ -169,6 +172,7 @@ async function runFixture(fixture: Fixture, baseUrl: string, model: string): Pro
     illegalItems,
     illegalAbilities,
     megaIssues,
+    unknownPokemon,
     archetypeOk,
     requiredMonOk,
     legalTeam,
@@ -223,6 +227,10 @@ function printReport(results: FixtureResult[]) {
     if (r.megaIssues?.length) {
       console.log(`  mega issues:`);
       r.megaIssues.forEach((p) => console.log(`    • ${p.pokemon} → ${p.stone}: ${p.reason}`));
+    }
+    if (r.unknownPokemon?.length) {
+      console.log(`  unknown pokemon (${r.unknownPokemon.length}):`);
+      r.unknownPokemon.forEach((p) => console.log(`    • ${p.pokemon}: ${p.reason}`));
     }
   }
 

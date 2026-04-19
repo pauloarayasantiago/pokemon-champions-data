@@ -271,8 +271,19 @@ export function validateSet(input: SetInput): SetValidation {
   if (input.ability) {
     const ab = input.ability.trim().toLowerCase();
     const nativeAbilities = lookup.abilities.map((a) => a.toLowerCase());
-    const megaAbility = lookup.mega?.ability.toLowerCase();
-    if (nativeAbilities.includes(ab) || (megaAbility && megaAbility === ab)) {
+    const megaAbilities = new Set<string>();
+    if (lookup.mega?.ability) megaAbilities.add(lookup.mega.ability.toLowerCase());
+    if (input.megaStone) {
+      const stoneMega = getStoneToMega().get(input.megaStone.trim().toLowerCase());
+      if (stoneMega?.ability) megaAbilities.add(stoneMega.ability.toLowerCase());
+    }
+    // Also include every known mega ability whose basePokemon matches (covers X/Y splits).
+    for (const m of getStoneToMega().values()) {
+      if (m.basePokemon.toLowerCase() === lookup.name.toLowerCase() && m.ability) {
+        megaAbilities.add(m.ability.toLowerCase());
+      }
+    }
+    if (nativeAbilities.includes(ab) || megaAbilities.has(ab)) {
       out.ability = { valid: true };
     } else {
       out.ability = { valid: false, reason: `not a native or mega ability for ${lookup.name}` };

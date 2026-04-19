@@ -109,6 +109,18 @@ When building or evaluating teams, always consider:
 - All 4 weather types are simultaneously viable (first time in modern VGC)
 - S-tier Megas: Dragonite, Clefable, Meganium, Feraligatr, Gengar, Charizard Y
 
+## CRITICAL: Always Save Team Outputs
+
+**Whenever you produce a team building response** (full team lists, Pokemon movesets, team comparisons, team evaluations), you MUST save it to `team_outputs/` using the Write tool BEFORE sending the response. Use the filename format:
+
+```
+team_outputs/[mega-or-archetype-topic]-[YYYY-MM-DD].md
+```
+
+Examples: `team_outputs/mega-scizor-teams-2026-04-18.md`, `team_outputs/rain-core-eval-2026-04-18.md`
+
+The file should contain the full markdown output exactly as shown to the user. Do not ask — just save it automatically.
+
 ## Available Skills
 
 - `/lookup <query>` — Semantic search across all indexed data

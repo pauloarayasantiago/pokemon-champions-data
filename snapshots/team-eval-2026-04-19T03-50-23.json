@@ -1,0 +1,293 @@
+{
+  "model": "nemotron-super",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "all",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": false,
+      "error": "Invalid Record Length: columns length is 12, got 1 on line 203"
+    },
+    {
+      "id": "rain-pelipper",
+      "ok": false,
+      "error": "no team-json fenced block found",
+      "totalMs": 42565,
+      "contentChars": 519,
+      "toolCalls": {
+        "search": 6,
+        "pokedex": 11
+      }
+    },
+    {
+      "id": "sun-torkoal",
+      "ok": false,
+      "error": "https://openrouter.ai/api/v1/chat/completions 429: {\"error\":{\"message\":\"Rate limit exceeded: free-models-per-min. \",\"code\":429,\"metadata\":{\"headers\":{\"X-RateLimit-Limit\":\"20\",\"X-RateLimit-Remaining\":\"0\",\"X-RateLimit-Reset\":\"1776570300000\"},\"provider_name\":null}},\"user_id\":\"user_2sxZq4s6ZxfZ1Nr7G93mqiXsnXW\"}",
+      "totalMs": 433,
+      "contentChars": 0,
+      "toolCalls": {}
+    },
+    {
+      "id": "sand-rush",
+      "ok": false,
+      "error": "https://openrouter.ai/api/v1/chat/completions 429: {\"error\":{\"message\":\"Rate limit exceeded: free-models-per-min. \",\"code\":429,\"metadata\":{\"headers\":{\"X-RateLimit-Limit\":\"16\",\"X-RateLimit-Remaining\":\"0\",\"X-RateLimit-Reset\":\"1776570360000\"},\"provider_name\":null}},\"user_id\":\"user_2sxZq4s6ZxfZ1Nr7G93mqiXsnXW\"}",
+      "totalMs": 3561,
+      "contentChars": 0,
+      "toolCalls": {
+        "search": 1
+      }
+    },
+    {
+      "id": "tr-hard",
+      "ok": false,
+      "error": "https://openrouter.ai/api/v1/chat/completions 429: {\"error\":{\"message\":\"Rate limit exceeded: free-models-per-min. \",\"code\":429,\"metadata\":{\"headers\":{\"X-RateLimit-Limit\":\"16\",\"X-RateLimit-Remaining\":\"0\",\"X-RateLimit-Reset\":\"1776570360000\"},\"provider_name\":null}},\"user_id\":\"user_2sxZq4s6ZxfZ1Nr7G93mqiXsnXW\"}",
+      "totalMs": 299,
+      "contentChars": 0,
+      "toolCalls": {}
+    },
+    {
+      "id": "tailwind-offense",
+      "ok": false,
+      "error": "Hit max tool iterations (20)",
+      "totalMs": 88802,
+      "contentChars": 0,
+      "toolCalls": {
+        "search": 6,
+        "pokedex": 6,
+        "validate_set": 8
+      }
+    },
+    {
+      "id": "counter-incineroar",
+      "ok": false,
+      "error": "Hit max tool iterations (20)",
+      "totalMs": 208047,
+      "contentChars": 0,
+      "toolCalls": {
+        "search": 8,
+        "pokedex": 8,
+        "validate_set": 4
+      }
+    },
+    {
+      "id": "goodstuffs-balance",
+      "ok": true,
+      "totalMs": 56176,
+      "contentChars": 8250,
+      "toolCalls": {
+        "pokedex": 3,
+        "search": 2,
+        "validate_set": 1
+      },
+      "team": {
+        "archetype": "Goodstuffs",
+        "megaStone": "Dragoninite",
+        "pokemon": [
+          {
+            "name": "Dragonite",
+            "item": "Dragoninite",
+            "ability": "Multiscale",
+            "moves": [
+              "Dragon Dance",
+              "Extreme Speed",
+              "Earthquake",
+              "Protect"
+            ],
+            "spread": "0/32/0/0/0/34",
+            "nature": "Jolly"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Assault Vest",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Close Combat",
+              "Darkest Lariat",
+              "Protect"
+            ],
+            "spread": "32/0/4/0/30/0",
+            "nature": "Impish"
+          },
+          {
+            "name": "Sinistcha",
+            "item": "Leftovers",
+            "ability": "Hospitality",
+            "moves": [
+              "Grassy Terrain",
+              "Life Dew",
+              "Protect",
+              "Psychic"
+            ],
+            "spread": "0/0/32/0/32/2",
+            "nature": "Calm"
+          },
+          {
+            "name": "Kingambit",
+            "item": "Bright Powder",
+            "ability": "Supreme Overlord",
+            "moves": [
+              "Sucker Punch",
+              "Iron Head",
+              "Swords Dance",
+              "Protect"
+            ],
+            "spread": "32/30/0/0/4/0",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Pelipper",
+            "item": "Misty Seed",
+            "ability": "Drizzle",
+            "moves": [
+              "Tailwind",
+              "Scald",
+              "Hurricane",
+              "Protect"
+            ],
+            "spread": "0/0/32/0/32/2",
+            "nature": "Bold"
+          },
+          {
+            "name": "Basculegion",
+            "item": "Mystic Water",
+            "ability": "Adaptability",
+            "moves": [
+              "Water Shuriken",
+              "Flip Turn",
+              "Protect",
+              "Ice Beam"
+            ],
+            "spread": "0/0/32/30/0/4",
+            "nature": "Modest"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: "
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: "
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: "
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: "
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: "
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: "
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [
+        {
+          "pokemon": "Dragonite",
+          "reason": "Not in roster. Suggestions: "
+        },
+        {
+          "pokemon": "Incineroar",
+          "reason": "Not in roster. Suggestions: "
+        },
+        {
+          "pokemon": "Sinistcha",
+          "reason": "Not in roster. Suggestions: "
+        },
+        {
+          "pokemon": "Kingambit",
+          "reason": "Not in roster. Suggestions: "
+        },
+        {
+          "pokemon": "Pelipper",
+          "reason": "Not in roster. Suggestions: "
+        },
+        {
+          "pokemon": "Basculegion",
+          "reason": "Not in roster. Suggestions: "
+        }
+      ],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": false
+    },
+    {
+      "id": "mega-gengar",
+      "ok": false,
+      "error": "Hit max tool iterations (20)",
+      "totalMs": 79062,
+      "contentChars": 0,
+      "toolCalls": {
+        "pokedex": 5,
+        "search": 4,
+        "validate_set": 11
+      }
+    },
+    {
+      "id": "azumarill-core",
+      "ok": false,
+      "error": "Hit max tool iterations (20)",
+      "totalMs": 106987,
+      "contentChars": 0,
+      "toolCalls": {
+        "pokedex": 8,
+        "search": 4,
+        "validate_set": 8
+      }
+    }
+  ]
+}

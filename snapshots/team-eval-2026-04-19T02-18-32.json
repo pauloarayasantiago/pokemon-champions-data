@@ -1,0 +1,19 @@
+{
+  "model": "nemotron-super",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "from-report",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": false,
+      "error": "Hit max tool iterations (20)",
+      "totalMs": 357238,
+      "contentChars": 0,
+      "toolCalls": {
+        "pokedex": 10,
+        "search": 9,
+        "validate_set": 1
+      }
+    }
+  ]
+}

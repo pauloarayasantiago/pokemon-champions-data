@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-04-19T03:41:29.250Z",
+  "models": [
+    "nemotron-super"
+  ],
+  "tests": [
+    "banned_item"
+  ],
+  "results": [
+    {
+      "testId": "banned_item",
+      "modelKey": "nemotron-super",
+      "pass": false,
+      "reason": "Positively recommended Life Orb",
+      "latencyMs": 20822,
+      "turns": 2,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Dragonite item best life orb competitive usage",
+            "topK": 5
+          }
+        }
+      ],
+      "contentPreview": "**Item recommendation for Dragonite in Pokémon Champions**\n\n| Item | Why it’s good for Dragonite | Verdict |\n|------|----------------------------|---------|\n| **Weakness Policy** | • Dragonite’s most common role is a bulky / physical attacker that can take a hit and return damage.<br>• When Dragonit"
+    }
+  ]
+}

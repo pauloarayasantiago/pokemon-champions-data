@@ -1,0 +1,366 @@
+{
+  "model": "nemotron-super",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "from-report",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": true,
+      "totalMs": 99186,
+      "contentChars": 8895,
+      "toolCalls": {
+        "pokedex": 2,
+        "search": 1,
+        "pokedex<|channel|>commentary": 1
+      },
+      "team": {
+        "archetype": "Snow/AuroraVeil",
+        "megaStone": "Froslassite",
+        "pokemon": [
+          {
+            "name": "Froslass",
+            "item": "Froslassite",
+            "ability": "Snow Warning",
+            "moves": [
+              "Aurora Veil",
+              "Blizzard",
+              "Shadow Ball",
+              "Protect"
+            ],
+            "spread": "24/0/0/32/0/10",
+            "nature": "Timid"
+          },
+          {
+            "name": "Glaceon",
+            "item": "Bright Powder",
+            "ability": "Snow Cloak",
+            "moves": [
+              "Aurora Veil",
+              "Ice Beam",
+              "Protect",
+              "Helping Hand"
+            ],
+            "spread": "24/0/0/32/0/10",
+            "nature": "Timid"
+          },
+          {
+            "name": "Beartic",
+            "item": "Macho Brace",
+            "ability": "Slush Rush",
+            "moves": [
+              "Icicle Crash",
+              "Ice Fang",
+              "Liquidation",
+              "Protect"
+            ],
+            "spread": "24/32/0/0/0/10",
+            "nature": "Jolly"
+          },
+          {
+            "name": "Whimsicott",
+            "item": "Mental Herb",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Encore",
+              "Moonblast",
+              "Protect"
+            ],
+            "spread": "24/0/0/32/0/10",
+            "nature": "Modest"
+          },
+          {
+            "name": "Kingambit",
+            "item": "Leftovers",
+            "ability": "Supreme Overlord",
+            "moves": [
+              "Iron Head",
+              "Sucker Punch",
+              "Kowtow Crush",
+              "Protect"
+            ],
+            "spread": "24/32/0/0/0/10",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Gengar",
+            "item": "Focus Sash",
+            "ability": "Shadow Tag",
+            "moves": [
+              "Shadow Ball",
+              "Sludge Bomb",
+              "Destiny Bond",
+              "Protect"
+            ],
+            "spread": "24/0/0/32/0/10",
+            "nature": "Timid"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Froslass"
+          },
+          "moves": [
+            {
+              "name": "Aurora Veil",
+              "valid": true
+            },
+            {
+              "name": "Blizzard",
+              "valid": true
+            },
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Glaceon"
+          },
+          "moves": [
+            {
+              "name": "Aurora Veil",
+              "valid": false,
+              "reason": "not in Glaceon's movepool"
+            },
+            {
+              "name": "Ice Beam",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Helping Hand",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": false,
+            "reason": "Froslassite is for Froslass, not Glaceon"
+          },
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Beartic"
+          },
+          "moves": [
+            {
+              "name": "Icicle Crash",
+              "valid": true
+            },
+            {
+              "name": "Ice Fang",
+              "valid": true
+            },
+            {
+              "name": "Liquidation",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": false,
+            "reason": "not in items.csv"
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": false,
+            "reason": "Froslassite is for Froslass, not Beartic"
+          },
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Encore",
+              "valid": true
+            },
+            {
+              "name": "Moonblast",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": false,
+            "reason": "Froslassite is for Froslass, not Whimsicott"
+          },
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Kingambit"
+          },
+          "moves": [
+            {
+              "name": "Iron Head",
+              "valid": true
+            },
+            {
+              "name": "Sucker Punch",
+              "valid": true
+            },
+            {
+              "name": "Kowtow Crush",
+              "valid": false,
+              "reason": "move does not exist in Champions"
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": false,
+            "reason": "Froslassite is for Froslass, not Kingambit"
+          },
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Gengar"
+          },
+          "moves": [
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Sludge Bomb",
+              "valid": true
+            },
+            {
+              "name": "Destiny Bond",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": false,
+            "reason": "Froslassite is for Froslass, not Gengar"
+          },
+          "overall": false
+        }
+      ],
+      "phantomMoves": [
+        {
+          "pokemon": "Glaceon",
+          "move": "Aurora Veil",
+          "reason": "not in Glaceon's movepool"
+        },
+        {
+          "pokemon": "Kingambit",
+          "move": "Kowtow Crush",
+          "reason": "move does not exist in Champions"
+        }
+      ],
+      "illegalItems": [
+        {
+          "pokemon": "Beartic",
+          "item": "Macho Brace",
+          "reason": "not in items.csv"
+        }
+      ],
+      "illegalAbilities": [],
+      "megaIssues": [
+        {
+          "pokemon": "Glaceon",
+          "stone": "Froslassite",
+          "reason": "Froslassite is for Froslass, not Glaceon"
+        },
+        {
+          "pokemon": "Beartic",
+          "stone": "Froslassite",
+          "reason": "Froslassite is for Froslass, not Beartic"
+        },
+        {
+          "pokemon": "Whimsicott",
+          "stone": "Froslassite",
+          "reason": "Froslassite is for Froslass, not Whimsicott"
+        },
+        {
+          "pokemon": "Kingambit",
+          "stone": "Froslassite",
+          "reason": "Froslassite is for Froslass, not Kingambit"
+        },
+        {
+          "pokemon": "Gengar",
+          "stone": "Froslassite",
+          "reason": "Froslassite is for Froslass, not Gengar"
+        }
+      ],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": false
+    }
+  ]
+}

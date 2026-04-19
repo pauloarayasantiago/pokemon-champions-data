@@ -52,7 +52,7 @@
 │   │   ├── meta_snapshot.md    Top 20 usage, WR, cores, archetypes, S-tier Megas
 │   │   ├── speed_tiers.md      Lv50 benchmarks, TR tiers, weather/Tailwind speeds
 │   │   └── champions_rules.md  Reg M-A rules, timer, bans, bugs, event schedule
-│   └── transcripts/            YouTube creator transcripts (43 markdown files, auto-discovered)
+│   └── transcripts/            YouTube creator transcripts (63 markdown files, auto-discovered)
 ├── research/                   External AI research documents (3 files, auto-discovered)
 │   ├── claude-research.md
 │   ├── Gemini.txt
@@ -62,7 +62,7 @@
 ├── scraper_pikalytics.py       Python: Pikalytics usage scraper (Accept-Language: en header)
 ├── scraper_sheets.py           Python: VGCPastes tournament team scraper (Google Sheets API)
 ├── scraper_youtube.py          Python: YouTube transcript scraper (yt-dlp + youtube-transcript-api)
-├── pokemon_champions.csv       191 Pokémon: name, types, abilities, moves, stats (186 base + 5 Rotom forms)
+├── pokemon_champions.csv       201 Pokémon: name, types, abilities, moves, stats (186 base + 5 Rotom forms + 10 regional variants)
 ├── mega_evolutions.csv         59 Mega forms: pokemon, mega_name, types, ability, stats
 ├── items.csv                   138 items: name, effect, location
 ├── moves.csv                   494 moves: name, type, category, pp, power, accuracy, effect
@@ -70,7 +70,7 @@
 ├── new_abilities.csv           4 new abilities: name, effect
 ├── mega_abilities.csv          23 megas with new abilities
 ├── pikalytics_usage.csv        84 Pokémon: usage %, rank, top moves/items/abilities/teammates
-├── tournament_teams.csv        135 teams: team ID, player, Pokemon, items, tournament info
+├── tournament_teams.csv        314 teams: team ID, player, Pokemon, items, tournament info
 ├── matchup_matrix.csv          61,752 matchup pairs: attacker, defender, best_move, damage_pct, score
 ├── efficiency_matrix.csv       61,752 efficiency entries: 26 columns (6 sub-scores + composite E + meta weight + diagnostics)
 ├── status_conditions.txt       Freeze/Paralysis/Sleep mechanic changes

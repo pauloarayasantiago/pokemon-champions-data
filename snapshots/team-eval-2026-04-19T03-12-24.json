@@ -1,0 +1,2431 @@
+{
+  "model": "nemotron-super",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "all",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": true,
+      "totalMs": 80137,
+      "contentChars": 6221,
+      "toolCalls": {
+        "pokedex": 5,
+        "search": 1,
+        "validate_set": 1
+      },
+      "team": {
+        "archetype": "Snow/Veil",
+        "megaStone": "Froslassite",
+        "pokemon": [
+          {
+            "name": "Froslass",
+            "item": "Froslassite",
+            "ability": "Snow Warning",
+            "moves": [
+              "Aurora Veil",
+              "Blizzard",
+              "Shadow Ball",
+              "Protect"
+            ],
+            "spread": "2/0/0/32/0/32",
+            "nature": "Timid"
+          },
+          {
+            "name": "Sinistcha",
+            "item": "Sitrus Berry",
+            "ability": "Hospitality",
+            "moves": [
+              "Matcha Gotcha",
+              "Strength Sap",
+              "Protect",
+              "Trick Room"
+            ],
+            "spread": "8/0/0/32/16/10",
+            "nature": "Bold"
+          },
+          {
+            "name": "Excadrill",
+            "item": "Excadrite",
+            "ability": "Piercing Drill",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Protect",
+              "Rapid Spin"
+            ],
+            "spread": "0/32/0/0/0/34",
+            "nature": "Jolly"
+          },
+          {
+            "name": "Tyranitar",
+            "item": "Leftovers",
+            "ability": "Sand Stream",
+            "moves": [
+              "Rock Slide",
+              "Crunch",
+              "Protect",
+              "Stealth Rock"
+            ],
+            "spread": "12/30/12/0/0/12",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Choice Scarf",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Flare Blitz",
+              "Darkest Lariat",
+              "Parting Shot"
+            ],
+            "spread": "8/30/0/0/0/28",
+            "nature": "Jolly"
+          },
+          {
+            "name": "Whimsicott",
+            "item": "Focus Sash",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Moonblast",
+              "Encore",
+              "Protect"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Timid"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Froslass"
+          },
+          "moves": [
+            {
+              "name": "Aurora Veil",
+              "valid": true
+            },
+            {
+              "name": "Blizzard",
+              "valid": true
+            },
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Sinistcha"
+          },
+          "moves": [
+            {
+              "name": "Matcha Gotcha",
+              "valid": true
+            },
+            {
+              "name": "Strength Sap",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Trick Room",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Excadrill"
+          },
+          "moves": [
+            {
+              "name": "Earthquake",
+              "valid": true
+            },
+            {
+              "name": "Iron Head",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Rapid Spin",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Tyranitar"
+          },
+          "moves": [
+            {
+              "name": "Rock Slide",
+              "valid": true
+            },
+            {
+              "name": "Crunch",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Stealth Rock",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Incineroar"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Flare Blitz",
+              "valid": true
+            },
+            {
+              "name": "Darkest Lariat",
+              "valid": true
+            },
+            {
+              "name": "Parting Shot",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Moonblast",
+              "valid": true
+            },
+            {
+              "name": "Encore",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "rain-pelipper",
+      "ok": true,
+      "totalMs": 98787,
+      "contentChars": 5895,
+      "toolCalls": {
+        "search": 2,
+        "pokedex": 4,
+        "validate_set": 4
+      },
+      "team": {
+        "archetype": "Rain/Swift Swim",
+        "megaStone": "Gengarite",
+        "pokemon": [
+          {
+            "name": "Pelipper",
+            "item": "Focus Sash",
+            "ability": "Drizzle",
+            "moves": [
+              "Rain Dance",
+              "U-turn",
+              "Protect",
+              "Hurricane"
+            ],
+            "spread": "2/0/0/28/0/36",
+            "nature": "Timid"
+          },
+          {
+            "name": "Basculegion",
+            "item": "Choice Scarf",
+            "ability": "Swift Swim",
+            "moves": [
+              "Last Respects",
+              "Wave Crash",
+              "Aqua Jet",
+              "Protect"
+            ],
+            "spread": "0/0/0/32/0/34",
+            "nature": "Timid"
+          },
+          {
+            "name": "Archaludon",
+            "item": "Sitrus Berry",
+            "ability": "Stamina",
+            "moves": [
+              "Electro Shot",
+              "Flash Cannon",
+              "Iron Head",
+              "Protect"
+            ],
+            "spread": "10/24/0/0/0/32",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Mega Gengar",
+            "item": "Gengarite",
+            "ability": "Shadow Tag",
+            "moves": [
+              "Shadow Ball",
+              "Focus Blast",
+              "Protect",
+              "Trick"
+            ],
+            "spread": "0/0/0/32/0/34",
+            "nature": "Modest"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Pelipper"
+          },
+          "moves": [
+            {
+              "name": "Rain Dance",
+              "valid": true
+            },
+            {
+              "name": "U-turn",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Hurricane",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Basculegion"
+          },
+          "moves": [
+            {
+              "name": "Last Respects",
+              "valid": true
+            },
+            {
+              "name": "Wave Crash",
+              "valid": true
+            },
+            {
+              "name": "Aqua Jet",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Archaludon"
+          },
+          "moves": [
+            {
+              "name": "Electro Shot",
+              "valid": true
+            },
+            {
+              "name": "Flash Cannon",
+              "valid": true
+            },
+            {
+              "name": "Iron Head",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Gengar"
+          },
+          "moves": [
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Focus Blast",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Trick",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "sun-torkoal",
+      "ok": true,
+      "totalMs": 137096,
+      "contentChars": 5024,
+      "toolCalls": {
+        "search": 1,
+        "pokedex": 6,
+        "validate_set": 7
+      },
+      "team": {
+        "archetype": "Sun/Speed",
+        "megaStone": "Charizardite Y",
+        "pokemon": [
+          {
+            "name": "Torkoal",
+            "item": "Charcoal",
+            "ability": "Drought",
+            "moves": [
+              "Eruption",
+              "Heat Wave",
+              "Solar Beam",
+              "Protect"
+            ],
+            "spread": "16/0/0/32/0/18",
+            "nature": "Modest"
+          },
+          {
+            "name": "Venusaur",
+            "item": "Focus Sash",
+            "ability": "Overgrow",
+            "moves": [
+              "Solar Beam",
+              "Sludge Bomb",
+              "Protect",
+              "Growth"
+            ],
+            "spread": "4/0/0/32/30/0",
+            "nature": "Modest"
+          },
+          {
+            "name": "Charizard",
+            "item": "Charizardite Y",
+            "ability": "Drought",
+            "moves": [
+              "Heat Wave",
+              "Solar Beam",
+              "Protect",
+              "Focus Blast"
+            ],
+            "spread": "2/0/0/32/0/32",
+            "nature": "Timid"
+          },
+          {
+            "name": "Whimsicott",
+            "item": "Focus Sash",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Light Screen",
+              "Protect",
+              "Moonblast"
+            ],
+            "spread": "32/0/0/0/0/32",
+            "nature": "Timid"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Torkoal"
+          },
+          "moves": [
+            {
+              "name": "Eruption",
+              "valid": true
+            },
+            {
+              "name": "Heat Wave",
+              "valid": true
+            },
+            {
+              "name": "Solar Beam",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Venusaur"
+          },
+          "moves": [
+            {
+              "name": "Solar Beam",
+              "valid": true
+            },
+            {
+              "name": "Sludge Bomb",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Growth",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Charizard"
+          },
+          "moves": [
+            {
+              "name": "Heat Wave",
+              "valid": true
+            },
+            {
+              "name": "Solar Beam",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Focus Blast",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": false,
+            "reason": "not a native or mega ability for Charizard"
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Light Screen",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Moonblast",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [
+        {
+          "pokemon": "Charizard",
+          "ability": "Drought",
+          "reason": "not a native or mega ability for Charizard"
+        }
+      ],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": false
+    },
+    {
+      "id": "sand-rush",
+      "ok": true,
+      "totalMs": 123098,
+      "contentChars": 4512,
+      "toolCalls": {
+        "search": 1,
+        "pokedex": 5,
+        "validate_set": 4
+      },
+      "team": {
+        "archetype": "Sand Rush",
+        "megaStone": "Tyranitarite",
+        "pokemon": [
+          {
+            "name": "Tyranitar",
+            "item": "Tyranitarite",
+            "ability": "Sand Stream",
+            "moves": [
+              "Rock Slide",
+              "Protect",
+              "Crunch",
+              "Low Kick"
+            ],
+            "spread": "20/0/32/0/14/0",
+            "nature": "Impish"
+          },
+          {
+            "name": "Excadrill",
+            "item": "Excadrite",
+            "ability": "Piercing Drill",
+            "moves": [
+              "Iron Head",
+              "Rock Slide",
+              "Earthquake",
+              "Protect"
+            ],
+            "spread": "2/32/0/0/0/32",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Whimsicott",
+            "item": "Focus Sash",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Moonblast",
+              "Helping Hand",
+              "Protect"
+            ],
+            "spread": "34/0/0/0/0/32",
+            "nature": "Timid"
+          },
+          {
+            "name": "Garchomp",
+            "item": "Focus Sash",
+            "ability": "Sand Veil",
+            "moves": [
+              "Earthquake",
+              "Stone Edge",
+              "Swords Dance",
+              "Protect"
+            ],
+            "spread": "34/0/0/0/0/32",
+            "nature": "Jolly"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Tyranitar"
+          },
+          "moves": [
+            {
+              "name": "Rock Slide",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Crunch",
+              "valid": true
+            },
+            {
+              "name": "Low Kick",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Excadrill"
+          },
+          "moves": [
+            {
+              "name": "Iron Head",
+              "valid": true
+            },
+            {
+              "name": "Rock Slide",
+              "valid": true
+            },
+            {
+              "name": "Earthquake",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Moonblast",
+              "valid": true
+            },
+            {
+              "name": "Helping Hand",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Garchomp"
+          },
+          "moves": [
+            {
+              "name": "Earthquake",
+              "valid": true
+            },
+            {
+              "name": "Stone Edge",
+              "valid": true
+            },
+            {
+              "name": "Swords Dance",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "tr-hard",
+      "ok": true,
+      "totalMs": 139005,
+      "contentChars": 5677,
+      "toolCalls": {
+        "search": 2,
+        "pokedex": 7,
+        "validate_set": 6
+      },
+      "team": {
+        "archetype": "Hard Trick Room",
+        "megaStone": "Crabominite",
+        "pokemon": [
+          {
+            "name": "Sinistcha",
+            "item": "Sitrus Berry",
+            "ability": "Hospitality",
+            "moves": [
+              "Trick Room",
+              "Giga Drain",
+              "Strength Sap",
+              "Protect"
+            ],
+            "spread": "0/4/0/32/0/30",
+            "nature": "Modest"
+          },
+          {
+            "name": "Crabominable",
+            "item": "Crabominite",
+            "ability": "Iron Fist",
+            "moves": [
+              "Ice Hammer",
+              "Close Combat",
+              "Protect",
+              "Helping Hand"
+            ],
+            "spread": "2/32/30/0/0/2",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Slowbro",
+            "item": "Slowbronite",
+            "ability": "Shell Armor",
+            "moves": [
+              "Trick Room",
+              "Expanding Force",
+              "Shadow Ball",
+              "Protect"
+            ],
+            "spread": "2/0/30/28/0/6",
+            "nature": "Quiet"
+          },
+          {
+            "name": "Hatterene",
+            "item": "Sitrus Berry",
+            "ability": "Magic Bounce",
+            "moves": [
+              "Trick Room",
+              "Expanding Force",
+              "Protect",
+              "Dazzling Gleam"
+            ],
+            "spread": "0/0/0/28/30/8",
+            "nature": "Modest"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Sitrus Berry",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Parting Shot",
+              "Snarl",
+              "Protect"
+            ],
+            "spread": "0/32/30/0/4/0",
+            "nature": "Adamant"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Sinistcha"
+          },
+          "moves": [
+            {
+              "name": "Trick Room",
+              "valid": true
+            },
+            {
+              "name": "Giga Drain",
+              "valid": true
+            },
+            {
+              "name": "Strength Sap",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Crabominable"
+          },
+          "moves": [
+            {
+              "name": "Ice Hammer",
+              "valid": true
+            },
+            {
+              "name": "Close Combat",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Helping Hand",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Slowbro"
+          },
+          "moves": [
+            {
+              "name": "Trick Room",
+              "valid": true
+            },
+            {
+              "name": "Expanding Force",
+              "valid": true
+            },
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Hatterene"
+          },
+          "moves": [
+            {
+              "name": "Trick Room",
+              "valid": true
+            },
+            {
+              "name": "Expanding Force",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Dazzling Gleam",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Incineroar"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Parting Shot",
+              "valid": true
+            },
+            {
+              "name": "Snarl",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "tailwind-offense",
+      "ok": true,
+      "totalMs": 90238,
+      "contentChars": 6421,
+      "toolCalls": {
+        "search": 1,
+        "pokedex": 6,
+        "validate_set": 6
+      },
+      "team": {
+        "archetype": "Tailwind Offense",
+        "megaStone": "Dragoninite",
+        "pokemon": [
+          {
+            "name": "Whimsicott",
+            "item": "Focus Sash",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Protect",
+              "Moonblast",
+              "Taunt"
+            ],
+            "spread": "0/0/0/32/0/34",
+            "nature": "Timid"
+          },
+          {
+            "name": "Dragonite",
+            "item": "Dragoninite",
+            "ability": "Multiscale",
+            "moves": [
+              "Dragon Dance",
+              "Outrage",
+              "Extreme Speed",
+              "Protect"
+            ],
+            "spread": "0/32/0/0/0/34",
+            "nature": "Jolly",
+            "mega": true
+          },
+          {
+            "name": "Sneasler",
+            "item": "Sitrus Berry",
+            "ability": "Unburden",
+            "moves": [
+              "Fake Out",
+              "Dire Claw",
+              "Swords Dance",
+              "Protect"
+            ],
+            "spread": "0/32/0/0/0/34",
+            "nature": "Jolly"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Sitrus Berry",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Flare Blitz",
+              "Darkest Lariat",
+              "Protect"
+            ],
+            "spread": "16/32/0/0/0/18",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Garchomp",
+            "item": "Yache Berry",
+            "ability": "Sand Veil",
+            "moves": [
+              "Earthquake",
+              "Rock Slide",
+              "Stealth Rock",
+              "Protect"
+            ],
+            "spread": "0/32/0/0/0/34",
+            "nature": "Jolly"
+          },
+          {
+            "name": "Kingambit",
+            "item": "Black Glasses",
+            "ability": "Supreme Overlord",
+            "moves": [
+              "Swords Dance",
+              "Kowtow Cleave",
+              "Iron Head",
+              "Protect"
+            ],
+            "spread": "0/32/0/0/0/34",
+            "nature": "Adamant"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Moonblast",
+              "valid": true
+            },
+            {
+              "name": "Taunt",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Dragonite"
+          },
+          "moves": [
+            {
+              "name": "Dragon Dance",
+              "valid": true
+            },
+            {
+              "name": "Outrage",
+              "valid": true
+            },
+            {
+              "name": "Extreme Speed",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Sneasler"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Dire Claw",
+              "valid": true
+            },
+            {
+              "name": "Swords Dance",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Incineroar"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Flare Blitz",
+              "valid": true
+            },
+            {
+              "name": "Darkest Lariat",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Garchomp"
+          },
+          "moves": [
+            {
+              "name": "Earthquake",
+              "valid": true
+            },
+            {
+              "name": "Rock Slide",
+              "valid": true
+            },
+            {
+              "name": "Stealth Rock",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Kingambit"
+          },
+          "moves": [
+            {
+              "name": "Swords Dance",
+              "valid": true
+            },
+            {
+              "name": "Kowtow Cleave",
+              "valid": true
+            },
+            {
+              "name": "Iron Head",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "counter-incineroar",
+      "ok": true,
+      "totalMs": 188461,
+      "contentChars": 7796,
+      "toolCalls": {
+        "search": 2,
+        "pokedex": 7,
+        "validate_set": 6
+      },
+      "team": {
+        "archetype": "Tailwind/Trap",
+        "megaStone": "Gengarite",
+        "pokemon": [
+          {
+            "name": "Gengar",
+            "item": "Gengarite",
+            "ability": "Shadow Tag",
+            "moves": [
+              "Perish Song",
+              "Sludge Bomb",
+              "Shadow Ball",
+              "Protect"
+            ],
+            "spread": "2/0/0/28/0/36",
+            "nature": "Timid"
+          },
+          {
+            "name": "Aggron",
+            "item": "Aggronite",
+            "ability": "Filter",
+            "moves": [
+              "Iron Defense",
+              "Body Press",
+              "Heavy Slam",
+              "Protect"
+            ],
+            "spread": "0/32/34/0/0/0",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Whimsicott",
+            "item": "Focus Sash",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Encore",
+              "Helping Hand",
+              "Protect"
+            ],
+            "spread": "0/0/0/32/0/34",
+            "nature": "Timid"
+          },
+          {
+            "name": "Garchomp",
+            "item": "Leftovers",
+            "ability": "Sand Veil",
+            "moves": [
+              "Earthquake",
+              "Dragon Claw",
+              "Iron Head",
+              "Protect"
+            ],
+            "spread": "0/32/30/0/4/0",
+            "nature": "Adamant"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Gengar"
+          },
+          "moves": [
+            {
+              "name": "Perish Song",
+              "valid": true
+            },
+            {
+              "name": "Sludge Bomb",
+              "valid": true
+            },
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Aggron"
+          },
+          "moves": [
+            {
+              "name": "Iron Defense",
+              "valid": true
+            },
+            {
+              "name": "Body Press",
+              "valid": true
+            },
+            {
+              "name": "Heavy Slam",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Encore",
+              "valid": true
+            },
+            {
+              "name": "Helping Hand",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Garchomp"
+          },
+          "moves": [
+            {
+              "name": "Earthquake",
+              "valid": true
+            },
+            {
+              "name": "Dragon Claw",
+              "valid": true
+            },
+            {
+              "name": "Iron Head",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "goodstuffs-balance",
+      "ok": true,
+      "totalMs": 119051,
+      "contentChars": 4576,
+      "toolCalls": {
+        "pokedex": 5,
+        "search": 3,
+        "validate_set": 4
+      },
+      "team": {
+        "archetype": "Goodstuffs",
+        "megaStone": "Dragoninite",
+        "pokemon": [
+          {
+            "name": "Dragonite",
+            "item": "Dragoninite",
+            "ability": "Multiscale",
+            "moves": [
+              "Hurricane",
+              "Draco Meteor",
+              "Protect",
+              "Tailwind"
+            ],
+            "spread": "0/0/0/32/34/0",
+            "nature": "Modest"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Sitrus Berry",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Parting Shot",
+              "Flare Blitz",
+              "Protect"
+            ],
+            "spread": "0/30/0/0/0/36",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Azumarill",
+            "item": "Sitrus Berry",
+            "ability": "Huge Power",
+            "moves": [
+              "Play Rough",
+              "Aqua Jet",
+              "Waterfall",
+              "Protect"
+            ],
+            "spread": "32/0/28/0/6/0",
+            "nature": "Bold"
+          },
+          {
+            "name": "Pelipper",
+            "item": "Choice Scarf",
+            "ability": "Drizzle",
+            "moves": [
+              "Hurricane",
+              "Scald",
+              "Wide Guard",
+              "Protect"
+            ],
+            "spread": "0/0/20/32/14/0",
+            "nature": "Modest"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Dragonite"
+          },
+          "moves": [
+            {
+              "name": "Hurricane",
+              "valid": true
+            },
+            {
+              "name": "Draco Meteor",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Tailwind",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Incineroar"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Parting Shot",
+              "valid": true
+            },
+            {
+              "name": "Flare Blitz",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Azumarill"
+          },
+          "moves": [
+            {
+              "name": "Play Rough",
+              "valid": true
+            },
+            {
+              "name": "Aqua Jet",
+              "valid": true
+            },
+            {
+              "name": "Waterfall",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Pelipper"
+          },
+          "moves": [
+            {
+              "name": "Hurricane",
+              "valid": true
+            },
+            {
+              "name": "Scald",
+              "valid": false,
+              "reason": "not in Pelipper's movepool"
+            },
+            {
+              "name": "Wide Guard",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": false
+        }
+      ],
+      "phantomMoves": [
+        {
+          "pokemon": "Pelipper",
+          "move": "Scald",
+          "reason": "not in Pelipper's movepool"
+        }
+      ],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": false
+    },
+    {
+      "id": "mega-gengar",
+      "ok": true,
+      "totalMs": 149399,
+      "contentChars": 6720,
+      "toolCalls": {
+        "pokedex": 6,
+        "search": 1,
+        "validate_set": 7
+      },
+      "team": {
+        "archetype": "Trap/Speed",
+        "megaStone": "Gengarite",
+        "pokemon": [
+          {
+            "name": "Gengar",
+            "item": "Gengarite",
+            "ability": "Shadow Tag",
+            "moves": [
+              "Shadow Ball",
+              "Protect",
+              "Perish Song",
+              "Mean Look"
+            ],
+            "spread": "2/0/0/32/0/32",
+            "nature": "Timid"
+          },
+          {
+            "name": "Whimsicott",
+            "item": "Focus Sash",
+            "ability": "Prankster",
+            "moves": [
+              "Tailwind",
+              "Encore",
+              "Protect",
+              "Moonblast"
+            ],
+            "spread": "32/0/2/0/0/32",
+            "nature": "Timid"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Sitrus Berry",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Protect",
+              "Flare Blitz",
+              "Snarl"
+            ],
+            "spread": "20/16/0/0/0/30",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Tyranitar",
+            "item": "Choice Scarf",
+            "ability": "Sand Stream",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Protect",
+              "Stealth Rock"
+            ],
+            "spread": "30/16/20/0/0/0",
+            "nature": "Adamant"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Gengar"
+          },
+          "moves": [
+            {
+              "name": "Shadow Ball",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Perish Song",
+              "valid": true
+            },
+            {
+              "name": "Mean Look",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": {
+            "valid": true
+          },
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Whimsicott"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Encore",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Moonblast",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Incineroar"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Flare Blitz",
+              "valid": true
+            },
+            {
+              "name": "Snarl",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Tyranitar"
+          },
+          "moves": [
+            {
+              "name": "Stone Edge",
+              "valid": true
+            },
+            {
+              "name": "Crunch",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            },
+            {
+              "name": "Stealth Rock",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        }
+      ],
+      "phantomMoves": [],
+      "illegalItems": [],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": true
+    },
+    {
+      "id": "azumarill-core",
+      "ok": true,
+      "totalMs": 145839,
+      "contentChars": 6927,
+      "toolCalls": {
+        "search": 3,
+        "pokedex": 5,
+        "validate_set": 1
+      },
+      "team": {
+        "archetype": "Sun‑Rain‑Grass",
+        "megaStone": "Gardevoirite",
+        "pokemon": [
+          {
+            "name": "Azumarill",
+            "item": "Sitrus Berry",
+            "ability": "Huge Power",
+            "moves": [
+              "Belly Drum",
+              "Play Rough",
+              "Aqua Jet",
+              "Protect"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Incineroar",
+            "item": "Leftovers",
+            "ability": "Intimidate",
+            "moves": [
+              "Fake Out",
+              "Parting Shot",
+              "Flare Blitz",
+              "Darkest Lariat"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Mega Gardevoir",
+            "item": "Choice Scarf",
+            "ability": "Pixilate",
+            "moves": [
+              "Dazzling Gleam",
+              "Psychic",
+              "Calm Mind",
+              "Protect"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Modest"
+          },
+          {
+            "name": "Pelipper",
+            "item": "Damp Rock",
+            "ability": "Drizzle",
+            "moves": [
+              "Tailwind",
+              "Hurricane",
+              "Icy Wind",
+              "Protect"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Relaxed"
+          },
+          {
+            "name": "Rillaboom",
+            "item": "Assault Vest",
+            "ability": "Grassy Surge",
+            "moves": [
+              "Grassy Glide",
+              "Wood Hammer",
+              "Stomping Tantrum",
+              "Protect"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Adamant"
+          },
+          {
+            "name": "Rotom-Wash",
+            "item": "Leftovers",
+            "ability": "Levitate",
+            "moves": [
+              "Hydro Pump",
+              "Thunderbolt",
+              "Defog",
+              "Protect"
+            ],
+            "spread": "0/0/0/0/0/32",
+            "nature": "Bold"
+          }
+        ]
+      },
+      "validations": [
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Azumarill"
+          },
+          "moves": [
+            {
+              "name": "Belly Drum",
+              "valid": true
+            },
+            {
+              "name": "Play Rough",
+              "valid": true
+            },
+            {
+              "name": "Aqua Jet",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Incineroar"
+          },
+          "moves": [
+            {
+              "name": "Fake Out",
+              "valid": true
+            },
+            {
+              "name": "Parting Shot",
+              "valid": true
+            },
+            {
+              "name": "Flare Blitz",
+              "valid": true
+            },
+            {
+              "name": "Darkest Lariat",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Gardevoir"
+          },
+          "moves": [
+            {
+              "name": "Dazzling Gleam",
+              "valid": true
+            },
+            {
+              "name": "Psychic",
+              "valid": true
+            },
+            {
+              "name": "Calm Mind",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": true
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Pelipper"
+          },
+          "moves": [
+            {
+              "name": "Tailwind",
+              "valid": true
+            },
+            {
+              "name": "Hurricane",
+              "valid": true
+            },
+            {
+              "name": "Icy Wind",
+              "valid": true
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": false,
+            "reason": "not in items.csv"
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": false,
+            "reason": "Not in roster. Suggestions: Bellibolt, Slowbro, Flareon"
+          },
+          "moves": [],
+          "item": null,
+          "ability": null,
+          "megaStone": null,
+          "overall": false
+        },
+        {
+          "pokemon": {
+            "valid": true,
+            "resolvedName": "Rotom-Wash"
+          },
+          "moves": [
+            {
+              "name": "Hydro Pump",
+              "valid": true
+            },
+            {
+              "name": "Thunderbolt",
+              "valid": true
+            },
+            {
+              "name": "Defog",
+              "valid": false,
+              "reason": "not in Rotom-Wash's movepool"
+            },
+            {
+              "name": "Protect",
+              "valid": true
+            }
+          ],
+          "item": {
+            "valid": true
+          },
+          "ability": {
+            "valid": true
+          },
+          "megaStone": null,
+          "overall": false
+        }
+      ],
+      "phantomMoves": [
+        {
+          "pokemon": "Rotom-Wash",
+          "move": "Defog",
+          "reason": "not in Rotom-Wash's movepool"
+        }
+      ],
+      "illegalItems": [
+        {
+          "pokemon": "Pelipper",
+          "item": "Damp Rock",
+          "reason": "not in items.csv"
+        }
+      ],
+      "illegalAbilities": [],
+      "megaIssues": [],
+      "unknownPokemon": [
+        {
+          "pokemon": "Rillaboom",
+          "reason": "Not in roster. Suggestions: Bellibolt, Slowbro, Flareon"
+        }
+      ],
+      "archetypeOk": true,
+      "requiredMonOk": true,
+      "legalTeam": false
+    }
+  ]
+}

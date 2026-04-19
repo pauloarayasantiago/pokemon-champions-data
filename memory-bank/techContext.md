@@ -30,6 +30,56 @@
   - Service: `SUPABASE_SERVICE_KEY` or `SUPABASE_SECRET`
 - Client factory: `lib/supabase.ts` → `supabaseServer()` / `supabaseAnon()`; manually loads root `.env` once at startup so CLI scripts work without dotenv
 
+## LLM Provider Layer (`src/lib/llm/`) — Under Exploration
+
+All providers route through `openai-compat.ts` (OpenAI chat completions format). The dispatcher in `src/lib/llm.ts` picks the right adapter from `MODEL_REGISTRY`.
+
+### Adapters
+| File | Provider | Notes |
+|------|----------|-------|
+| `anthropic.ts` | Anthropic SDK | Claude Sonnet/Opus — paid |
+| `gemini.ts` | Google AI Studio | `gemini-2.5-flash` — free, used as app default |
+| `groq.ts` | Groq | `llama-3.3-70b-versatile` — free |
+| `openrouter.ts` | OpenRouter | Free tier: `gpt-oss-120b`, `gemma-4-26b`, `gemma-4-31b` |
+| `ollama.ts` | Ollama (local + remote) | **Option being explored** — not in production |
+
+### Ollama Option (not yet in production)
+- Local: `OLLAMA_BASE_URL` (default `http://localhost:11434`) — for 7-9B models on RTX 2070 SUPER 8GB
+- Remote: `OLLAMA_REMOTE_URL` + `OLLAMA_REMOTE_KEY` — for larger models on a managed server
+- Routes by model ID prefix: `remote-*` → remote config, others → local config
+- No new adapter logic needed — reuses `compatChat`/`compatChatStream`
+
+### Model Registry (all options, none final for production)
+```
+Free hosted (OpenRouter):
+  nemotron-super  → openai/gpt-oss-120b:free
+  gemma-4-26b     → google/gemma-4-26b-a4b-it
+  gemma-4-31b     → google/gemma-4-31b-it:free
+
+Free hosted (direct):
+  gemini-2.5-flash → gemini-2.5-flash (Gemini API — current app default)
+  llama-3.3-70b    → llama-3.3-70b-versatile (Groq)
+
+Paid:
+  sonnet-4-6      → claude-sonnet-4-6 (Anthropic)
+  opus-4-7        → claude-opus-4-7 (Anthropic)
+
+Ollama local (option, needs install):
+  qwen2.5-7b      → qwen2.5:7b-instruct-q4_K_M
+  llama3.1-8b     → llama3.1:8b-instruct-q4_K_M
+
+Ollama remote (option, server GPU TBD):
+  remote-gemma4   → gemma3:27b-it-q4_K_M    (placeholder — update after pull)
+  remote-qwen32b  → qwen2.5:32b-instruct-q4_K_M
+```
+
+### Eval Harness (`scripts/eval-models.ts`)
+- 5 tests: tool_workflow, banned_item, banned_mech, team_json, validate_loop
+- Query-aware search stub (9 Champions knowledge entries, no Supabase needed)
+- Finalization turn for team-json (pushes one extra message if block not found)
+- `npm run eval:models` — supports `--models`, `--tests`, `--verbose`
+- Results snapshot to `snapshots/model-eval-[timestamp].json`
+
 ## npm Scripts
 - `calc` — `npx tsx scripts/calc.ts` (CLI damage calculator)
 - `calc:web` — `npx serve tools/NCP-VGC-Damage-Calculator` (reference web calc)

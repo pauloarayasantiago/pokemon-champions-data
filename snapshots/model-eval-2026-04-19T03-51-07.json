@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-04-19T03:51:07.403Z",
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    "tool_workflow",
+    "banned_item",
+    "banned_mech",
+    "team_json",
+    "validate_loop"
+  ],
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "pokedex called 1x, including Dragonite",
+      "latencyMs": 38901,
+      "turns": 2,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "thought\nSince \"Mega Dragonite\" is not a standard mechanic in official Pokémon games (Dragonite does not have a Mega Evolution), I will interpret this request in one of two ways for a high-level VGC (Doubles) team build:\n\n1.  **The \"Pseudo-Mega\" approach:** A Dragonite utilizing its strongest possibl"
+    },
+    {
+      "testId": "banned_item",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Positively recommended Life Orb",
+      "latencyMs": 12070,
+      "turns": 2,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "dragonite"
+          }
+        }
+      ],
+      "contentPreview": " talent: Dragonite's ability **Multiscale** is arguably its most important asset. It reduces damage taken when at full HP, making it an incredibly strong setup sweeper.\n\nRegarding **Life Orb**:\nWhile Life Orb increases your damage by 30%, it it comes at the cost of 10% HP every turn. This can **comp"
+    },
+    {
+      "testId": "banned_mech",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Suggested using Terastallization",
+      "latencyMs": 11045,
+      "turns": 1,
+      "toolCallLog": [],
+      "contentPreview": "The short answer is **yes, it is a very strong and common strategy**, but whether you *should* do it depends entirely on your team's composition and the specific meta you are playing in.\n\nHere is a breakdown of the pros and cons of Tera Normal Dragonite.\n\n### The Pros: Why it works\n1.  **Extreme Spe"
+    },
+    {
+      "testId": "team_json",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "No ```team-json block found in response",
+      "latencyMs": 13304,
+      "turns": 1,
+      "toolCallLog": [],
+      "contentPreview": "To build a competitive Rain team, we need to focus on three pillars: a **Rain Setter**, **Swift Swim Sweepers** to take advantage of the speed boost, and **Defensive Cores** to handle the Electric and Grass types that threaten Water types.\n\nHere is a high-tier Rain team featuring **Mega Swampert** a"
+    },
+    {
+      "testId": "validate_loop",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "validate_set was never called",
+      "latencyMs": 12402,
+      "turns": 1,
+      "toolCallLog": [],
+      "contentPreview": "To build a successful **Sand Rush** team, we need to focus on three core pillars: **Sandstorm setup** (Tyranitar), **Speed control/Sweeping** (Excadrill), and **Support** (to ensure the sand stays up and the sweepers stay healthy).\n\nHere is a competitive team structure designed around the Tyranitar "
+    }
+  ]
+}

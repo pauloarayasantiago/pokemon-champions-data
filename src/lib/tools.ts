@@ -334,6 +334,22 @@ export async function executeTool(
     }
     if (call.name === "validate_set") {
       const out = validateSet(call.arguments as unknown as SetInput);
+      if (!out.overall) {
+        const badMoves = out.moves.filter((m) => !m.valid).map((m) => m.name);
+        const badItem = out.item && !out.item.valid ? true : false;
+        const badAbility = out.ability && !out.ability.valid ? true : false;
+        const badMega = out.megaStone && !out.megaStone.valid ? true : false;
+        const fields = [
+          badMoves.length ? `moves (${badMoves.join(", ")})` : null,
+          badItem ? "item" : null,
+          badAbility ? "ability" : null,
+          badMega ? "megaStone" : null,
+        ].filter(Boolean);
+        return JSON.stringify({
+          ...out,
+          _instruction: `This set is INVALID in Pokemon Champions — ${fields.join(", ")} failed. Do NOT include this set in the final team-json. Revise by calling pokedex(${JSON.stringify((call.arguments as unknown as SetInput).pokemon)}) to see the authoritative movepool, swap the invalid field(s) for legal alternatives, then call validate_set again. Do not emit the final team until validate_set returns overall:true for every member.`,
+        });
+      }
       return JSON.stringify(out);
     }
     return JSON.stringify({ error: `Unknown tool: ${call.name}` });
