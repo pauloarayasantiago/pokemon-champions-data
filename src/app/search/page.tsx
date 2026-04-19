@@ -6,6 +6,7 @@ import { query } from "@core/rag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; topK?: string }>;

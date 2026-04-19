@@ -20,6 +20,11 @@ async function checkStaleness(): Promise<void> {
   if (_stalenessChecked) return;
   _stalenessChecked = true;
 
+  // Skip on Vercel: Lambda filesystem mtimes come from the build image and
+  // never match the mtimes captured at reindex time, so every file looks
+  // "stale" on every cold start. Staleness is a local-dev signal only.
+  if (process.env.VERCEL) return;
+
   try {
     const { data, error } = await supabaseServer()
       .from("pc_index_meta")

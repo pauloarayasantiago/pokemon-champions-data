@@ -30,8 +30,8 @@ async function embedLocal(texts: string[]): Promise<number[][]> {
   return results;
 }
 
-async function embedRemote(texts: string[]): Promise<number[][]> {
-  const res = await fetch(
+async function hfCall(texts: string[], timeoutMs: number): Promise<Response> {
+  return fetch(
     `https://api-inference.huggingface.co/pipeline/feature-extraction/${HF_MODEL}`,
     {
       method: "POST",
@@ -43,18 +43,37 @@ async function embedRemote(texts: string[]): Promise<number[][]> {
         inputs: texts,
         options: { wait_for_model: true },
       }),
+      signal: AbortSignal.timeout(timeoutMs),
     }
   );
+}
+
+async function embedRemote(texts: string[]): Promise<number[][]> {
+  let res = await hfCall(texts, 8000);
+
+  // HF returns 503 while the model cold-starts. wait_for_model should handle
+  // this, but on free tier it sometimes 503s immediately with estimated_time.
+  // Retry once with a slightly larger window.
+  if (res.status === 503) {
+    await new Promise((r) => setTimeout(r, 1500));
+    res = await hfCall(texts, 15000);
+  }
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`HF Inference API ${res.status}: ${body}`);
+    throw new Error(`HF Inference API ${res.status}: ${body.slice(0, 300)}`);
   }
 
-  const data = (await res.json()) as number[][] | number[];
-  // Single-input responses may come back as a flat array; normalize to batched shape.
-  const vectors: number[][] = Array.isArray(data[0]) ? (data as number[][]) : [data as number[]];
-  return vectors;
+  const data = (await res.json()) as unknown;
+
+  // HF feature-extraction for sentence-transformers returns:
+  //   number[][]  — batched pooled vectors (expected)
+  //   number[]    — occasionally flat for a single-input call
+  if (!Array.isArray(data)) {
+    throw new Error(`HF response not array: ${JSON.stringify(data).slice(0, 200)}`);
+  }
+  if (data.length === 0) return [];
+  return Array.isArray(data[0]) ? (data as number[][]) : [data as number[]];
 }
 
 /**
