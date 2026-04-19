@@ -74,6 +74,25 @@ export async function embed(
   texts: string[],
   _mode: "query" | "document" = "document"
 ): Promise<number[][]> {
-  if (HF_TOKEN) return embedRemote(texts);
-  return embedLocal(texts);
+  console.log(
+    `[embed] texts=${texts.length} HF_TOKEN=${HF_TOKEN ? `set(len=${HF_TOKEN.length})` : "UNSET"}`
+  );
+  if (HF_TOKEN) {
+    try {
+      const vecs = await embedRemote(texts);
+      console.log(`[embed] remote OK, got ${vecs.length} vectors`);
+      return vecs;
+    } catch (e) {
+      console.error(`[embed] remote FAILED: ${(e as Error).message}`);
+      throw e;
+    }
+  }
+  try {
+    const vecs = await embedLocal(texts);
+    console.log(`[embed] local OK, got ${vecs.length} vectors`);
+    return vecs;
+  } catch (e) {
+    console.error(`[embed] local FAILED: ${(e as Error).message}`);
+    throw e;
+  }
 }

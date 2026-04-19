@@ -90,7 +90,9 @@ async function safeQuery(q: string, topK: number) {
   try {
     return await query(q, topK);
   } catch (err) {
-    console.error("[/search] query failed:", err);
+    const e = err as Error;
+    console.error(`[/search] query failed: name=${e.name} msg=${e.message}`);
+    if (e.stack) console.error(`[/search] stack: ${e.stack.split("\n").slice(0, 5).join(" | ")}`);
     return "error" as const;
   }
 }
