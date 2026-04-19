@@ -1,0 +1,62 @@
+{
+  "fixtures": [
+    {
+      "id": "from-report",
+      "prompt": "Build a team centered around Mega Froslass using Snow Warning and Aurora Veil. Give me the full 6-Pokemon roster with items, abilities, moves, SP spreads, and natures.",
+      "requiredMon": ["Froslass"],
+      "archetypeKeywords": ["snow", "veil", "aurora"]
+    },
+    {
+      "id": "rain-pelipper",
+      "prompt": "Build a rain team around Pelipper. I want Swift Swim abusers.",
+      "requiredMon": ["Pelipper"],
+      "archetypeKeywords": ["rain", "swift swim"]
+    },
+    {
+      "id": "sun-torkoal",
+      "prompt": "Build a sun team with Torkoal + Venusaur core.",
+      "requiredMon": ["Torkoal", "Venusaur"],
+      "archetypeKeywords": ["sun", "drought", "chlorophyll"]
+    },
+    {
+      "id": "sand-rush",
+      "prompt": "Build a Sand Rush team around Tyranitar + Excadrill.",
+      "requiredMon": ["Tyranitar", "Excadrill"],
+      "archetypeKeywords": ["sand", "sand rush"]
+    },
+    {
+      "id": "tr-hard",
+      "prompt": "Build a hard Trick Room team with strong TR setters and slow hitters.",
+      "archetypeKeywords": ["trick room", "tr"],
+      "requireSlowHitter": true
+    },
+    {
+      "id": "tailwind-offense",
+      "prompt": "Build a Tailwind offense team with a Mega of your choice.",
+      "archetypeKeywords": ["tailwind"]
+    },
+    {
+      "id": "counter-incineroar",
+      "prompt": "I keep losing to Incineroar-heavy teams. Build me something that punishes Incineroar.",
+      "archetypeKeywords": ["fighting", "ground", "incineroar"]
+    },
+    {
+      "id": "goodstuffs-balance",
+      "prompt": "Build me a balanced goodstuffs team with Dragonite as the Mega.",
+      "requiredMon": ["Dragonite"],
+      "archetypeKeywords": ["balance", "goodstuffs"]
+    },
+    {
+      "id": "mega-gengar",
+      "prompt": "Build a trapper team around Mega Gengar's Shadow Tag.",
+      "requiredMon": ["Gengar"],
+      "archetypeKeywords": ["shadow tag", "trap"]
+    },
+    {
+      "id": "azumarill-core",
+      "prompt": "Azumarill is the highest WR Pokemon in the meta. Build a team around it.",
+      "requiredMon": ["Azumarill"],
+      "archetypeKeywords": ["azumarill", "huge power", "belly drum"]
+    }
+  ]
+}

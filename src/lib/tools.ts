@@ -1,10 +1,11 @@
-import { query } from "@core/rag";
+import { query, type ProgressStage } from "@core/rag";
 import {
   calculateDamage,
   findPokemon,
   findMega,
   findMove,
 } from "@core/calc";
+import { lookupPokemon, validateSet, type SetInput } from "@core/team-validator";
 import type {
   CompetitiveSet,
   StatSpread,
@@ -75,6 +76,37 @@ export const TOOL_DEFINITIONS: Tool[] = [
         helpingHand: { type: "boolean", description: "Is attacker receiving Helping Hand?" },
       },
       required: ["attacker", "defender"],
+    },
+  },
+  {
+    name: "pokedex",
+    description:
+      "Authoritative structured lookup of a Pokemon. Returns types, abilities, base stats, and the FULL legal movepool as an array of strings. Accepts base form ('Froslass') or Mega ('Mega Froslass'). If a Mega exists, includes mega form details and its stone. Use this BEFORE proposing any set — the moves[] field is the single source of truth for move legality.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Pokemon name. Use 'Mega X' to get mega details inline.",
+        },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "validate_set",
+    description:
+      "Verifies that a proposed set is legal in Pokemon Champions. Checks each move against the Pokemon's movepool, the item against the Champions item list + banned list (Life Orb, Choice Band, etc.), the ability against native + mega abilities, and the mega stone against the mega evolution chart. Call this on every team member before emitting the final team. If overall is false, revise.",
+    parameters: {
+      type: "object",
+      properties: {
+        pokemon: { type: "string", description: "Pokemon name." },
+        moves: { type: "array", items: { type: "string" }, description: "Proposed move list (4 moves)." },
+        item: { type: "string", description: "Held item name." },
+        ability: { type: "string", description: "Ability name." },
+        megaStone: { type: "string", description: "If using a Mega, the stone name (e.g. 'Froslassite')." },
+      },
+      required: ["pokemon", "moves"],
     },
   },
 ];
@@ -192,9 +224,24 @@ function buildFieldFromArgs(args: CalcArgs): Partial<FieldConditions> {
   };
 }
 
-async function executeSearch(args: { query: string; topK?: number }) {
+export type ToolProgressStage =
+  | ProgressStage
+  | "resolve_start"
+  | "resolve_end"
+  | "calc_start"
+  | "calc_end";
+
+export type ToolProgressCallback = (
+  stage: ToolProgressStage,
+  detail?: Record<string, unknown>,
+) => void;
+
+async function executeSearch(
+  args: { query: string; topK?: number },
+  onProgress?: ToolProgressCallback,
+) {
   const topK = Math.max(1, Math.min(15, args.topK ?? 5));
-  const results = await query(args.query, topK);
+  const results = await query(args.query, topK, (stage, detail) => onProgress?.(stage, detail));
   return {
     query: args.query,
     topK,
@@ -207,19 +254,38 @@ async function executeSearch(args: { query: string; topK?: number }) {
   };
 }
 
-async function executeCalc(args: CalcArgs) {
+async function executeCalc(args: CalcArgs, onProgress?: ToolProgressCallback) {
+  const resolveT0 = Date.now();
+  onProgress?.("resolve_start");
   const attacker = resolveSet(args.attacker, args.attackerSp, args.attackerItem);
   const defender = resolveSet(args.defender, args.defenderSp, args.defenderItem);
+  onProgress?.("resolve_end", {
+    ms: Date.now() - resolveT0,
+    attacker: attacker ? (attacker.mega?.megaName ?? attacker.pokemon.name) : null,
+    defender: defender ? (defender.mega?.megaName ?? defender.pokemon.name) : null,
+    attackerResolved: !!attacker,
+    defenderResolved: !!defender,
+  });
   if (!attacker) return { error: `Attacker not found: "${args.attacker}"` };
   if (!defender) return { error: `Defender not found: "${args.defender}"` };
 
   const field = buildFieldFromArgs(args);
+
+  const calcT0 = Date.now();
+  onProgress?.("calc_start", { move: args.move ?? null });
 
   if (!args.move) {
     const results = attacker.pokemon.moves
       .map((m) => calculateDamage(attacker, defender, m, field))
       .filter((r) => r.maxDmg > 0)
       .sort((a, b) => b.maxDmg - a.maxDmg);
+    onProgress?.("calc_end", {
+      ms: Date.now() - calcT0,
+      movesConsidered: attacker.pokemon.moves.length,
+      moves: results.length,
+      topMove: results[0]?.moveName ?? null,
+      topMaxPct: results[0]?.maxPct ?? null,
+    });
     return {
       attacker: attacker.mega?.megaName ?? attacker.pokemon.name,
       defender: defender.mega?.megaName ?? defender.pokemon.name,
@@ -228,8 +294,17 @@ async function executeCalc(args: CalcArgs) {
   }
 
   const move = findMove(args.move);
-  if (!move) return { error: `Move not found: "${args.move}"` };
+  if (!move) {
+    onProgress?.("calc_end", { ms: Date.now() - calcT0, error: "move_not_found" });
+    return { error: `Move not found: "${args.move}"` };
+  }
   const result = calculateDamage(attacker, defender, args.move, field);
+  onProgress?.("calc_end", {
+    ms: Date.now() - calcT0,
+    move: result.moveName,
+    minPct: result.minPct,
+    maxPct: result.maxPct,
+  });
   return {
     attacker: attacker.mega?.megaName ?? attacker.pokemon.name,
     defender: defender.mega?.megaName ?? defender.pokemon.name,
@@ -237,14 +312,28 @@ async function executeCalc(args: CalcArgs) {
   };
 }
 
-export async function executeTool(call: ToolCall): Promise<string> {
+export async function executeTool(
+  call: ToolCall,
+  onProgress?: ToolProgressCallback,
+): Promise<string> {
   try {
     if (call.name === "search") {
-      const out = await executeSearch(call.arguments as { query: string; topK?: number });
+      const out = await executeSearch(
+        call.arguments as { query: string; topK?: number },
+        onProgress,
+      );
       return JSON.stringify(out);
     }
     if (call.name === "calc") {
-      const out = await executeCalc(call.arguments as unknown as CalcArgs);
+      const out = await executeCalc(call.arguments as unknown as CalcArgs, onProgress);
+      return JSON.stringify(out);
+    }
+    if (call.name === "pokedex") {
+      const { name } = call.arguments as { name: string };
+      return JSON.stringify(lookupPokemon(name));
+    }
+    if (call.name === "validate_set") {
+      const out = validateSet(call.arguments as unknown as SetInput);
       return JSON.stringify(out);
     }
     return JSON.stringify({ error: `Unknown tool: ${call.name}` });

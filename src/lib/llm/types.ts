@@ -1,5 +1,5 @@
 export type ModelId =
-  | "deepseek-v3"
+  | "nemotron-super"
   | "gemini-2.5-flash"
   | "llama-3.3-70b"
   | "sonnet-4-6"
@@ -55,9 +55,9 @@ export const MODEL_REGISTRY: Record<
   ModelId,
   { provider: Provider; remoteName: string; tier: "free" | "paid" }
 > = {
-  "deepseek-v3": {
+  "nemotron-super": {
     provider: "openrouter",
-    remoteName: "deepseek/deepseek-chat-v3:free",
+    remoteName: "nvidia/nemotron-3-super-120b-a12b:free",
     tier: "free",
   },
   "gemini-2.5-flash": {

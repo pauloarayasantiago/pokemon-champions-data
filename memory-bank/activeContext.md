@@ -16,7 +16,7 @@
   `team_building_theory.md` for Fake Out / item queries where items.csv is
   clearly more relevant) and one semantic-mismatch case (TR setters query
   where TR transcripts dominate over the TR section of team_archetypes.md).
-- Deploy webapp to Vercel preview (per plan step #2).
+- ~~Deploy webapp to Vercel preview~~ **Done 2026-04-18** — live at `pokemon-champions-data.vercel.app`; `/search` working after the HF Inference API router migration (see progress.md "Vercel /search Production Fix").
 - Fix Tailwind 4 CSS blocker in webapp.
 - Author `data/knowledge/singles_meta.md` from hoshinjosh / istarlytv transcripts.
 - Reconcile `meta_snapshot.md` with AngrySlowbroPlus tier list (Sinistcha vs Incineroar #1).
@@ -70,8 +70,7 @@ npm run test:stress               # 111-test stress suite
 
 ### What's Next (concrete, ordered by leverage)
 1. **Run full `npm test` against Supabase** — confirm no regressions vs the LanceDB-era 251/251 baseline. First real validation beyond smoke tests.
-2. **Deploy webapp to Vercel preview** — the whole point of this migration. Confirm cold-start improvement now that the 30-50MB LanceDB native binary is gone.
-3. **Resolve webapp Tailwind 4 CSS blocker** — tracked in `webapp/HANDOVER.md`; separate task the user deferred.
-4. **Create `data/knowledge/singles_meta.md`** — Singles ladder is diverging from Doubles and has no KB coverage (iStarlyTV + HoshinJosh transcripts already indexed).
-5. **Reconcile `meta_snapshot.md`** with AngrySlowbroPlus tier list (Sinistcha #1 vs Incineroar #1 drift).
-6. **Codify TheDelybird's 5 template team archetypes** (sun / Floette-balance / rain / sand / snow) with EV pastes — transcripts already indexed, needs structured extraction.
+2. **Resolve webapp Tailwind 4 CSS blocker** — tracked in `webapp/HANDOVER.md`; separate task the user deferred.
+3. **Create `data/knowledge/singles_meta.md`** — Singles ladder is diverging from Doubles and has no KB coverage (iStarlyTV + HoshinJosh transcripts already indexed).
+4. **Reconcile `meta_snapshot.md`** with AngrySlowbroPlus tier list (Sinistcha #1 vs Incineroar #1 drift).
+5. **Codify TheDelybird's 5 template team archetypes** (sun / Floette-balance / rain / sand / snow) with EV pastes — transcripts already indexed, needs structured extraction.

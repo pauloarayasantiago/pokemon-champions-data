@@ -30,7 +30,10 @@
       "Bash(grep -ri \"clear amulet\\\\|throat spray\\\\|expert belt\\\\|booster energy\" data/knowledge/*.md CLAUDE.md)",
       "Bash(python -c \"import yt_dlp; import youtube_transcript_api; print\\('deps ok'\\)\")",
       "mcp__5e2406ef-9f6b-4849-b4a6-be3e51ca06a5__get_runtime_logs",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "mcp__5e2406ef-9f6b-4849-b4a6-be3e51ca06a5__get_deployment",
+      "mcp__5e2406ef-9f6b-4849-b4a6-be3e51ca06a5__list_deployments",
+      "Bash(grep -iE \"ite$|ite,|stone\" items.csv)"
     ]
   }
 }

@@ -1,0 +1,15 @@
+{
+  "model": "sonnet-4-6",
+  "baseUrl": "http://localhost:3001",
+  "fixturesFilter": "from-report",
+  "results": [
+    {
+      "id": "from-report",
+      "ok": false,
+      "error": "Anthropic API 400: {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\"request_id\":\"req_011CaCKZ9SZ73wDy2McedPTJ\"}",
+      "totalMs": 432,
+      "contentChars": 0,
+      "toolCalls": {}
+    }
+  ]
+}

@@ -165,6 +165,9 @@ export async function* compatChatStream(
     { id: string; name: string; args: string }
   >();
   let finishReason: FinishReason | null = null;
+  let contentEmitted = false;
+  let reasoningBuffer = "";
+  let finalMessageContent = "";
 
   while (true) {
     const { value, done } = await reader.read();
@@ -180,9 +183,26 @@ export async function* compatChatStream(
         const evt = JSON.parse(payload);
         const choice = evt.choices?.[0];
         const delta = choice?.delta;
-        if (!delta) continue;
+        const message = choice?.message;
+        if (message?.content && typeof message.content === "string") {
+          finalMessageContent = message.content;
+        }
+        if (!delta) {
+          if (choice?.finish_reason) {
+            finishReason = mapFinishReason(choice.finish_reason);
+          }
+          continue;
+        }
         if (delta.content) {
+          contentEmitted = true;
           yield { type: "content", delta: delta.content };
+        }
+        const reasoningDelta =
+          (typeof delta.reasoning === "string" && delta.reasoning) ||
+          (typeof delta.reasoning_content === "string" && delta.reasoning_content) ||
+          "";
+        if (reasoningDelta) {
+          reasoningBuffer += reasoningDelta;
         }
         if (delta.tool_calls) {
           for (const tc of delta.tool_calls) {
@@ -190,7 +210,17 @@ export async function* compatChatStream(
             const cur = partialTools.get(idx) ?? { id: "", name: "", args: "" };
             if (tc.id) cur.id = tc.id;
             if (tc.function?.name) cur.name = tc.function.name;
-            if (tc.function?.arguments) cur.args += tc.function.arguments;
+            if (tc.function?.arguments) {
+              const frag = tc.function.arguments;
+              let fragIsComplete = false;
+              try {
+                JSON.parse(frag);
+                fragIsComplete = true;
+              } catch {
+                fragIsComplete = false;
+              }
+              cur.args = fragIsComplete ? frag : cur.args + frag;
+            }
             partialTools.set(idx, cur);
           }
         }
@@ -200,6 +230,13 @@ export async function* compatChatStream(
       } catch {
         // skip malformed
       }
+    }
+  }
+
+  if (!contentEmitted && partialTools.size === 0) {
+    const fallback = finalMessageContent || reasoningBuffer;
+    if (fallback) {
+      yield { type: "content", delta: fallback };
     }
   }
 

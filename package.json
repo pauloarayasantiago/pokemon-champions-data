@@ -11,8 +11,10 @@
     "calc:web": "npx serve tools/NCP-VGC-Damage-Calculator",
     "calc:matrix": "tsx scripts/build-matchup-matrix.ts",
     "calc:test": "tsx scripts/test-calc.ts",
-    "test": "tsx scripts/test-calc.ts && tsx scripts/test-suite.ts && tsx scripts/eval.ts && tsx scripts/stress-test.ts",
+    "test": "tsx scripts/test-calc.ts && tsx scripts/test-validator.ts && tsx scripts/test-suite.ts && tsx scripts/eval.ts && tsx scripts/stress-test.ts",
     "test:calc": "tsx scripts/test-calc.ts",
+    "test:validator": "tsx scripts/test-validator.ts",
+    "test:team": "tsx scripts/eval-team.ts",
     "test:rag": "tsx scripts/eval.ts",
     "test:integration": "tsx scripts/test-suite.ts",
     "test:stress": "tsx scripts/stress-test.ts"

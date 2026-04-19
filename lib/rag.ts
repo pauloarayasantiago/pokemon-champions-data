@@ -340,9 +340,29 @@ async function runStructuredFilter(question: string, limit: number): Promise<Rec
   return (data ?? []) as Record<string, unknown>[];
 }
 
-export async function query(question: string, topK = 5): Promise<Result[]> {
+export type ProgressStage =
+  | "embed_start"
+  | "embed_end"
+  | "rpc_start"
+  | "rpc_end"
+  | "structured_end"
+  | "rules_end"
+  | "rerank_end";
+
+export type ProgressCallback = (stage: ProgressStage, detail?: Record<string, unknown>) => void;
+
+export async function query(
+  question: string,
+  topK = 5,
+  onProgress?: ProgressCallback,
+): Promise<Result[]> {
   await checkStaleness();
+
+  const embedT0 = Date.now();
+  onProgress?.("embed_start", { chars: question.length });
   const [vector] = await embed([question], "query");
+  onProgress?.("embed_end", { ms: Date.now() - embedT0, dim: vector?.length ?? 0 });
+
   const intent = classifyQuery(question);
   const supabase = supabaseServer();
 
@@ -351,6 +371,14 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
   // outside the raw RRF top-20 but #1 after move-name boost).
   const fetchK = Math.max(topK * 8, 80);
 
+  const rpcT0 = Date.now();
+  onProgress?.("rpc_start", {
+    fetchK,
+    categories: intent.categories,
+    pokemonName: intent.pokemonName,
+    moveName: intent.moveName,
+    itemName: intent.itemName,
+  });
   const { data: hybridRaw, error: hybridErr } = await supabase.rpc("pc_hybrid_search", {
     p_embedding: vector,
     p_query: question,
@@ -358,6 +386,7 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
     p_fetch_k: fetchK,
     p_rrf_k: 60,
   });
+  onProgress?.("rpc_end", { ms: Date.now() - rpcT0, rows: (hybridRaw ?? []).length });
   if (hybridErr) {
     throw new Error(`pc_hybrid_search RPC failed: ${hybridErr.message}`);
   }
@@ -585,5 +614,15 @@ export async function query(question: string, topK = 5): Promise<Result[]> {
   });
 
   boosted.sort((a, b) => b.score - a.score);
-  return boosted.slice(0, topK);
+  const kept = boosted.slice(0, topK);
+  onProgress?.("rerank_end", {
+    candidatePool: boosted.length,
+    kept: kept.length,
+    topSource: kept[0]?.source ?? null,
+    topScore: kept[0]?.score ?? null,
+    topCategory: (kept[0] as { dataCategory?: string } | undefined)?.dataCategory ?? null,
+    structuredCount: structuredResults.length,
+    rulesCount: rulesResults.length,
+  });
+  return kept;
 }

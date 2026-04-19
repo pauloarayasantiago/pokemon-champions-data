@@ -16,6 +16,7 @@ export type {
   ChatResult,
   Message,
   ModelId,
+  Provider,
   Tool,
   ToolCall,
   FinishReason,
@@ -44,12 +45,12 @@ export function chatStream(params: ChatParams): AsyncIterable<ChatDelta> {
   return pick(params.model).chatStream(params);
 }
 
-export const DEFAULT_MODEL: ModelId = "deepseek-v3";
+export const DEFAULT_MODEL: ModelId = "gemini-2.5-flash";
 
 export const AVAILABLE_MODELS: { id: ModelId; label: string; tier: "free" | "paid" }[] = [
-  { id: "deepseek-v3", label: "DeepSeek V3", tier: "free" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", tier: "free" },
   { id: "llama-3.3-70b", label: "Llama 3.3 70B", tier: "free" },
+  { id: "nemotron-super", label: "Nemotron Super 120B (reasoning)", tier: "free" },
   { id: "sonnet-4-6", label: "Claude Sonnet 4.6", tier: "paid" },
   { id: "opus-4-7", label: "Claude Opus 4.7", tier: "paid" },
 ];

@@ -329,6 +329,17 @@ Replaces the 30-50MB bundled LanceDB native binary with a managed Postgres+pgvec
 - **Cutover**: removed `@lancedb/lancedb` + `apache-arrow` from both root and webapp `package.json`; dropped from `serverExternalPackages` in `webapp/next.config.ts`. Rewrote `scripts/debug-db.ts` and `scripts/test-suite.ts`' `testIndexLifecycle` against Supabase. Historical references kept in `memory-bank/progress.md`, `webapp/HANDOVER.md`, `lookup-reindex-system-prompt.txt`.
 - **Parity verified**: 5 canonical queries (counters, structured stat, usage, move, archetype) all return sensible top-K with `rrf_score`; incremental reindex returns "Nothing to index. Done."; structured filter still fires on "highest attack water types" → Gyarados/Sharpedo/Quaquaval/Mega Gyarados/Mega Feraligatr.
 
+### Vercel /search Production Fix (2026-04-18)
+
+Production `/search` on `pokemon-champions-data.vercel.app` first 500'd, then surfaced the "Search failed. Check the dev console." card. Root causes and fixes, in order:
+
+1. **`onnxruntime-node` native bindings don't bundle into Lambda** — `@huggingface/transformers` loaded `.node` binaries at module-eval time, 500ing every `/search` hit. Fixed by lazy-importing the pipeline and routing query embeddings through the Hugging Face Inference API when `HF_TOKEN` is set (commit `f8c5a6e`). Local indexing scripts still use the bundled path.
+2. **Legacy HF endpoint 404** — `https://api-inference.huggingface.co/pipeline/feature-extraction/{model}` returns 404 for `sentence-transformers/all-MiniLM-L6-v2` after HF consolidated serverless inference behind the Inference Providers router. Fixed by switching `lib/embed.ts` to `https://router.huggingface.co/hf-inference/models/{model}/pipeline/feature-extraction` (commit `57ff6f4`).
+3. **Hardening on the remote path**: `AbortSignal.timeout(8000)` with a single 503 retry at 15s for HF cold-starts; `export const maxDuration = 30` on `src/app/search/page.tsx` so the function has headroom over the default 10s.
+4. **Noise silencing**: `checkStaleness()` in `lib/rag.ts` now short-circuits on `process.env.VERCEL`. Lambda filesystem mtimes come from the build image and never match the mtimes captured at reindex time, so the "index is stale" warning was always a false positive in prod and was polluting error-level logs.
+
+Verified end-to-end by the user: `/search?q=incineroar` returns result cards on the live deploy. Auto-memory `project_vercel_embedding_constraint.md` updated with the router URL, the 404 pitfall, and instructions to re-check the HF provider docs if it shifts again.
+
 ## Pending
 - Alolan Ninetales form variants (same pattern as Rotom)
 - WolfeyVGC daily April series — some videos still uncaptured
@@ -337,7 +348,6 @@ Replaces the 30-50MB bundled LanceDB native binary with a managed Postgres+pgvec
 - Codify TheDelybird's 5 template archetypes with EV pastes
 - Resolve webapp Tailwind 4 CSS blocker (unrelated to vector-store migration)
 - Run full `npm test` regression against Supabase backend (251 tests) — only smoke-tested so far
-- Vercel preview deploy to confirm cold-start improvement from removing the LanceDB native binary
 
 ## Known Issues
 - Castform shows Normal/Fire because Serebii lists its form types together
