@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-04-19T04:38:25.853Z",
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    "banned_item",
+    "banned_mech"
+  ],
+  "results": [
+    {
+      "testId": "banned_item",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Correctly identified Life Orb as unavailable in Champions",
+      "latencyMs": 9339,
+      "turns": 2,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "is Life Orb a legal item in Champions"
+          }
+        }
+      ],
+      "contentPreview": "thought\nNo, **Life Orb does not exist in Champions**. You should not attempt to use it, as it is a banned item in this format.\n\nSince Dragonite does not have a Mega Evolution, you should focus on items that enhance its bulk, survivates, or specific damage types. Depending on your Dragonite's role (Offensive Sweeper vs. Bulky Attacker), here are the best legal options in Champions:\n\n### 1. For Offensive Sweepers (Damage Focus)\nSince you cannot use Life Orb to boost damage, you must use **type-boosting held items**. These increase the power of specific moves without the recoil damage.\n*   **Drac"
+    },
+    {
+      "testId": "banned_mech",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Correctly stated Tera doesn't exist in Champions",
+      "latencyMs": 3279,
+      "turns": 1,
+      "toolCallLog": [],
+      "contentPreview": "Terastallization does not exist in Pokémon Champions. The only battle gimmick available in this game is Mega Evolution.\n\nIf you are looking to maximize Dragonite's Extreme Speed, you should look into using a type-boosting held item like the **Silk Scarf** (if available) or focusing on Mega Evolution mechanics if a suitable Mega form were to be used, though Dragonite itself does not have a Mega Evolution. \n\nSince Terastallization is not a mechanic in this game, it is not a viable strategy."
+    }
+  ]
+}

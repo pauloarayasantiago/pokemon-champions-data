@@ -232,6 +232,8 @@ def scrape_pokemon(name, url):
     megas = [f for f in forms if f["name"].startswith("Mega ")]
     stats = parse_base_stats(soup)
     mega_stats = parse_mega_stats(soup)
+    # Form variants (Alolan/Hisuian/Galarian/Paldean/Rotom/etc.)
+    variants = extract_form_variant_rows(soup, name, moves, stats)
     return {
         "type1": type1,
         "type2": type2,
@@ -240,7 +242,183 @@ def scrape_pokemon(name, url):
         "megas": megas,
         "stats": stats,
         "mega_stats": mega_stats,
+        "variants": variants,
     }
+
+
+# ---------------------------------------------------------------------------
+# Form variants (regional forms, Rotom appliances, Tauros breeds, size/gender)
+# ---------------------------------------------------------------------------
+
+# Variant spec: (form_name, type1, type2, abilities, moves_section, stats_section)
+# moves_section = header text to find (None -> share base moves)
+# stats_section = header text to find (None -> share base stats)
+FORM_VARIANTS = {
+    "Raichu": [
+        ("Raichu-Alola", "Electric", "Psychic", ["Surge Surfer"],
+         "Alola Form Standard Moves", "Stats - Alolan Raichu"),
+    ],
+    "Ninetales": [
+        ("Ninetales-Alola", "Ice", "Fairy", ["Snow Cloak", "Snow Warning"],
+         "Alola Form Standard Moves", "Stats - Alolan Ninetales"),
+    ],
+    "Arcanine": [
+        ("Arcanine-Hisui", "Fire", "Rock", ["Intimidate", "Flash Fire", "Rock Head"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Arcanine"),
+    ],
+    "Typhlosion": [
+        ("Typhlosion-Hisui", "Fire", "Ghost", ["Blaze", "Flash Fire", "Frisk"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Typhlosion"),
+    ],
+    "Samurott": [
+        ("Samurott-Hisui", "Water", "Dark", ["Torrent", "Shell Armor", "Sharpness"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Samurott"),
+    ],
+    "Zoroark": [
+        ("Zoroark-Hisui", "Normal", "Ghost", ["Illusion"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Zoroark"),
+    ],
+    "Decidueye": [
+        ("Decidueye-Hisui", "Grass", "Fighting", ["Overgrow", "Long Reach"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Decidueye"),
+    ],
+    "Goodra": [
+        ("Goodra-Hisui", "Steel", "Dragon", ["Sap Sipper", "Shell Armor", "Gooey"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Goodra"),
+    ],
+    "Avalugg": [
+        ("Avalugg-Hisui", "Ice", "Rock", ["Strong Jaw", "Ice Body", "Sturdy"],
+         "Hisuian Form Standard Moves", "Stats - Hisuian Avalugg"),
+    ],
+    "Slowbro": [
+        ("Slowbro-Galar", "Poison", "Psychic", ["Quick Draw", "Own Tempo", "Regenerator"],
+         "Galar Form Standard Moves", "Stats - Galarian Slowbro"),
+    ],
+    "Slowking": [
+        ("Slowking-Galar", "Poison", "Psychic", ["Curious Medicine", "Own Tempo", "Regenerator"],
+         "Galar Form Standard Moves", "Stats - Galarian Slowking"),
+    ],
+    "Stunfisk": [
+        ("Stunfisk-Galar", "Ground", "Steel", ["Mimicry"],
+         "Galar Form Standard Moves", "Stats - Galarian Stunfisk"),
+    ],
+    "Tauros": [
+        ("Tauros-Paldea-Combat", "Fighting", "", ["Intimidate", "Anger Point", "Cud Chew"],
+         "Paldean Form Standard Moves", "Stats - Paldean Tauros"),
+        ("Tauros-Paldea-Blaze", "Fire", "Fighting", ["Intimidate", "Anger Point", "Cud Chew"],
+         "Standard Moves - Blaze Breed", "Stats - Paldean Tauros"),
+        ("Tauros-Paldea-Aqua", "Water", "Fighting", ["Intimidate", "Anger Point", "Cud Chew"],
+         "Standard Moves - Aqua Breed", "Stats - Paldean Tauros"),
+    ],
+    "Rotom": [
+        ("Rotom-Heat", "Electric", "Fire", ["Levitate"],
+         None, "Stats - Alternate Forms"),
+        ("Rotom-Wash", "Electric", "Water", ["Levitate"],
+         None, "Stats - Alternate Forms"),
+        ("Rotom-Frost", "Electric", "Ice", ["Levitate"],
+         None, "Stats - Alternate Forms"),
+        ("Rotom-Fan", "Electric", "Flying", ["Levitate"],
+         None, "Stats - Alternate Forms"),
+        ("Rotom-Mow", "Electric", "Grass", ["Levitate"],
+         None, "Stats - Alternate Forms"),
+    ],
+    "Floette": [
+        ("Floette-Eternal", "Fairy", "", ["Flower Veil"],
+         None, "Stats - Eternal Floette"),
+    ],
+    "Meowstic": [
+        ("Meowstic-F", "Psychic", "", ["Keen Eye", "Infiltrator", "Competitive"],
+         "Standard Moves - Female", None),
+    ],
+    "Aegislash": [
+        ("Aegislash-Blade", "Steel", "Ghost", ["Stance Change"],
+         None, "Stats - Blade Forme"),
+    ],
+    "Lycanroc": [
+        ("Lycanroc-Midnight", "Rock", "", ["Keen Eye", "Vital Spirit", "No Guard"],
+         "Standard Moves - Midnight Form", "Stats - Midnight Form"),
+        ("Lycanroc-Dusk", "Rock", "", ["Tough Claws"],
+         "Standard Moves - Dusk Form", "Stats - Dusk Form"),
+    ],
+    "Gourgeist": [
+        ("Gourgeist-Small", "Ghost", "Grass", ["Pickup", "Frisk", "Insomnia"],
+         None, "Stats - Small Variety"),
+        ("Gourgeist-Large", "Ghost", "Grass", ["Pickup", "Frisk", "Insomnia"],
+         None, "Stats - Large Variety"),
+        ("Gourgeist-Jumbo", "Ghost", "Grass", ["Pickup", "Frisk", "Insomnia"],
+         None, "Stats - Jumbo Variety"),
+    ],
+    "Basculegion": [
+        ("Basculegion-F", "Water", "Ghost", ["Swift Swim", "Adaptability", "Mold Breaker"],
+         "Standard Moves - Female", "Stats - Female"),
+    ],
+    "Palafin": [
+        ("Palafin-Hero", "Water", "", ["Zero to Hero"],
+         None, "Stats - Hero Form"),
+    ],
+}
+
+
+def parse_section_moves(soup, header_text):
+    """Find a move-list section by its h2/h3 text and return list of move names."""
+    for h in soup.find_all(["h2", "h3"]):
+        if h.get_text(" ", strip=True) == header_text:
+            table = h.find_parent("table", class_="dextable")
+            if not table:
+                return []
+            moves = []
+            seen = set()
+            for a in table.find_all("a", href=re.compile(r"/attackdex-champions/")):
+                n = a.get_text(strip=True)
+                if n and n not in seen:
+                    seen.add(n)
+                    moves.append(n)
+            return moves
+    return []
+
+
+def parse_section_stats(soup, header_text):
+    """Find a stats section by its h2 text and return stats dict."""
+    for h in soup.find_all(["h2", "h3"]):
+        if h.get_text(" ", strip=True) == header_text:
+            table = h.find_parent("table", class_="dextable")
+            if not table:
+                return None
+            rows = table.find_all("tr", recursive=False)
+            if len(rows) < 3:
+                return None
+            data_cells = rows[2].find_all("td", recursive=False)
+            vals = [int(c.get_text(strip=True)) for c in data_cells
+                    if c.get_text(strip=True).isdigit()]
+            if len(vals) >= 6:
+                return {
+                    "hp": vals[0], "attack": vals[1], "defense": vals[2],
+                    "sp_atk": vals[3], "sp_def": vals[4], "speed": vals[5],
+                }
+    return None
+
+
+def extract_form_variant_rows(soup, base_name, base_moves, base_stats):
+    """Build rows for known regional/form variants from a Pokemon page."""
+    specs = FORM_VARIANTS.get(base_name, [])
+    rows = []
+    for form_name, t1, t2, abilities, moves_section, stats_section in specs:
+        moves = (parse_section_moves(soup, moves_section)
+                 if moves_section else list(base_moves))
+        if not moves:
+            moves = list(base_moves)
+        stats = (parse_section_stats(soup, stats_section)
+                 if stats_section else base_stats)
+        if not stats:
+            stats = base_stats or {}
+        rows.append({
+            "name": form_name,
+            "type1": t1, "type2": t2,
+            "abilities": abilities,
+            "moves": moves,
+            "stats": stats,
+        })
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -564,12 +742,22 @@ def main():
                 })
                 # Match mega stats by index order (forms and stat tables appear in same order)
                 mega_stats_list = data.get("mega_stats", [])
+                # Disambiguate duplicate mega names (e.g., Charizard has two "Mega Charizard" entries — X / Y)
+                mega_name_counts = {}
+                for mega in data["megas"]:
+                    mega_name_counts[mega["name"]] = mega_name_counts.get(mega["name"], 0) + 1
+                dup_suffix_index = {}
                 for idx, mega in enumerate(data["megas"]):
                     ms = mega_stats_list[idx] if idx < len(mega_stats_list) else {}
                     mega_bst = sum(ms.values()) if ms else ""
+                    mega_name = mega["name"]
+                    if mega_name_counts[mega_name] > 1:
+                        dup_suffix_index[mega_name] = dup_suffix_index.get(mega_name, 0) + 1
+                        suffix = " X" if dup_suffix_index[mega_name] == 1 else " Y"
+                        mega_name = mega_name + suffix
                     all_megas.append({
                         "base_pokemon": name,
-                        "mega_name": mega["name"],
+                        "mega_name": mega_name,
                         "type1": mega["type1"],
                         "type2": mega["type2"],
                         "ability": "|".join(mega["abilities"]),
@@ -581,9 +769,28 @@ def main():
                         "speed": ms.get("speed", ""),
                         "bst": mega_bst,
                     })
+                # Emit form variant rows (regional/breed/size/gender forms)
+                for v in data.get("variants", []):
+                    vs = v.get("stats") or {}
+                    vbst = sum(vs.values()) if vs else ""
+                    results.append({
+                        "name": v["name"],
+                        "type1": v["type1"],
+                        "type2": v["type2"],
+                        "abilities": "|".join(v["abilities"]),
+                        "moves": "|".join(v["moves"]),
+                        "hp": vs.get("hp", ""),
+                        "attack": vs.get("attack", ""),
+                        "defense": vs.get("defense", ""),
+                        "sp_atk": vs.get("sp_atk", ""),
+                        "sp_def": vs.get("sp_def", ""),
+                        "speed": vs.get("speed", ""),
+                        "bst": vbst,
+                    })
                 mega_info = f", {len(data['megas'])} mega(s)" if data["megas"] else ""
+                var_info = f", {len(data.get('variants', []))} variant(s)" if data.get("variants") else ""
                 stats_info = f", BST {bst}" if bst else ", no stats found"
-                print(f"{data['type1']}/{data['type2'] or '—'}, {len(data['abilities'])} abilities, {len(data['moves'])} moves{mega_info}{stats_info}")
+                print(f"{data['type1']}/{data['type2'] or '—'}, {len(data['abilities'])} abilities, {len(data['moves'])} moves{mega_info}{var_info}{stats_info}")
         except Exception as e:
             print(f"ERROR: {e}")
             failed.append(name)

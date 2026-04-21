@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-20T22:33:05.232Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 5077,
+      "tokens_per_pass": 5077,
+      "mean_latency_ms": 6897,
+      "mean_turns": 2,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+      "latencyMs": 6897,
+      "turns": 2,
+      "inputTokens": 4868,
+      "outputTokens": 209,
+      "totalTokens": 5077,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Garchomp Regulation A Doubles tier list Pokemon Champions"
+          }
+        }
+      ],
+      "contentPreview": "thought\nI'm sorry, but I could not find any specific mentions of a content creator named **AngrySlowbroPlus** or their individual tier lists in the Champions competitive database.\n\nHowever, I can provide the current meta context for **Garchomp** in the Champions Regulation A Doubles tier based on official usage and win rate data:\n\n*   **Tier:** A-Tier\n*   **Usage Rate:** Approximately 35-36%\n*   **Win Rate:** ~51.8-52.1%\n*   **Primary Role:** Ground/Dragon offensive coverage, Rough Skin chip damage, and flexible utility (such as Rock Slide flinch support).\n*   **Common Moves:** Earthquake, Dra"
+    }
+  ]
+}

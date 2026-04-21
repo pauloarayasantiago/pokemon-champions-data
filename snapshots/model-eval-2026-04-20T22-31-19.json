@@ -1,0 +1,79 @@
+{
+  "timestamp": "2026-04-20T22:31:19.339Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 13554,
+      "tokens_per_pass": 13554,
+      "mean_latency_ms": 11179,
+      "mean_turns": 5,
+      "nudge_count": 1,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf",
+      "latencyMs": 11179,
+      "turns": 5,
+      "inputTokens": 13232,
+      "outputTokens": 322,
+      "totalTokens": 13554,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        }
+      ],
+      "contentPreview": "A recent tournament-winning team built around **Mega Golurk** in Champions Regulation M-A is the \"Golurk Sun Room Team\" by player **JoeUX9**. \n\nThis team leverages the intense offensive pressure of Mega Golurk alongside the sun-setting capabilities of Torkoal to create a powerful offensive core. Mega Golurk, utilizing its **Unseen Fist** ability via the **Golurkite**, becomes a formidable physical attacker that can bypass protection moves. The team is designed to control the tempo of the match through weather and redirection/support roles.\n\nThe other five members of JoeUX9's tournament-winning"
+    }
+  ]
+}

@@ -1,8 +1,12 @@
 import type { FeatureExtractionPipeline } from "@huggingface/transformers";
 
-const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
-const HF_MODEL = "sentence-transformers/all-MiniLM-L6-v2";
+const MODEL_ID = "Xenova/bge-small-en-v1.5";
+const HF_MODEL = "BAAI/bge-small-en-v1.5";
 const BATCH_SIZE = 64;
+
+// BGE requires an instruction prefix on QUERIES only; passages go in raw.
+// Skipping it costs 3–8 nDCG points per the model card.
+const BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: ";
 
 const HF_TOKEN = process.env.HF_TOKEN;
 
@@ -11,7 +15,7 @@ let extractor: FeatureExtractionPipeline | null = null;
 async function getExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractor) {
     const { pipeline } = await import("@huggingface/transformers");
-    console.log(`Loading embedding model ${MODEL_ID} (first run downloads ~80MB)...`);
+    console.log(`Loading embedding model ${MODEL_ID} (first run downloads ~130MB)...`);
     extractor = await pipeline("feature-extraction", MODEL_ID) as FeatureExtractionPipeline;
     console.log("Embedding model loaded.");
   }
@@ -23,7 +27,7 @@ async function embedLocal(texts: string[]): Promise<number[][]> {
   const results: number[][] = [];
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
-    const output = await ext(batch, { pooling: "mean", normalize: true });
+    const output = await ext(batch, { pooling: "cls", normalize: true });
     const nested: number[][] = output.tolist();
     results.push(...nested);
   }
@@ -80,28 +84,26 @@ async function embedRemote(texts: string[]): Promise<number[][]> {
 }
 
 /**
- * Embed an array of texts into 384-dim normalized vectors.
+ * Embed an array of texts into 384-dim normalized vectors from BAAI/bge-small-en-v1.5.
  *
  * If HF_TOKEN is set (e.g. on Vercel), routes to Hugging Face Inference API —
  * avoids shipping onnxruntime-node native binaries to serverless. Otherwise
  * uses the local @huggingface/transformers pipeline (used by indexing scripts).
  *
- * Both paths return the same 384-dim normalized vectors from
- * sentence-transformers/all-MiniLM-L6-v2, so they share a Supabase pgvector
- * index without re-embedding.
- *
- * MiniLM-L6-v2 does not use task/document prefixes — raw text is embedded directly.
+ * Queries are prefixed with the BGE instruction per the model card; passages are not.
+ * The prefix is applied here so callers pass raw text.
  */
 export async function embed(
   texts: string[],
-  _mode: "query" | "document" = "document"
+  mode: "query" | "document" = "document"
 ): Promise<number[][]> {
+  const inputs = mode === "query" ? texts.map((t) => BGE_QUERY_PREFIX + t) : texts;
   console.log(
-    `[embed] texts=${texts.length} HF_TOKEN=${HF_TOKEN ? `set(len=${HF_TOKEN.length})` : "UNSET"}`
+    `[embed] texts=${texts.length} mode=${mode} HF_TOKEN=${HF_TOKEN ? `set(len=${HF_TOKEN.length})` : "UNSET"}`
   );
   if (HF_TOKEN) {
     try {
-      const vecs = await embedRemote(texts);
+      const vecs = await embedRemote(inputs);
       console.log(`[embed] remote OK, got ${vecs.length} vectors`);
       return vecs;
     } catch (e) {
@@ -110,7 +112,7 @@ export async function embed(
     }
   }
   try {
-    const vecs = await embedLocal(texts);
+    const vecs = await embedLocal(inputs);
     console.log(`[embed] local OK, got ${vecs.length} vectors`);
     return vecs;
   } catch (e) {

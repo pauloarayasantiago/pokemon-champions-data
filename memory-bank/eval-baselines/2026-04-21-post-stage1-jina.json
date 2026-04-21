@@ -1,0 +1,462 @@
+{
+  "label": "post-stage1-jina-active",
+  "date": "2026-04-21",
+  "model": "gemma-4-26b (google/gemma-4-26b-a4b-it via OpenRouter)",
+  "mode": "--real-rag (lib/rag.ts → Supabase pc_chunks)",
+  "embedding_model": "Xenova/bge-small-en-v1.5 (384-dim, CLS pooling, query prefix)",
+  "reranker": "Jina Reranker v2 ACTIVE (jina-reranker-v2-base-multilingual via api.jina.ai); top-40 candidates reranked, boostMul=20 recalibration",
+  "vector_schema": "halfvec(384) with HNSW halfvec_cosine_ops",
+  "stage1_changes": [
+    "Stage 1.1: vector(384) -> halfvec(384), HNSW rebuilt with halfvec_cosine_ops, pc_hybrid_search RPC param type updated",
+    "Stage 1.2: Xenova/all-MiniLM-L6-v2 -> Xenova/bge-small-en-v1.5, mean pooling -> CLS pooling, BGE query instruction prefix added, 2307 chunks re-indexed",
+    "Stage 1.3: lib/rerank.ts added (Jina Reranker v2 API client with sha256 cache and graceful fallback, lazy env var read), wired into lib/rag.ts between RPC and boost layer"
+  ],
+  "snapshots_source": [
+    "model-eval-2026-04-21T06-04-16.json",
+    "model-eval-2026-04-21T06-08-47.json",
+    "model-eval-2026-04-21T06-12-02.json"
+  ],
+  "runs_summary": {
+    "total_runs": 3,
+    "overall_pass_rate": 0.9487179487179487,
+    "passes_per_run": [
+      "13/13",
+      "13/13",
+      "11/13"
+    ],
+    "tok_per_pass": {
+      "mean": 22458,
+      "runs": [
+        11897,
+        35927,
+        19551
+      ]
+    },
+    "mean_latency_ms": {
+      "mean": 17935,
+      "runs": [
+        19769,
+        20071,
+        13966
+      ]
+    },
+    "nudge_count_per_run": [
+      12,
+      16,
+      13
+    ],
+    "dedup_count_per_run": [
+      5,
+      9,
+      21
+    ],
+    "by_tag": {
+      "behavior": [
+        "5/5",
+        "5/5",
+        "4/5"
+      ],
+      "retrieval": [
+        "5/5",
+        "5/5",
+        "4/5"
+      ],
+      "hallucination": [
+        "3/3",
+        "3/3",
+        "3/3"
+      ]
+    }
+  },
+  "per_test": {
+    "tool_workflow": {
+      "tag": "behavior",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        59089,
+        42939,
+        39999
+      ],
+      "tok_per_run": [
+        31654,
+        41237,
+        22249
+      ],
+      "turns_per_run": [
+        9,
+        12,
+        6
+      ],
+      "reasons": [
+        "pokedex called 12x (Dragonite ✓), validate 6x",
+        "pokedex called 11x (Dragonite ✓), validate 1x",
+        "pokedex called 3x (Dragonite ✓), validate 0x"
+      ]
+    },
+    "team_json": {
+      "tag": "behavior",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        33538,
+        74751,
+        28318
+      ],
+      "tok_per_run": [
+        19015,
+        75109,
+        30684
+      ],
+      "turns_per_run": [
+        5,
+        14,
+        7
+      ],
+      "reasons": [
+        "team-json valid — 6 Pokemon, archetype: \"Rain\"",
+        "team-json valid — 8 Pokemon, archetype: \"Rain\"",
+        "team-json valid — 6 Pokemon, archetype: \"Rain\""
+      ]
+    },
+    "validate_loop": {
+      "tag": "behavior",
+      "pass_rate": 0.6666666666666666,
+      "passes_per_run": [
+        1,
+        1,
+        0
+      ],
+      "lat_ms_per_run": [
+        39032,
+        28977,
+        34009
+      ],
+      "tok_per_run": [
+        26545,
+        18376,
+        61872
+      ],
+      "turns_per_run": [
+        7,
+        5,
+        14
+      ],
+      "reasons": [
+        "validate_set called 6x, pokedex 9x",
+        "validate_set called 6x, pokedex 10x",
+        "validate_set never called (pokedex: 10x, other: none)"
+      ]
+    },
+    "pokedex_dedup": {
+      "tag": "behavior",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        52267,
+        33897,
+        24404
+      ],
+      "tok_per_run": [
+        31537,
+        262124,
+        48751
+      ],
+      "turns_per_run": [
+        8,
+        9,
+        11
+      ],
+      "reasons": [
+        "Efficient: 17 pokedex calls, 14 unique mons (all ≤2 calls each)",
+        "Efficient: 6 pokedex calls, 6 unique mons (all ≤2 calls each)",
+        "Efficient: 14 pokedex calls, 11 unique mons (all ≤2 calls each)"
+      ]
+    },
+    "item_availability": {
+      "tag": "behavior",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        13092,
+        13965,
+        12294
+      ],
+      "tok_per_run": [
+        7310,
+        7274,
+        7290
+      ],
+      "turns_per_run": [
+        3,
+        3,
+        3
+      ],
+      "reasons": [
+        "Valid items listed: sitrus berry, focus sash, lum berry, mega stone",
+        "Valid items listed: sitrus berry, focus sash, lum berry, mega stone",
+        "Valid items listed: sitrus berry, lum berry, mega stone"
+      ]
+    },
+    "phantom_pokemon": {
+      "tag": "hallucination",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        2134,
+        3122,
+        3118
+      ],
+      "tok_per_run": [
+        1742,
+        1731,
+        1768
+      ],
+      "turns_per_run": [
+        1,
+        1,
+        1
+      ],
+      "reasons": [
+        "Flagged both Amoonguss + Porygon2 as unavailable",
+        "Flagged both Amoonguss + Porygon2 as unavailable",
+        "Flagged both Amoonguss + Porygon2 as unavailable"
+      ]
+    },
+    "stat_accuracy": {
+      "tag": "hallucination",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        2997,
+        4116,
+        1784
+      ],
+      "tok_per_run": [
+        3768,
+        3764,
+        3761
+      ],
+      "turns_per_run": [
+        2,
+        2,
+        2
+      ],
+      "reasons": [
+        "All 6 stats match (91/124/115/145/125/100)",
+        "All 6 stats match (91/124/115/145/125/100)",
+        "All 6 stats match (91/124/115/145/125/100)"
+      ]
+    },
+    "banned_comprehensive": {
+      "tag": "hallucination",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        12160,
+        18563,
+        13878
+      ],
+      "tok_per_run": [
+        5004,
+        5008,
+        5085
+      ],
+      "turns_per_run": [
+        2,
+        2,
+        2
+      ],
+      "reasons": [
+        "Named 14 banned items + all 3 missing gimmicks",
+        "Named 14 banned items + all 3 missing gimmicks",
+        "Named 12 banned items + all 3 missing gimmicks"
+      ]
+    },
+    "usage_lookup": {
+      "tag": "retrieval",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        5558,
+        3082,
+        2236
+      ],
+      "tok_per_run": [
+        5228,
+        5231,
+        5232
+      ],
+      "turns_per_run": [
+        2,
+        2,
+        2
+      ],
+      "reasons": [
+        "Reported 51% vs truth 51% (Δ0.0pp)",
+        "Reported 51% vs truth 51% (Δ0.0pp)",
+        "Reported 51% vs truth 51% (Δ0.0pp)"
+      ]
+    },
+    "usage_teammates": {
+      "tag": "retrieval",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        8452,
+        6078,
+        3868
+      ],
+      "tok_per_run": [
+        7539,
+        21632,
+        7564
+      ],
+      "turns_per_run": [
+        2,
+        2,
+        2
+      ],
+      "reasons": [
+        "Named 3/3 top teammates: sneasler, incineroar, charizard",
+        "Named 3/3 top teammates: sneasler, incineroar, charizard",
+        "Named 3/3 top teammates: sneasler, incineroar, charizard"
+      ]
+    },
+    "tournament_retrieval": {
+      "tag": "retrieval",
+      "pass_rate": 0.6666666666666666,
+      "passes_per_run": [
+        1,
+        1,
+        0
+      ],
+      "lat_ms_per_run": [
+        15442,
+        19382,
+        7605
+      ],
+      "tok_per_run": [
+        5383,
+        15672,
+        10925
+      ],
+      "turns_per_run": [
+        2,
+        5,
+        4
+      ],
+      "reasons": [
+        "Named 5 real Mega Golurk teammates: torkoal, clefable, oranguru, hatterene, hydreigon",
+        "Named 5 real Mega Golurk teammates: torkoal, clefable, oranguru, hatterene, hydreigon",
+        "Only 1 recognizable teammates (need ≥3): clefable"
+      ]
+    },
+    "creator_opinion": {
+      "tag": "retrieval",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        6745,
+        5863,
+        3340
+      ],
+      "tok_per_run": [
+        5089,
+        5132,
+        5003
+      ],
+      "turns_per_run": [
+        2,
+        2,
+        2
+      ],
+      "reasons": [
+        "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+        "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+        "Attributed Garchomp view to AngrySlowbroPlus's tier list"
+      ]
+    },
+    "meta_core_attribution": {
+      "tag": "retrieval",
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        6496,
+        6182,
+        6701
+      ],
+      "tok_per_run": [
+        4841,
+        4756,
+        4882
+      ],
+      "turns_per_run": [
+        2,
+        2,
+        2
+      ],
+      "reasons": [
+        "Reported 55.8% (truth ~55.8%)",
+        "Reported 55.8% (truth ~55.8%)",
+        "Reported 55.8% (truth ~55.8%)"
+      ]
+    }
+  },
+  "baseline_comparison": {
+    "stage0_overall": "38/39 (97.4%)",
+    "stage1_no_jina": "35/39 (89.7%)",
+    "stage1_jina_active": "37/39 (94.9%)",
+    "token_baseline_mean": 35438,
+    "token_stage1_jina_mean": 22458,
+    "token_delta_pct": "36.6",
+    "latency_baseline_mean": 22553,
+    "latency_stage1_jina_mean": 17935,
+    "note": "Run 3 (11/13) failures: validate_loop (Gemma behavior variance, not retrieval) and tournament_retrieval. Runs 1+2 both 13/13 clean. Jina rerank adds ~3s per query but drops token use significantly. Next: set up Stage 2 graded-relevance eval to measure retrieval quality properly (nDCG@10/Recall@10/Context Precision@10)."
+  },
+  "next_action": "Proceed to Stage 2: Graded-relevance golden set + retrieval metrics harness (scripts/eval-retrieval.ts)."
+}

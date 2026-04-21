@@ -1,0 +1,402 @@
+{
+  "timestamp": "2026-04-20T20:20:50.142Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 3,
+      "tokens_total": 77208,
+      "tokens_per_pass": 77208,
+      "mean_latency_ms": 44928.333333333336,
+      "mean_turns": 11,
+      "nudge_count": 18,
+      "dedup_count": 11,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 2
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "No ```team-json block found anywhere in response",
+      "latencyMs": 50876,
+      "turns": 16,
+      "inputTokens": 17726,
+      "outputTokens": 359,
+      "totalTokens": 18085,
+      "nudgeCount": 12,
+      "dedupCount": 6,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Zapdos"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {}
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        }
+      ],
+      "contentPreview": ""
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Obsessive pokedex loops: metagross×3 (max 2 lookups per mon)",
+      "latencyMs": 43381,
+      "turns": 8,
+      "inputTokens": 27434,
+      "outputTokens": 1487,
+      "totalTokens": 28921,
+      "nudgeCount": 5,
+      "dedupCount": 4,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Indeedee"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mimikyu"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Slowking"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Melmetal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Magic Bounce",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Dazzling Gleam",
+              "Psychic",
+              "Protect"
+            ],
+            "pokemon": "Hatterene"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Regenerator",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Scald",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Slowking"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drought",
+            "item": "Charcoal",
+            "moves": [
+              "Eruption",
+              "Heat Wave",
+              "Solar Beam",
+              "Protect"
+            ],
+            "pokemon": "Torkoal"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Disguise",
+            "item": "Focus Sash",
+            "moves": [
+              "Play Rough",
+              "Shadow Sneak",
+              "Trick Room",
+              "Protect"
+            ],
+            "pokemon": "Mimikyu"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Guts",
+            "item": "Flame Orb",
+            "moves": [
+              "Facade",
+              "Headlong Rush",
+              "Crunch",
+              "Protect"
+            ],
+            "pokemon": "Ursaluna"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Clear Body",
+            "item": "Metagrossite",
+            "megaStone": "Metagrossite",
+            "moves": [
+              "Meteor Mash",
+              "Zen Headbutt",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Metagross"
+          }
+        }
+      ],
+      "contentPreview": "I have attempted to build a Trick Room team, but several core members were found to be unavailable in the Champions roster. Specifically, **Ursaluna** and **Metagross** are not in the Champions database (which only contains 186 fully-evolved Pokemon and Pikachu). \n\nI have pivoted the team to use legal alternatives that maintain the Trick Room archetype: **Hatterene** and **Slowking** act as your primary Trick Room setters, while **Torkoal** provides sun support and **Mimikyu** offers disruption. To replace the unavailable heavy hitters, I have included **Melmetal** (as a powerhouse replacement"
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 3 real Mega Golurk teammates: pelipper, archaludon, clefable",
+      "latencyMs": 40528,
+      "turns": 9,
+      "inputTokens": 28990,
+      "outputTokens": 1212,
+      "totalTokens": 30202,
+      "nudgeCount": 1,
+      "dedupCount": 1,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Clefable"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gyarados"
+          }
+        }
+      ],
+      "contentPreview": "thought\n探寻 Mega Golurk 的配合。Golurk 的 Mega 进化后拥有 Unseen Fist 效果（接触类招式无视 Protect），且攻击力大幅提升。在雨天下，Pelipper 设雨，Archaludon 配合 Electro Shot (如果是雨天的话在 S/V 很强，在 Champions 需要确认) 或利用雨水增强配合。\n\n让我查看一下 Archaludon 是否有 Electro Shot，以及在 Champions 的机制下如何配合。\n\nGolurk 的核心是 Unseen Fist，这使得他能无视 Protect 攻击。\n配队思路：雨天 (Rain) 组合。\nPelipper (Drizzle) + Archaludon (Stamina/Electro Shot) + Mega Golurk (Unseen Fist)。\n由于 Golurk 是 Ground/Ghost，他怕 Water/Grass。Archaludon (Steel/Dragon) 可以抵抗这些。\n\n还需要其他 3 个成员。\n1. Amoonguss 被禁了。\n2. 需要一个辅助，可能可以用 Clefable 或 Florges。\n3. 需要一个快速攻击手或控制手。\n4. 还需要一个能利用雨天的 Pokemon，比如 Swampert (没问题) 或 Basculegion"
+    }
+  ]
+}

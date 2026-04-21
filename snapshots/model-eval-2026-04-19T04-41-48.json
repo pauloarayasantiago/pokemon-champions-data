@@ -1,0 +1,665 @@
+{
+  "timestamp": "2026-04-19T04:41:48.876Z",
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    "tool_workflow",
+    "banned_item",
+    "banned_mech",
+    "team_json",
+    "validate_loop",
+    "pokedex_dedup",
+    "item_availability"
+  ],
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "pokedex called 11x (Dragonite ✓), validate 0x",
+      "latencyMs": 13563,
+      "turns": 12,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite Mega Stone"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Dragonite stats moves ability Champions"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incinceroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Grimmsnarl"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Grimmsnarl"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Grimmsnarl"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Clefable"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Amoonguss"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Amoonguss"
+          }
+        }
+      ],
+      "contentPreview": ""
+    },
+    {
+      "testId": "banned_item",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Correctly identified Life Orb as unavailable in Champions",
+      "latencyMs": 12466,
+      "turns": 2,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "is Life Orb allowed in Champions VGC?"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIn **Champions**, you cannot use a **Life Orb**. That item does not exist in this game format.\n\nSince Dragonite is a powerful offensive threat, your choice of item should depend on whether you want to maximize its damage, increase its survivability, or ensure it gets a move off.\n\n### Recommended Items for Dragonite in Champions:\n\n1.  **Dragon Fang / Draco Plate (Type-Boosting Items):**\n    Since Life Orb is unavailable, using a type-boosting held item is one of the most efficient ways to increase Dragonite's damage output without the recoil penalty. A **Draco Plate** will boost its Dra"
+    },
+    {
+      "testId": "banned_mech",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Correctly stated Tera doesn't exist in Champions",
+      "latencyMs": 6297,
+      "turns": 1,
+      "toolCallLog": [],
+      "contentPreview": "Terastallization does not exist in Pokémon Champions. In this game, the only battle gimmick available is Mega Evolution. \n\nIf you are looking to maximize Dragonite's damage output, you should focus on its Mega Evolution if available, or optimize its moves and held items (such as type-boosting items like Dragon Fang or Sitrus Berries) within the specific rules of the Champions format."
+    },
+    {
+      "testId": "team_json",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "No ```team-json block found anywhere in response",
+      "latencyMs": 33880,
+      "turns": 12,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Champions VGC doubles meta rain teams mega evolution items"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Basculegion"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Rillaboom"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Charizard Y"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Charizard"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Basculegion"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hurricane",
+              "Weather Ball",
+              "Tailwind",
+              "Protect"
+            ],
+            "pokemon": "Pelipper"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Focus Sash",
+            "moves": [
+              "Wave Crash",
+              "Aqua Jet",
+              "Flip Turn",
+              "Protect"
+            ],
+            "pokemon": "Basculegion"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Stamina",
+            "item": "Assault Vest",
+            "moves": [
+              "Electro Shot",
+              "Flash Cannon",
+              "Draco Meteor",
+              "Protect"
+            ],
+            "pokemon": "Archaludon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Intimidate",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Fake Out",
+              "Parting Shot",
+              "Flare Blitz",
+              "Knock Off"
+            ],
+            "pokemon": "Incineroar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Blaze",
+            "item": "Charizardite Y",
+            "moves": [
+              "Flamethrower",
+              "Hurricane",
+              "Solar Beam",
+              "Protect"
+            ],
+            "pokemon": "Charizard"
+          }
+        }
+      ],
+      "contentPreview": ""
+    },
+    {
+      "testId": "validate_loop",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "validate_set called 8x, pokedex 16x",
+      "latencyMs": 55090,
+      "turns": 10,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hippowdon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Landorus-Therian"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Glinting"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Champions meta Sand Rush Tyranitar Excadrill items moves"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Corviknight"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Milotic"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gliscor"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Rock Slide",
+              "Earthquake",
+              "Protect",
+              "Dark Pulse"
+            ],
+            "pokemon": "Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Rush",
+            "item": "Focus Sash",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Rock Slide",
+              "Protect"
+            ],
+            "pokemon": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Intimidate",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Fake Out",
+              "Flare Blitz",
+              "Knock Off",
+              "Parting Shot"
+            ],
+            "pokemon": "Incineroar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Poison Heal",
+            "item": "Toxic Orb",
+            "moves": [
+              "Earthquake",
+              "Protect",
+              "Toxic",
+              "Spikes"
+            ],
+            "pokemon": "Gliscor"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Moxie",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Waterfall",
+              "Dragon Dance",
+              "Ice Fang",
+              "Protect"
+            ],
+            "pokemon": "Gyarados"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Marvel Scale",
+            "item": "Lum Berry",
+            "moves": [
+              "Scald",
+              "Recover",
+              "Ice Beam",
+              "Protect"
+            ],
+            "pokemon": "Milotic"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Intimidate",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Fake Out",
+              "Flare Blitz",
+              "Parting Shot",
+              "Will-O-Wisp"
+            ],
+            "pokemon": "Incineroar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Poison Heal",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Earthquake",
+              "Protect",
+              "Toxic",
+              "Spikes"
+            ],
+            "pokemon": "Gliscor"
+          }
+        }
+      ],
+      "contentPreview": "This Sand Rush team is built around the classic synergy of Tyranitar's Sand Stream and Excadrill's Sand Rush ability. The team focuses on weather control, speed control via sand, and a balanced defensive core to mitigate the weaknesses inherent in sand teams (specifically Water and Fighting types).\n\n### Team Breakdown:\n\n*   **Tyranitar (Sand Setter):** The core of the team. It sets the sandstorm required for Excadrill to sweep. Its bulky typing and access to moves like Rock Slide and Earthquake allow it to deal significant chip damage while maintaining field presence.\n*   **Excadrill (Sand Swe"
+    },
+    {
+      "testId": "pokedex_dedup",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Efficient: 12 pokedex calls, 12 unique mons (all ≤2 calls each)",
+      "latencyMs": 38289,
+      "turns": 5,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Indeedee"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Slowbro"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Farigiraf"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hariyama"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Conkeldurr"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Porygon2"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gallade"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Slowbro"
+          }
+        }
+      ],
+      "contentPreview": "To build a competitive Trick Room team for Champions, we focus on high-bulk, low-speed attackers that can capitalize on the reversed turn order. This team utilizes **Farigiraf** and **Hatterene** as dual Trick Room setters, with **Farigiraf's** *Armor Tail* ability providing vital protection against priority moves like Fake Out and Extreme Speed.\n\nThe offensive core consists of **Torkoal** for sun-boosted Fire damage, **Conkeldurr** for immense physical pressure, and **Slowbro** (as a Mega evolution candidate) to provide redirection and bulky offense. **Gallade** serves as a versatile attacker"
+    },
+    {
+      "testId": "item_availability",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Valid items listed: sitrus berry, focus sash, draco plate, charcoal, lum berry, yache berry, mega stone, mystic water",
+      "latencyMs": 37665,
+      "turns": 3,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "available items in Champions for Dragonite sets"
+          }
+        }
+      ],
+      "contentPreview": " Winded by the search results, I have verified the available items in Champions. Since Dragonite can potentially Mega Evolve (as noted in the search results regarding Mega Dragonite), it has a few distinct paths depending on its role.\n\nHere are your best options for Dragonite in Champions:\n\n### 1. The Mega Evolution Route\nIf your team is built to support it, **Mega Stone** is your strongest option. \n* **Mega Dragonite:** This transforms the Pokemon into its Mega form, likely boosting its stats or enhancing its **Multiscale** ability. This is your \"all-in\" offensive or defensive powerhouse choi"
+    }
+  ]
+}

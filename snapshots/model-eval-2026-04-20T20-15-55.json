@@ -1,0 +1,355 @@
+{
+  "timestamp": "2026-04-20T20:15:55.408Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 3,
+      "tokens_total": 58914,
+      "tokens_per_pass": 58914,
+      "mean_latency_ms": 36843.666666666664,
+      "mean_turns": 10.666666666666666,
+      "nudge_count": 21,
+      "dedup_count": 6,
+      "by_tag": {
+        "behavior": {
+          "passes": 1,
+          "total": 2
+        },
+        "retrieval": {
+          "passes": 0,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "team-json has only 4/6 Pokemon",
+      "latencyMs": 61716,
+      "turns": 9,
+      "inputTokens": 32222,
+      "outputTokens": 1934,
+      "totalTokens": 34156,
+      "nudgeCount": 7,
+      "dedupCount": 5,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Manaphy"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Politoed"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Milotic"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Floatzel"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hurricane",
+              "Weather Ball",
+              "Wide Guard",
+              "Protect"
+            ],
+            "pokemon": "Pelipper"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Competitive",
+            "item": "Leftovers",
+            "moves": [
+              "Scald",
+              "Ice Beam",
+              "Recover",
+              "Protect"
+            ],
+            "pokemon": "Milotic"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hydro Pump",
+              "Ice Beam",
+              "Encore",
+              "Protect"
+            ],
+            "pokemon": "Politoed"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Stamina",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Electro Shot",
+              "Flash Cannon",
+              "Draco Meteor",
+              "Protect"
+            ],
+            "pokemon": "Archaludon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Surf",
+              "Ice Beam",
+              "Protect",
+              "Helping Hand"
+            ],
+            "pokemon": "Kingdra"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Mega Swampert",
+            "moves": [
+              "Waterfall",
+              "Earthquake",
+              "Ice Punch",
+              "Protect"
+            ],
+            "pokemon": "Swampert"
+          }
+        }
+      ],
+      "contentPreview": "I apologize for the omission. My previous response failed to include the full team because the validation for Kingdra and Swampert returned as illegal due to them being unavailable in the Champions roster. \n\nAs per the **UNAVAILABLE POKEMON** rule, I must explicitly state why they cannot be included in the final JSON:\n1. **Swampert/Mega Swampert** is unavailable in Champions because it is not in the 186-Pokemon roster.\n2. **Kingdra** is unavailable in Champions because it is not in the 186-Pokemon roster.\n\nBecause `validate_set` returned `overall: false` for these two members, I cannot include"
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Efficient: 2 pokedex calls, 2 unique mons (all ≤2 calls each)",
+      "latencyMs": 34920,
+      "turns": 14,
+      "inputTokens": 1520,
+      "outputTokens": 92,
+      "totalTokens": 1612,
+      "nudgeCount": 13,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {}
+        }
+      ],
+      "contentPreview": ""
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Only 0 recognizable teammates (need ≥3): none",
+      "latencyMs": 13895,
+      "turns": 9,
+      "inputTokens": 22947,
+      "outputTokens": 199,
+      "totalTokens": 23146,
+      "nudgeCount": 1,
+      "dedupCount": 1,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Amoonguss"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Milotic"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "No Guard",
+            "item": "Golurkite",
+            "moves": [
+              "Headlong Rush",
+              "Poltergeist",
+              "High Horsepower",
+              "Protect"
+            ],
+            "pokemon": "Golurk"
+          }
+        }
+      ],
+      "contentPreview": ""
+    }
+  ]
+}

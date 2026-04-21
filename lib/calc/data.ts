@@ -21,7 +21,12 @@ function readCSV(filename: string): Record<string, string>[] {
     relax_quotes: true,
     relax_column_count: true,
   });
-  return rows.filter((r) => r.name && r.name.trim().length > 0 && r[Object.keys(r)[1]] !== undefined);
+  return rows.filter((r) => {
+    const keys = Object.keys(r);
+    if (keys.length < 2) return false;
+    const first = r[keys[0]];
+    return first !== undefined && first !== null && String(first).trim().length > 0 && r[keys[1]] !== undefined;
+  });
 }
 
 function parseStats(row: Record<string, string>): BaseStats {

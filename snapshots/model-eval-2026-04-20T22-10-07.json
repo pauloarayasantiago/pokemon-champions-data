@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-20T22:10:07.022Z",
+  "config": {
+    "useRealRag": false,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 4497,
+      "tokens_per_pass": 4497,
+      "mean_latency_ms": 15937,
+      "mean_turns": 2,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf",
+      "latencyMs": 15937,
+      "turns": 2,
+      "inputTokens": 3738,
+      "outputTokens": 759,
+      "totalTokens": 4497,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "thought\nThe most notable recent tournament-winning team featuring Mega Golurk in Champions Regulation M-A is the team used by **pokefey** to win the *Torneo Salida Pokemon Champions Tour* (PC105).\n\nThis team is built around a **Sun-based Trick Room archetype**. Mega Golurk serves as the primary offensive powerhouse, utilizing its immense physical pressure once Trick Room is established. The team utilizes Torkoal to set the Sun, which synergizes with Venusaur to provide offensive coverage and utility, while Incineroar provides essential redirection and pivoting to ensure Mega Golurk can safely "
+    }
+  ]
+}

@@ -47,9 +47,12 @@ export function chatStream(params: ChatParams): AsyncIterable<ChatDelta> {
   return pick(params.model).chatStream(params);
 }
 
+// Routing (2026-04-20): Gemma for batch/eval (cheap, 85% pass); Gemini 3 Flash for team-building UI (94.9% pass, parallel tools, always-valid output). See memory-bank/activeContext.md Task 4.
 export const DEFAULT_MODEL: ModelId = "gemma-4-26b";
+export const TEAM_BUILDING_MODEL: ModelId = "gemini-3-flash";
 
 export const AVAILABLE_MODELS: { id: ModelId; label: string; tier: "free" | "paid" }[] = [
+  { id: "gemini-3-flash", label: "Gemini 3 Flash Preview", tier: "paid" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", tier: "free" },
   { id: "llama-3.3-70b", label: "Llama 3.3 70B", tier: "free" },
   { id: "nemotron-super", label: "GPT-OSS 120B (OpenRouter)", tier: "free" },

@@ -22,6 +22,49 @@ export const BANNED_MOVES_BY_POKEMON: Record<string, ReadonlySet<string>> = {
   incineroar: new Set(["knock off", "u-turn"]),
 };
 
+// Common S/V pre-evolutions absent from Champions (which only allows fully-evolved forms).
+// Keys are lowercased query names; values are the fully-evolved form to redirect to.
+const PRE_EVO_MAP: Record<string, string> = {
+  porygon2: "Porygon-Z",
+  porygon: "Porygon-Z",
+  clefairy: "Clefable",
+  cleffa: "Clefable",
+  chansey: "Blissey",
+  happiny: "Blissey",
+  rhydon: "Rhyperior",
+  rhyhorn: "Rhyperior",
+  dusclops: "Dusknoir",
+  duskull: "Dusknoir",
+  electabuzz: "Electivire",
+  elekid: "Electivire",
+  magmar: "Magmortar",
+  magby: "Magmortar",
+  gligar: "Gliscor",
+  dragonair: "Dragonite",
+  dratini: "Dragonite",
+  scyther: "Scizor",
+  kirlia: "Gardevoir",
+  ralts: "Gardevoir",
+  lampent: "Chandelure",
+  litwick: "Chandelure",
+  golbat: "Crobat",
+  zubat: "Crobat",
+  doublade: "Aegislash",
+  honedge: "Aegislash",
+  togetic: "Togekiss",
+  togepi: "Togekiss",
+  roselia: "Roserade",
+  budew: "Roserade",
+  sneasel: "Weavile",
+  piloswine: "Mamoswine",
+  swinub: "Mamoswine",
+  murkrow: "Honchkrow",
+  misdreavus: "Mismagius",
+  yanma: "Yanmega",
+  lickitung: "Lickilicky",
+  tangela: "Tangrowth",
+};
+
 let _items: Map<string, { name: string; effect: string }> | null = null;
 let _stoneToMega: Map<string, MegaData> | null = null;
 
@@ -93,6 +136,7 @@ export interface PokedexEntry {
     stone: string | null;
   };
   notFound?: true;
+  reason?: string;
   suggestions?: string[];
 }
 
@@ -143,6 +187,18 @@ function closestNames(query: string, n = 3): string[] {
 }
 
 export function lookupPokemon(name: string): PokedexEntry {
+  if (typeof name !== "string" || !name.trim()) {
+    return {
+      name: String(name ?? ""),
+      types: [],
+      abilities: [],
+      stats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, bst: 0 },
+      moves: [],
+      notFound: true,
+      reason: "empty or missing pokemon name",
+      suggestions: [],
+    };
+  }
   const trimmed = name.trim();
   const lower = trimmed.toLowerCase();
   const isMegaQuery = lower.startsWith("mega ");
@@ -152,7 +208,23 @@ export function lookupPokemon(name: string): PokedexEntry {
   const mega = findMega(isMegaQuery ? trimmed : baseQuery);
 
   if (!mon && !mega) {
-    return { name: trimmed, types: [], abilities: [], stats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, bst: 0 }, moves: [], notFound: true, suggestions: closestNames(baseQuery) };
+    const preEvoEvolved = PRE_EVO_MAP[baseQuery.toLowerCase()];
+    const suggestions = preEvoEvolved
+      ? [preEvoEvolved, ...closestNames(baseQuery, 2).filter((n) => n !== preEvoEvolved)]
+      : closestNames(baseQuery);
+    const result: PokedexEntry = {
+      name: trimmed,
+      types: [],
+      abilities: [],
+      stats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0, bst: 0 },
+      moves: [],
+      notFound: true,
+      suggestions,
+    };
+    if (preEvoEvolved) {
+      result.reason = `pre-evolution — Champions only allows fully-evolved forms; use ${preEvoEvolved} instead`;
+    }
+    return result;
   }
 
   const basePokemon = mon ?? (mega ? findPokemon(mega.basePokemon) : undefined);

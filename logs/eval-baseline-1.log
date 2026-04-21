@@ -1,0 +1,66 @@
+
+=== eval-models ===
+Models: gemma-4-26b
+Tests:  tool_workflow, team_json, validate_loop, pokedex_dedup, item_availability, phantom_pokemon, stat_accuracy, banned_comprehensive, usage_lookup, usage_teammates, tournament_retrieval, creator_opinion, meta_core_attribution
+Search: REAL-RAG (lib/rag.ts → Supabase pc_chunks)
+Tip:    run with --verbose to see response content
+
+
+── Gemma 4 26B A4B (OpenRouter) (google/gemma-4-26b-a4b-it) ──
+  tool_workflow          ... [WARN] Index is stale: 5 file(s) modified since last reindex (memory-bank/errors.md, memory-bank/progress.md, memory-bank/techContext.md...). Run /reindex to update.
+[embed] texts=1 HF_TOKEN=UNSET
+Loading embedding model Xenova/all-MiniLM-L6-v2 (first run downloads ~80MB)...
+Embedding model loaded.
+[embed] local OK, got 1 vectors
+✓ pokedex called 1x (Dragonite ✓), validate 0x (34.2s, 3t, 58323tok [pokedex→search])
+  team_json              ... ✓ team-json valid — 6 Pokemon, archetype: "Rain" (81.6s, 16t, 109659tok [pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→pokedex→pokedex→pokedex→validate_set→validate_set→validate_set])
+  validate_loop          ... ✓ validate_set called 7x, pokedex 12x (51.0s, 7t, 30578tok [pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set])
+  pokedex_dedup          ... ✓ Efficient: 6 pokedex calls, 6 unique mons (all ≤2 calls each) (33.1s, 14t, 1706tok [pokedex→pokedex→pokedex→pokedex→pokedex→pokedex])
+  item_availability      ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Valid items listed: sitrus berry, focus sash, lum berry (17.1s, 3t, 7263tok [pokedex→search])
+  phantom_pokemon        ... ✓ Flagged both Amoonguss + Porygon2 as unavailable (2.8s, 1t, 1740tok [no tools])
+  stat_accuracy          ... ✓ All 6 stats match (91/124/115/145/125/100) (2.8s, 2t, 3767tok [pokedex])
+  banned_comprehensive   ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Named 14 banned items + all 3 missing gimmicks (16.7s, 2t, 5012tok [search])
+  usage_lookup           ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Reported 51% vs truth 51% (Δ0.0pp) (2.4s, 2t, 5095tok [search])
+  usage_teammates        ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Named 3/3 top teammates: sneasler, incineroar, charizard (3.8s, 2t, 19973tok [search])
+  tournament_retrieval   ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf (33.1s, 5t, 14712tok [search→pokedex→pokedex→pokedex])
+  creator_opinion        ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Attributed Garchomp view to AngrySlowbroPlus's tier list (6.5s, 2t, 5123tok [search])
+  meta_core_attribution  ... [embed] texts=1 HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+✓ Reported 55.8% (truth ~55.8%) (9.1s, 2t, 4850tok [search])
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+SUMMARY — pass/fail by test
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Model                  tool_workflow    team_json        validate_loop    pokedex_dedup    item_availabili  phantom_pokemon  stat_accuracy    banned_comprehe  usage_lookup     usage_teammates  tournament_retr  creator_opinion  meta_core_attri 
+----------------------------------------------------------------------------------------------------
+Gemma 4 26B A4B (O (13/13) ✓ 34.2s          ✓ 81.6s          ✓ 51.0s          ✓ 33.1s          ✓ 17.1s          ✓ 2.8s           ✓ 2.8s           ✓ 16.7s          ✓ 2.4s           ✓ 3.8s           ✓ 33.1s          ✓ 6.5s           ✓ 9.1s          
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+SUMMARY — score by category
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Model                  behavior       retrieval      hallucination  overall   
+------------------------------------------------------------------------------
+Gemma 4 26B A4B (Ope   5/5            5/5            3/3            13/13     
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+EFFICIENCY — primary metric: tokens_per_pass (lower is better)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Model                  passes   tok_total    tok/pass    lat_avg   turns_avg  nudges   dedup  
+----------------------------------------------------------------------------------------------
+Gemma 4 26B A4B (Ope   13/13    267801       20600       22.6s     4.7        30       13     
+
+Total: 13/13 passed
+
+Snapshot → C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\snapshots\model-eval-2026-04-21T00-25-56.json

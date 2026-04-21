@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-20T18:28:33.126Z",
+  "config": {
+    "useRealRag": false,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 3089,
+      "tokens_per_pass": 3089,
+      "mean_latency_ms": 24625,
+      "mean_turns": 2,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 0,
+          "total": 0
+        },
+        "hallucination": {
+          "passes": 1,
+          "total": 1
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "banned_comprehensive",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 14 banned items + all 3 missing gimmicks",
+      "latencyMs": 24625,
+      "turns": 2,
+      "inputTokens": 2683,
+      "outputTokens": 406,
+      "totalTokens": 3089,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Champions game mechanics and items not available compared to Scarlet/Violet"
+          }
+        }
+      ],
+      "contentPreview": "\nIn **Pokémon Champions**, the competitive landscape is significantly different from Pokémon Scarlet/Violet. To ensure your team-building is legal, you must avoid several mechanics and items that were central to the Scarlet/Violet era.\n\n### 🚫 Non-Existent Battle Mechanics\nThe following mechanics **do not exist** in Pokémon Champions:\n*   **Terastallization:** This is the primary gimmick of Scarlet/Violet, but it is completely absent here.\n*   **Dynamax / Gigantamax:** These mechanics are not available.\n*   **Z-Moves:** These mechanics are not available.\n\n**The only available battle gimmick is"
+    }
+  ]
+}

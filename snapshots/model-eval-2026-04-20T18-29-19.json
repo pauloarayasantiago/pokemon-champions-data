@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-04-20T18:29:19.161Z",
+  "config": {
+    "useRealRag": false,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 3,
+      "total": 4,
+      "tokens_total": 10323,
+      "tokens_per_pass": 3441,
+      "mean_latency_ms": 9273,
+      "mean_turns": 1.75,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 2,
+          "total": 2
+        },
+        "hallucination": {
+          "passes": 1,
+          "total": 2
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Flagged only Amoonguss — missed the other",
+      "latencyMs": 6068,
+      "turns": 1,
+      "inputTokens": 1225,
+      "outputTokens": 115,
+      "totalTokens": 1340,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [],
+      "contentPreview": "I cannot fulfill this request because **Amoonguss is not available in the Champions roster.**\n\nIn Pokemon Champions, the roster is strictly limited to 186 fully-evolved Pokemon and Pikachu. Amoonguss is not part of this selection.\n\nIf you would like to build a team around **Porygon2**, I can certainly help with that. We could look for a strong core partner such as a bulky offensive threat or a weather setter. Would you like me to suggest some legal partners for Porygon2 to build a competitive team?"
+    },
+    {
+      "testId": "stat_accuracy",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "All 6 stats match (91/124/115/145/125/100)",
+      "latencyMs": 5604,
+      "turns": 2,
+      "inputTokens": 2896,
+      "outputTokens": 92,
+      "totalTokens": 2988,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIn Pokemon Champions, Mega Dragonite's base stats are as follows:\n\n* **HP:** 91\n* **Attack:** 124\n* **Defense:** 115\n* **Sp. Atk:** 145\n* **Sp. Def:** 125\n* **Speed:** 100"
+    },
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 54% vs truth 51% (Δ3.0pp)",
+      "latencyMs": 3136,
+      "turns": 2,
+      "inputTokens": 2653,
+      "outputTokens": 53,
+      "totalTokens": 2706,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar usage percentage Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIn Pokemon Champions Regulation M-A, Incineroar's current tournament usage percentage is approximately 48-54%."
+    },
+    {
+      "testId": "meta_core_attribution",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 55.8% (truth ~55.8%)",
+      "latencyMs": 22284,
+      "turns": 2,
+      "inputTokens": 2756,
+      "outputTokens": 533,
+      "totalTokens": 3289,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Archaludon Pelipper rain core win rate meta"
+          }
+        }
+      ],
+      "contentPreview": " nghiệm thành công. Kết quả cho thấy Archaludon + Pelipper là một core rất mạnh trong meta hiện tại của Pokemon Champions.\n\nDựa trên dữ liệu meta (Regulation M-A), core **Archaludon + Pelipper** có tỉ lệ thắng (win rate) là **55.8%**.\n\nĐây là một vài điểm phân tích về hiệu cảnh quả của core này:\n- **Hi|ệu quả**: Đây là một con số thực tế cho thấy core này chiến thuật thuật này là là một chiến thuật Rain (mưa) rain core mạnh mẽ và laggio (lag) không cần thiết. Nó đặt vào vị trí hàng đầu trong các chiến thuật thuật thuật là các \"weather cores\" weather cores.\nmanh (strong) so với các chiến thuật "
+    }
+  ]
+}

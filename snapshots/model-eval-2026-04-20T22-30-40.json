@@ -1,0 +1,187 @@
+{
+  "timestamp": "2026-04-20T22:30:40.355Z",
+  "config": {
+    "useRealRag": false,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 14178,
+      "tokens_per_pass": 14178,
+      "mean_latency_ms": 33789,
+      "mean_turns": 4,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf",
+      "latencyMs": 33789,
+      "turns": 4,
+      "inputTokens": 12881,
+      "outputTokens": 1297,
+      "totalTokens": 14178,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Venusaur"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Sneasler"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Farigiraf"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Unseen Fist",
+            "item": "Golurkite",
+            "moves": [
+              "Poltergeist",
+              "High Horsepower",
+              "Close Combat",
+              "Protect"
+            ],
+            "pokemon": "Golurk"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Intimidate",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Fake Out",
+              "Flare Blitz",
+              "Knock Off",
+              "Parting Shot"
+            ],
+            "pokemon": "Incineroar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drought",
+            "item": "Charcoal",
+            "moves": [
+              "Eruption",
+              "Heat Wave",
+              "Sunny Day",
+              "Protect"
+            ],
+            "pokemon": "Torkoal"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Chlorophyll",
+            "item": "Focus Sash",
+            "moves": [
+              "Solar Beam",
+              "Sludge Wave",
+              "Earth Power",
+              "Protect"
+            ],
+            "pokemon": "Venusaur"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Unburden",
+            "item": "White Herb",
+            "moves": [
+              "Dire Claw",
+              "Close Combat",
+              "Fake Out",
+              "Protect"
+            ],
+            "pokemon": "Sneasler"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Armor Tail",
+            "item": "Shuca Berry",
+            "moves": [
+              "Trick Room",
+              "Helping Hand",
+              "Psychic Noise",
+              "Protect"
+            ],
+            "pokemon": "Farigiraf"
+          }
+        }
+      ],
+      "contentPreview": "thought\nA notable recent tournament-winning team in Champions Regulation M-A (specifically the team used by **pokefey** to win the Torneo Salida Pokemon Champions Tour) is a Sun-based offense built around the heavy hitting power of **Mega Golurk**.\n\n### Team Strategy\nThis team leverages the Sun synergy between **Torkoal** and **Venusaur**. Torkoal sets the weather with its *Drought* ability, which immediately activates Venusaur's *Chlorophyll* to double its Speed, making it a terrifying sweeper under the sun. **Mega Golurk** serves as the primary physical wallbreaker; its *Unseen Fist* ability"
+    }
+  ]
+}

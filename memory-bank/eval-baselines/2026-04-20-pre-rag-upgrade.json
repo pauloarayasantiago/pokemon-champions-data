@@ -1,0 +1,324 @@
+{
+  "label": "pre-rag-upgrade-stage0-baseline",
+  "date": "2026-04-20",
+  "model": "gemma-4-26b (google/gemma-4-26b-a4b-it via OpenRouter)",
+  "mode": "--real-rag (lib/rag.ts → Supabase pc_chunks)",
+  "embedding_model": "Xenova/all-MiniLM-L6-v2 (384-dim)",
+  "reranker": "none (additive 8-boost metadata layer only)",
+  "vector_schema": "vector(384)",
+  "snapshots_source": [
+    "model-eval-2026-04-21T00-25-56.json",
+    "model-eval-2026-04-21T00-30-45.json",
+    "model-eval-2026-04-21T00-35-45.json"
+  ],
+  "runs_summary": {
+    "total_runs": 3,
+    "overall_pass_rate": 0.9743589743589743,
+    "passes_per_run": [
+      "13/13",
+      "12/13",
+      "13/13"
+    ],
+    "tok_per_pass": {
+      "mean": 35438,
+      "runs": [
+        20600,
+        26175,
+        59539
+      ]
+    },
+    "mean_latency_ms": {
+      "mean": 22553,
+      "runs": [
+        22642,
+        22097,
+        22921
+      ]
+    },
+    "nudge_count_per_run": [
+      30,
+      14,
+      11
+    ],
+    "dedup_count_per_run": [
+      13,
+      22,
+      16
+    ],
+    "by_tag": {
+      "behavior": [
+        "5/5",
+        "4/5",
+        "5/5"
+      ],
+      "retrieval": [
+        "5/5",
+        "5/5",
+        "5/5"
+      ],
+      "hallucination": [
+        "3/3",
+        "3/3",
+        "3/3"
+      ]
+    }
+  },
+  "per_test": {
+    "tool_workflow": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        34245,
+        46881,
+        48953
+      ],
+      "tok_per_run": [
+        58323,
+        116842,
+        46984
+      ],
+      "fail_reasons": []
+    },
+    "team_json": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        81635,
+        47265,
+        51175
+      ],
+      "tok_per_run": [
+        109659,
+        34769,
+        28953
+      ],
+      "fail_reasons": []
+    },
+    "validate_loop": {
+      "pass_rate": 0.6666666666666666,
+      "passes_per_run": [
+        1,
+        0,
+        1
+      ],
+      "lat_ms_per_run": [
+        50954,
+        48751,
+        38189
+      ],
+      "tok_per_run": [
+        30578,
+        56030,
+        27629
+      ],
+      "fail_reasons": [
+        "validate_set never called (pokedex: 8x, other: none)"
+      ]
+    },
+    "pokedex_dedup": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        33093,
+        50660,
+        52480
+      ],
+      "tok_per_run": [
+        1706,
+        38330,
+        604068
+      ],
+      "fail_reasons": []
+    },
+    "item_availability": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        17092,
+        14830,
+        13132
+      ],
+      "tok_per_run": [
+        7263,
+        7319,
+        7332
+      ],
+      "fail_reasons": []
+    },
+    "phantom_pokemon": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        2843,
+        3621,
+        3326
+      ],
+      "tok_per_run": [
+        1740,
+        1738,
+        1757
+      ],
+      "fail_reasons": []
+    },
+    "stat_accuracy": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        2834,
+        3188,
+        2608
+      ],
+      "tok_per_run": [
+        3767,
+        3771,
+        3763
+      ],
+      "fail_reasons": []
+    },
+    "banned_comprehensive": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        16668,
+        12161,
+        11366
+      ],
+      "tok_per_run": [
+        5012,
+        4814,
+        4005
+      ],
+      "fail_reasons": []
+    },
+    "usage_lookup": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        2386,
+        2788,
+        24601
+      ],
+      "tok_per_run": [
+        5095,
+        5095,
+        5098
+      ],
+      "fail_reasons": []
+    },
+    "usage_teammates": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        3820,
+        3384,
+        4363
+      ],
+      "tok_per_run": [
+        19973,
+        20215,
+        20008
+      ],
+      "fail_reasons": []
+    },
+    "tournament_retrieval": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        33144,
+        38500,
+        23243
+      ],
+      "tok_per_run": [
+        14712,
+        15351,
+        14497
+      ],
+      "fail_reasons": []
+    },
+    "creator_opinion": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        6482,
+        4951,
+        5131
+      ],
+      "tok_per_run": [
+        5123,
+        5056,
+        5077
+      ],
+      "fail_reasons": []
+    },
+    "meta_core_attribution": {
+      "pass_rate": 1,
+      "passes_per_run": [
+        1,
+        1,
+        1
+      ],
+      "lat_ms_per_run": [
+        9148,
+        10277,
+        19412
+      ],
+      "tok_per_run": [
+        4850,
+        4769,
+        4839
+      ],
+      "fail_reasons": []
+    }
+  },
+  "notes": [
+    "Baseline captured before Stage 1 (halfvec migration, bge-small-en-v1.5, Jina Reranker v2)",
+    "One flaky test this session: validate_loop (passed 2/3 — run 2 Gemma skipped validate_set)",
+    "Run 3 had a pokedex_dedup token blowup (604k tokens in one test) — unrelated loop protection edge case",
+    "Variance profile confirms the plan-reported baseline (12/13 target; we saw 38/39 aggregate = 97.4%)",
+    "Stale index warning logged each run (5 memory-bank files modified since last reindex)"
+  ]
+}

@@ -30,60 +30,73 @@
   - Service: `SUPABASE_SERVICE_KEY` or `SUPABASE_SECRET`
 - Client factory: `lib/supabase.ts` → `supabaseServer()` / `supabaseAnon()`; manually loads root `.env` once at startup so CLI scripts work without dotenv
 
-## LLM Provider Layer (`src/lib/llm/`) — Under Exploration
+## LLM Provider Layer (`src/lib/llm/`)
 
 All providers route through `openai-compat.ts` (OpenAI chat completions format). The dispatcher in `src/lib/llm.ts` picks the right adapter from `MODEL_REGISTRY`.
+
+**Current DEFAULT_MODEL**: `gemma-4-26b` (Gemma 4 26B A4B via OpenRouter)
 
 ### Adapters
 | File | Provider | Notes |
 |------|----------|-------|
 | `anthropic.ts` | Anthropic SDK | Claude Sonnet/Opus — paid |
-| `gemini.ts` | Google AI Studio | `gemini-2.5-flash` — free, used as app default |
+| `gemini.ts` | Google AI Studio | `gemini-2.5-flash` — free, available as fallback |
 | `groq.ts` | Groq | `llama-3.3-70b-versatile` — free |
-| `openrouter.ts` | OpenRouter | Free tier: `gpt-oss-120b`, `gemma-4-26b`, `gemma-4-31b` |
-| `ollama.ts` | Ollama (local + remote) | **Option being explored** — not in production |
+| `openrouter.ts` | OpenRouter | `gemma-4-26b` (default), `gpt-oss-120b`, `gemma-4-31b` |
+| `ollama.ts` | Ollama (local + remote) | Wired but untested — server GPU unknown |
 
-### Ollama Option (not yet in production)
+### Ollama (wired, not yet validated)
 - Local: `OLLAMA_BASE_URL` (default `http://localhost:11434`) — for 7-9B models on RTX 2070 SUPER 8GB
 - Remote: `OLLAMA_REMOTE_URL` + `OLLAMA_REMOTE_KEY` — for larger models on a managed server
 - Routes by model ID prefix: `remote-*` → remote config, others → local config
-- No new adapter logic needed — reuses `compatChat`/`compatChatStream`
 
-### Model Registry (all options, none final for production)
+### Model Registry
 ```
+DEFAULT → gemma-4-26b
+
 Free hosted (OpenRouter):
-  nemotron-super  → openai/gpt-oss-120b:free
-  gemma-4-26b     → google/gemma-4-26b-a4b-it
-  gemma-4-31b     → google/gemma-4-31b-it:free
+  gemma-4-26b     → google/gemma-4-26b-a4b-it   ← CURRENT DEFAULT (6-7/7 eval score)
+  nemotron-super  → openai/gpt-oss-120b:free      (3/7)
+  gemma-4-31b     → google/gemma-4-31b-it:free   (auth error — Google key needed in OpenRouter)
 
 Free hosted (direct):
-  gemini-2.5-flash → gemini-2.5-flash (Gemini API — current app default)
+  gemini-2.5-flash → gemini-2.5-flash (Gemini API — former default, available as fallback)
   llama-3.3-70b    → llama-3.3-70b-versatile (Groq)
 
 Paid:
   sonnet-4-6      → claude-sonnet-4-6 (Anthropic)
   opus-4-7        → claude-opus-4-7 (Anthropic)
 
-Ollama local (option, needs install):
+Ollama local (wired, needs install + model pull):
   qwen2.5-7b      → qwen2.5:7b-instruct-q4_K_M
   llama3.1-8b     → llama3.1:8b-instruct-q4_K_M
 
-Ollama remote (option, server GPU TBD):
-  remote-gemma4   → gemma3:27b-it-q4_K_M    (placeholder — update after pull)
+Ollama remote (wired, server GPU TBD):
+  remote-gemma4   → gemma4:27b-it-q4_K_M    (corrected from gemma3 placeholder)
   remote-qwen32b  → qwen2.5:32b-instruct-q4_K_M
 ```
 
-### Eval Harness (`scripts/eval-models.ts`)
-- 5 tests: tool_workflow, banned_item, banned_mech, team_json, validate_loop
-- Query-aware search stub (9 Champions knowledge entries, no Supabase needed)
-- Finalization turn for team-json (pushes one extra message if block not found)
-- `npm run eval:models` — supports `--models`, `--tests`, `--verbose`
+### Eval Harness (`scripts/eval-models.ts`) — v4
+- **13 tests** (5 behavior + 5 retrieval + 3 hallucination):
+  - Behavior: `tool_workflow`, `team_json`, `validate_loop`, `pokedex_dedup`, `item_availability`
+  - Retrieval: `usage_lookup`, `usage_teammates`, `tournament_retrieval`, `creator_opinion`, `meta_core_attribution`
+  - Hallucination: `phantom_pokemon`, `stat_accuracy`, `banned_comprehensive`
+- **10-entry search stub** (was 9) — 10th entry: real Mega Golurk tournament teams (PC38/PC105/PC227/PC234)
+- **TOURNAMENT directive** in SYSTEM constant — forces `search("{pokemon} tournament team")` before answering; never invent tournament rosters
+- **Registered MODELS**: `gemma-4-26b` (default), `deepseek-v3`, `nemotron-super`, `gemma-4-31b`, `claude-sonnet` (Anthropic direct), `claude-sonnet-or` (OpenRouter)
+- **Anthropic call path**: `toAnthropicFormat()` / `toAnthropicTools()` / `callAnthropic()` — dispatched when `model.provider === "anthropic"`; converts OAI message format to Anthropic format
+- **Guardrails**: hard pokedex dedup cap (3rd+ identical call refused, log-push AFTER refusal check); post-loop force-completion (fires once if lastContent empty or no team-json block, disables tools for pure text)
+- Per-call timeout: 120s; loop detection: dedup nudge after 2 identical tool calls; pokedex-cap nudge after >12 total pokedex calls
+- `requireTeamJson` per-test flag; `lastContent` filters thinking-only responses ("thought\n\n")
+- `--real-rag` flag: replaces stub with production Supabase search
+- **Current baseline**: Gemma 4 26B **12/13** (creator_opinion flaky ~50%; all others consistent). DeepSeek V3.2 evaluated 9/13 — rejected due to hallucination failures
+- `npm run eval:models` — supports `--models`, `--tests`, `--verbose`, `--real-rag`
 - Results snapshot to `snapshots/model-eval-[timestamp].json`
 
 ## npm Scripts
 - `calc` — `npx tsx scripts/calc.ts` (CLI damage calculator)
 - `calc:web` — `npx serve tools/NCP-VGC-Damage-Calculator` (reference web calc)
-- `calc:matrix` — `npx tsx scripts/build-matchup-matrix.ts` (full 244×244 matrix)
+- `calc:matrix` — `npx tsx scripts/build-matchup-matrix.ts` (full 275×274 matrix)
 - `calc:test` — `npx tsx scripts/test-calc.ts` (41-test calc validation suite)
 - `test` — Runs all 4 test suites sequentially (251 tests total)
 - `test:calc` — `npx tsx scripts/test-calc.ts` (41 tests: stats, damage, 16 ability modifiers)
@@ -140,12 +153,12 @@ Ollama remote (option, server GPU TBD):
 - `lib/calc/data.ts` — CSV data loader with lazy caching, 18×18 type chart, move flag sets (contact/sound/pulse/slicing/bite/punch), type-boost items map, resist berry map
 - `lib/calc/stats.ts` — Champions SP calculator: HP = `floor((2*Base + 31 + SP*2) * 50/100) + 60`, Other = `floor((floor((2*Base + 31 + SP*2) * 50/100) + 5) * Nature)`
 - `lib/calc/damage.ts` — Full damage engine with ordered modifier chain: spread → weather → crit → random → STAB → effectiveness → burn → screen → item → ~15 attacker abilities → ~10 defender abilities → Friend Guard → Helping Hand → Protect
-- `lib/calc/matchup.ts` — Standard set generator (80 Pikalytics + 106 heuristic), matchup scorer with speed U-curve, full N×N matrix builder
+- `lib/calc/matchup.ts` — Standard set generator (91 Pikalytics + 125 heuristic), matchup scorer with speed U-curve, full N×N matrix builder
 - `lib/calc/efficiency.ts` — Efficiency coefficient engine: 6 sub-score calculators (offense, defense, speed, typing, movepool, mega), composite E(A,B) on [-1,+1], matrix builder, CSV exporter
 - `lib/calc/index.ts` — Barrel export
 - **CLI**: `npx tsx scripts/calc.ts "Garchomp Earthquake vs Incineroar"` — supports --weather, --spread, --crit, --mega, --item, --sp, --burned, --reflect, --screen, --helping-hand, --all
-- **Matrix**: 244×244 (186 base + 59 mega - 1 overlap) = 59,292 pairs in ~1 second → `matchup_matrix.csv` (3.8 MB)
-- **Efficiency Matrix**: Same 59,292 pairs with 26 columns → `efficiency_matrix.csv` (~9.6 MB, builds in ~15s)
+- **Matrix**: 275×274 (216 Pokemon + 59 Mega) = 75,350 pairs in ~1 second → `matchup_matrix.csv` (~5 MB)
+- **Efficiency Matrix**: Same 75,350 pairs with 26 columns → `efficiency_matrix.csv` (~12 MB, builds in ~20s)
   - Formula: `E = 0.30*offense + 0.25*defense + 0.20*speed + 0.10*typing + 0.10*movepool + 0.05*mega`
   - Sub-scores: offense (dmg%, OHKO/2HKO, coverage depth), defense (survival margin, bulk ratio, type resist), speed (continuous diff, TR favor, priority, speed control), typing (log2 STAB diff, resist balance), movepool (coverage types, status threats, setup potential), mega (opportunity cost, ability bonuses)
   - Meta weight = `usagePct / maxUsagePct` stored as separate column; `isMeta` flag for Pikalytics-tracked Pokemon
@@ -169,7 +182,8 @@ Ollama remote (option, server GPU TBD):
 ### scraper_pikalytics.py (Pikalytics)
 - Source: `pikalytics.com/pokedex/championstournaments`
 - Headers: `Accept-Language: en-US,en;q=0.9` (prevents Italian text)
-- 80/186 Pokemon have tournament data (106 return 404)
+- Iterates `pokemon_champions.csv` names directly — covers all 216 rows incl. form variants (`Rotom-Wash`, `Ninetales-Alola`, `Tauros-Paldea-Aqua`, etc.)
+- 91/216 Pokemon have tournament data (125 return 404, incl. 4 form variants that Pikalytics aggregates under base species: Basculegion-F, Palafin-Hero, Lycanroc poses, Gourgeist sizes)
 - Output: `pikalytics_usage.csv` with pipe-delimited top moves/items/abilities/teammates
 
 ### scraper_youtube.py (YouTube)

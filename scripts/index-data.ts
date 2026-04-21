@@ -254,7 +254,7 @@ async function main() {
 
   const metaRows = [
     { key: "indexed_at", value: new Date().toISOString() },
-    { key: "embedding_model", value: "Xenova/all-MiniLM-L6-v2" },
+    { key: "embedding_model", value: "Xenova/bge-small-en-v1.5" },
     { key: "chunk_count", value: totalAfter ?? 0 },
     { key: "file_count", value: FILES.length },
     { key: "file_mtimes", value: fileMtimes },

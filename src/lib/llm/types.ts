@@ -3,6 +3,7 @@ export type ModelId =
   | "gemma-4-31b"
   | "gemma-4-26b"
   | "gemini-2.5-flash"
+  | "gemini-3-flash"
   | "llama-3.3-70b"
   | "sonnet-4-6"
   | "opus-4-7"
@@ -82,6 +83,11 @@ export const MODEL_REGISTRY: Record<
     provider: "gemini",
     remoteName: "gemini-2.5-flash",
     tier: "free",
+  },
+  "gemini-3-flash": {
+    provider: "openrouter",
+    remoteName: "google/gemini-3-flash-preview",
+    tier: "paid",
   },
   "llama-3.3-70b": {
     provider: "groq",

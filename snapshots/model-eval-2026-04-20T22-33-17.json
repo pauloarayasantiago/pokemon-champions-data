@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-20T22:33:17.342Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 5189,
+      "tokens_per_pass": 5189,
+      "mean_latency_ms": 10250,
+      "mean_turns": 2,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+      "latencyMs": 10250,
+      "turns": 2,
+      "inputTokens": 4868,
+      "outputTokens": 321,
+      "totalTokens": 5189,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Garchomp Regulation A Doubles tier list Pokemon Champions"
+          }
+        }
+      ],
+      "contentPreview": "thought\nI could not find any specific information regarding a content creator named **AngrySlowbroPlus** or their individual tier list in the Champions database.\n\nHowever, I can provide you with the current **Regulation A Doubles** meta context for **Garchomp** based on the latest competitive usage data:\n\n*   **Tier Status:** Garchomp is currently ranked as an **A-tier** Pokemon.\n*   **Usage Rate:** It is a highly prominent threat, with a usage rate between **35-36%**.\n*   **Performance:** It maintains a strong win rate of approximately **51.8-52.1%**.\n*   **Competitive Role:** It is primarily"
+    }
+  ]
+}

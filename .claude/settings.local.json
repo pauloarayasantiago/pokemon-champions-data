@@ -40,7 +40,26 @@
       "Bash(node:*)",
       "Bash(wmic path:*)",
       "Bash(wmic computersystem:*)",
-      "Bash(wmic cpu:*)"
+      "Bash(wmic cpu:*)",
+      "Bash(python scraper.py --help)",
+      "Bash(python scraper_youtube.py --help)",
+      "Bash(python -c \"import ast; t=ast.parse\\(open\\('scraper.py'\\).read\\(\\)\\); [print\\(n.name\\) for n in ast.walk\\(t\\) if isinstance\\(n, ast.FunctionDef\\)]\")",
+      "Bash(PYTHONIOENCODING=utf-8 python scraper_pikalytics.py)",
+      "Bash(PYTHONIOENCODING=utf-8 python scraper_sheets.py)",
+      "Bash(PYTHONIOENCODING=utf-8 python scraper_youtube.py --max 15)",
+      "Bash(sed -i 's/$/\\\\r/' /tmp/extra_rows.csv)",
+      "Bash(cat /tmp/extra_rows.csv)",
+      "Bash(python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python *)",
+      "Bash(awk -F, 'NR>1 && $1 ~ /-/ {print $1, \"|\", $2\"/\"$3, \"| BST=\"$10}' pokemon_champions.csv)",
+      "Bash(awk -F, 'NR>1 && $1 ~ /-/ {c++} END{print \"Variants:\", c}' pokemon_champions.csv)",
+      "Bash(awk -F, 'NR>1 && $1 ~ /-\\(Alola|Hisui|Galar|Paldea|Eternal|F|Blade|Midnight|Dusk|Small|Large|Jumbo|Hero|Heat|Wash|Frost|Fan|Mow\\)/ {print $1}' pokemon_champions.csv)",
+      "Bash(awk -F',' 'NR>1 {print $1}' pikalytics_usage.csv)",
+      "Bash(grep -Ei \"alola|hisui|galar|paldea|eternal|blade|midnight|dusk|small|large|jumbo|hero|heat|wash|frost|fan|mow|-f$|-m$\")",
+      "Bash(awk -F',' 'NR>1 {print $1}' matchup_matrix.csv)",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -A Mozilla/5.0 -H 'Accept-Language: en-US,en;q=0.9' https://www.pikalytics.com/pokedex/championstournaments/__TRACKED_VAR__)",
+      "Bash(curl -s -A \"Mozilla/5.0\" -H \"Accept-Language: en-US,en;q=0.9\" \"https://www.pikalytics.com/pokedex/championstournaments/Rotom-Wash\")",
+      "Bash(awk *)"
     ]
   }
 }

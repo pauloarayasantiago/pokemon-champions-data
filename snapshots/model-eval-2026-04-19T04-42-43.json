@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-04-19T04:42:43.801Z",
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    "team_json"
+  ],
+  "results": [
+    {
+      "testId": "team_json",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "team-json valid — 6 Pokemon, archetype: \"Rain\"",
+      "latencyMs": 36362,
+      "turns": 4,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Amoonguss"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Pokemon Champions 2026 VGC Doubles Mega Evolutions list"
+          }
+        }
+      ],
+      "contentPreview": "To build a competitive Rain team for the Champions 2026 VGC Doubles format, we must work within the constraints of the 186-Pokemon roster and the specific Mega Evolution rules. Since Swampert and Ludicolo were not in the Champions database, I have pivoted to a high-tier Rain core featuring **Mega Feraligatr**, which is an S-tier threat in this format due to its \"Dragonize\" ability.\n\n### Team Strategy: Rain-Dragon Offense\nThe goal of this team is to set heavy weather with **Pelipper** and immediately capitalize on it using **Mega Feraligatr**. \n\n1.  **The Core (Pelipper & Mega Feraligatr):** Pe"
+    }
+  ]
+}

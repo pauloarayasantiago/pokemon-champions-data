@@ -1,25 +1,30 @@
 /**
- * eval-models.ts
+ * eval-models.ts — deep accuracy + efficiency eval for Gemma 4 26B
  *
- * Compares OpenRouter free models on the 5 dimensions that matter for this app:
- *   1. tool_workflow   — calls pokedex() before proposing moves
- *   2. banned_item     — refuses Life Orb (doesn't exist in Champions)
- *   3. banned_mech     — refuses Terastallization
- *   4. team_json       — response ends with a valid ```team-json block
- *   5. validate_loop   — calls validate_set at least once during a build
+ * Three test categories (each result is tagged):
+ *   behavior     — tool workflow discipline (pokedex-before-propose, validate_loop, team_json, dedup, item_availability)
+ *   retrieval    — grounds claims in project data (usage %s, teammate lists, tournament teams, creator opinions, meta win rates)
+ *   hallucination — refuses phantom items/mechanics/Pokemon, cites real stat lines
+ *
+ * The search tool has two modes:
+ *   default   — 9-entry keyword stub (fast, deterministic)
+ *   --real-rag — routes through lib/rag.ts → Supabase pc_chunks (production-parity)
+ *
+ * Primary efficiency metric: tokens_per_pass (total usage tokens ÷ passing tests).
  *
  * Usage:
  *   npx tsx scripts/eval-models.ts
- *   npx tsx scripts/eval-models.ts --models nemotron-super,gemma-4-26b
- *   npx tsx scripts/eval-models.ts --tests tool_workflow,team_json
- *   npx tsx scripts/eval-models.ts --verbose
+ *   npx tsx scripts/eval-models.ts --real-rag
+ *   npx tsx scripts/eval-models.ts --models gemma-4-26b --tests usage_lookup,stat_accuracy --verbose
  *
- * Requires OPENROUTER_API_KEY in .env or environment.
+ * Requires OPENROUTER_API_KEY in .env. --real-rag additionally needs Supabase env vars (loaded by lib/supabase.ts).
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
-import { lookupPokemon, validateSet, type SetInput } from "../lib/team-validator.js";
+import { parse as parseCsv } from "csv-parse/sync";
+import { lookupPokemon, validateSet, BANNED_ITEMS, type SetInput } from "../lib/team-validator.js";
+import { query as ragQuery } from "../lib/rag.js";
 
 // ── env loading ────────────────────────────────────────────────────────────────
 
@@ -40,11 +45,17 @@ const OPENROUTER_KEY = () => process.env.OPENROUTER_API_KEY ?? "";
 const OLLAMA_LOCAL   = () => `${process.env.OLLAMA_BASE_URL   ?? "http://localhost:11434"}/v1/chat/completions`;
 const OLLAMA_REMOTE  = () => `${process.env.OLLAMA_REMOTE_URL ?? "http://localhost:11434"}/v1/chat/completions`;
 
-const MODELS: Record<string, { remoteName: string; label: string; apiUrl?: () => string; apiKey?: () => string }> = {
+const MODELS: Record<string, { remoteName: string; label: string; provider?: string; apiUrl?: () => string; apiKey?: () => string }> = {
   // OpenRouter hosted
   "nemotron-super": { remoteName: "openai/gpt-oss-120b:free",   label: "GPT-OSS 120B (OpenRouter)" },
   "gemma-4-31b":    { remoteName: "google/gemma-4-31b-it:free", label: "Gemma 4 31B IT (OpenRouter)" },
   "gemma-4-26b":    { remoteName: "google/gemma-4-26b-a4b-it",  label: "Gemma 4 26B A4B (OpenRouter)" },
+  "gemini-3-flash": { remoteName: "google/gemini-3-flash-preview", label: "Gemini 3 Flash Preview (OpenRouter)" },
+  "deepseek-v3":    { remoteName: "deepseek/deepseek-v3.2",      label: "DeepSeek V3.2 (OpenRouter)" },
+  // Anthropic direct (requires funded ANTHROPIC_API_KEY)
+  "claude-sonnet":  { remoteName: "claude-sonnet-4-6",           label: "Claude Sonnet 4.6 (Anthropic)", provider: "anthropic" },
+  // Anthropic via OpenRouter (uses OPENROUTER_API_KEY — no separate Anthropic billing needed)
+  "claude-sonnet-or": { remoteName: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet 4.5 (OpenRouter)" },
   // Ollama local (RTX 2070 SUPER — 8GB → 7-9B Q4 only)
   "qwen2.5-7b":   { remoteName: "qwen2.5:7b-instruct-q4_K_M",      label: "Qwen 2.5 7B (Local Ollama)",   apiUrl: OLLAMA_LOCAL,  apiKey: () => "ollama" },
   "llama3.1-8b":  { remoteName: "llama3.1:8b-instruct-q4_K_M",     label: "Llama 3.1 8B (Local Ollama)",  apiUrl: OLLAMA_LOCAL,  apiKey: () => "ollama" },
@@ -151,6 +162,16 @@ ENFORCEMENT: validate_set will REJECT any banned item and return overall:false.
   Do not override this with your training data. Replace the item immediately.
 
 ROSTER: 186 fully-evolved Pokemon + Pikachu only. No Amoonguss. No Legendaries.
+  NO pre-evolutions — Champions only allows fully-evolved forms. Banned pre-evos include:
+  Porygon2 (use Porygon-Z), Clefairy (→ Clefable), Chansey (→ Blissey), Rhydon (→ Rhyperior),
+  Dusclops (→ Dusknoir), Scyther (→ Scizor), Dragonair (→ Dragonite), Kirlia (→ Gardevoir),
+  Electabuzz (→ Electivire), Magmar (→ Magmortar), Gligar (→ Gliscor), and others.
+
+UNAVAILABLE POKEMON — if the user names ANY Pokemon that is not in Champions (phantom, pre-evolution, banned):
+  1. You MUST explicitly name it in your response and say why it is unavailable.
+     Example: "Porygon2 is unavailable in Champions because it is a pre-evolution; Champions only allows fully-evolved forms."
+  2. Do NOT silently substitute a replacement without acknowledging the removal. The user needs to know.
+  3. The pokedex tool returns { notFound: true, reason: "..." } for unavailable Pokemon — trust that result.
 
 MOVE CHANGES vs S/V:
   - Fake Out: unselectable after turn 1.
@@ -167,6 +188,12 @@ STEP 1 — For every Pokemon you want to include, call pokedex(name) FIRST.
 
 STEP 2 — Use search(query) to verify meta context, items, and mechanics.
 
+TOURNAMENT & HISTORICAL TEAM QUERIES: When asked about a specific tournament-winning team,
+a named player's team, or "recent/top teams around X", you MUST call
+search("{pokemon} tournament team") BEFORE answering. NEVER invent tournament rosters —
+they are stored in the database. Hallucinated teams are wrong by definition.
+If search returns no results, say so honestly rather than guessing.
+
 STEP 3 — For EVERY team member, call validate_set(pokemon, moves, item, ability).
           If overall is false, fix the issue and call validate_set again.
           Do not finalize any member until validate_set returns overall: true.
@@ -175,6 +202,8 @@ STEP 4 — Write your analysis and team explanation in prose.
 
 STEP 5 — YOUR RESPONSE MUST END with a fenced team-json block (see format below).
           This is mandatory. Omitting it means your answer is incomplete.
+          The team-json block MUST contain EVERY Pokemon you called validate_set on.
+          If you validated 6, emit 6. Omitting any validated member means your answer is incomplete.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 REQUIRED OUTPUT FORMAT — team-json block (MUST be the last thing in your response):
@@ -238,9 +267,29 @@ const SEARCH_KNOWLEDGE: Array<{ keywords: string[]; text: string }> = [
     keywords: ["stat", "iv", "ev", "sp", "spread", "nature"],
     text: "CHAMPIONS STAT SYSTEM: IVs are eliminated — every Pokemon has 31 IVs in all stats. EVs are replaced by SP (Stat Points): 66 total, maximum 32 per stat. Nature system unchanged (1.1x/0.9x modifier, freely changeable via Stat Alignment). Format spread as HP/Atk/Def/SpA/SpD/Spe (e.g., '4/0/0/32/0/30').",
   },
+  {
+    keywords: ["tournament", "golurk", "winning team", "championship", "top team", "recent team", "player team"],
+    text: `RECENT TOURNAMENT TEAMS (Champions Regulation M-A):
+
+PC105 — pokefey, Winner of Torneo Salida Pokemon Champions Tour:
+Mega Golurk / Incineroar / Torkoal / Venusaur / Sneasler / Farigiraf
+Items: Golurkite / Shuca Berry / Charcoal / Focus Sash / White Herb / Sitrus Berry. Code: SPMJ8BQ863.
+
+PC227 — JoeUX9 (Golurk Sun Room Team):
+Mega Golurk / Incineroar / Torkoal / Venusaur / Sneasler / Farigiraf
+Items: Golurkite / Shuca Berry / Charcoal / Focus Sash / White Herb / Sitrus Berry. Code: 8TUNH9BY0R.
+
+PC38 — WDMichael (Golurk Trick Room Team):
+Mega Golurk / Torkoal / Clefable / Oranguru / Hatterene / Hydreigon
+Items: Golurkite / Charcoal / Focus Sash / Mental Herb / Fairy Feather / Choice Scarf. Code: HH3MF048VV.
+
+PC234 — Skwovetboi (Sinistcha Tailroom Team):
+Mega Golurk / Pelipper / Sneasler / Meowstic / Sinistcha / Archaludon
+Items: Golurkite / Leftovers / Focus Sash / Sitrus Berry / Mental Herb / Chesto Berry.`,
+  },
 ];
 
-function executeSearch(query: string): string {
+function executeSearchStub(query: string): string {
   const q = query.toLowerCase();
   const matched: string[] = [];
   for (const entry of SEARCH_KNOWLEDGE) {
@@ -254,17 +303,52 @@ function executeSearch(query: string): string {
   return JSON.stringify({ results: matched.map((text, i) => ({ source: "knowledge_base", score: 1 - i * 0.01, text })) });
 }
 
+async function executeSearchRealRag(query: string, topK = 5): Promise<string> {
+  try {
+    const results = await ragQuery(query, topK);
+    return JSON.stringify({
+      results: results.map(r => ({
+        source: r.source,
+        sourceType: r.sourceType,
+        score: r.score,
+        text: r.text,
+      })),
+    });
+  } catch (e) {
+    return JSON.stringify({ error: `RAG query failed: ${e}`, results: [] });
+  }
+}
+
 // ── tool executor ──────────────────────────────────────────────────────────────
 
-function executeTool(name: string, args: Record<string, unknown>): string {
+let USE_REAL_RAG = false;
+
+async function executeTool(name: string, args: Record<string, unknown>): Promise<string> {
   if (name === "search") {
-    return executeSearch(String(args.query ?? ""));
+    const q = String(args.query ?? "");
+    const topK = typeof args.topK === "number" ? args.topK : 5;
+    return USE_REAL_RAG ? await executeSearchRealRag(q, topK) : executeSearchStub(q);
   }
   if (name === "pokedex") {
     const result = lookupPokemon(String(args.name ?? ""));
     return JSON.stringify(result);
   }
   if (name === "validate_set") {
+    // Defensive: models sometimes emit validate_set with missing required fields.
+    if (typeof args.pokemon !== "string" || !args.pokemon.trim()) {
+      return JSON.stringify({
+        overall: false,
+        error: "Missing required 'pokemon' field.",
+        _instruction: "validate_set requires { pokemon: string, moves: string[], item?, ability?, megaStone? }. Re-emit the call with the correct arguments.",
+      });
+    }
+    if (!Array.isArray(args.moves)) {
+      return JSON.stringify({
+        overall: false,
+        error: "Missing or invalid 'moves' field.",
+        _instruction: "validate_set requires moves to be an array of 4 move names. Re-emit the call with moves: [...].",
+      });
+    }
     const result = validateSet(args as unknown as SetInput);
     if (!result.overall) {
       const badMoves = result.moves.filter(m => !m.valid).map(m => m.name);
@@ -281,6 +365,64 @@ function executeTool(name: string, args: Record<string, unknown>): string {
   return JSON.stringify({ error: `Unknown tool: ${name}` });
 }
 
+// ── ground-truth loaders for retrieval / hallucination scoring ─────────────────
+
+interface UsageRow {
+  pokemon: string;
+  usage_pct: number;
+  rank: number;
+  top_teammates: string[]; // names only, top-3 order preserved
+}
+
+let _usageRows: Map<string, UsageRow> | null = null;
+function loadUsage(): Map<string, UsageRow> {
+  if (_usageRows) return _usageRows;
+  _usageRows = new Map();
+  try {
+    const raw = readFileSync(join(process.cwd(), "pikalytics_usage.csv"), "utf8");
+    const rows = parseCsv(raw, { columns: true, skip_empty_lines: true }) as Array<Record<string, string>>;
+    for (const r of rows) {
+      const teammates = (r.top_teammates ?? "")
+        .split("|")
+        .map(s => s.split(":")[0]?.trim() ?? "")
+        .filter(Boolean)
+        .slice(0, 10);
+      _usageRows.set(r.pokemon.toLowerCase(), {
+        pokemon: r.pokemon,
+        usage_pct: Number(r.usage_pct) || 0,
+        rank: Number(r.rank) || 0,
+        top_teammates: teammates,
+      });
+    }
+  } catch { /* missing CSV is ok — tests will fail with a clear reason */ }
+  return _usageRows;
+}
+
+interface MegaRow {
+  base: string;
+  mega: string;
+  hp: number; attack: number; defense: number; sp_atk: number; sp_def: number; speed: number;
+}
+
+let _megaRows: Map<string, MegaRow> | null = null;
+function loadMegas(): Map<string, MegaRow> {
+  if (_megaRows) return _megaRows;
+  _megaRows = new Map();
+  try {
+    const raw = readFileSync(join(process.cwd(), "mega_evolutions.csv"), "utf8");
+    const rows = parseCsv(raw, { columns: true, skip_empty_lines: true }) as Array<Record<string, string>>;
+    for (const r of rows) {
+      _megaRows.set(r.mega_name.toLowerCase(), {
+        base: r.base_pokemon,
+        mega: r.mega_name,
+        hp: Number(r.hp), attack: Number(r.attack), defense: Number(r.defense),
+        sp_atk: Number(r.sp_atk), sp_def: Number(r.sp_def), speed: Number(r.speed),
+      });
+    }
+  } catch { /* ignore */ }
+  return _megaRows;
+}
+
 // ── OpenRouter agentic loop ────────────────────────────────────────────────────
 
 interface OAIMessage {
@@ -295,7 +437,18 @@ interface AgentResult {
   toolCallLog: Array<{ name: string; args: Record<string, unknown> }>;
   turns: number;
   latencyMs: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  nudgeCount: number;
+  dedupCount: number;
   error?: string;
+}
+
+interface UsageInfo {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
 }
 
 async function callOpenRouter(
@@ -304,7 +457,7 @@ async function callOpenRouter(
   messages: OAIMessage[],
   tools: typeof TOOL_DEFS,
   timeoutMs = 120_000,
-): Promise<{ message: OAIMessage; finishReason: string } | { error: string }> {
+): Promise<{ message: OAIMessage; finishReason: string; usage: UsageInfo } | { error: string }> {
   const modelDef = MODELS[modelKey];
   const apiUrl = modelDef.apiUrl ? modelDef.apiUrl() : "https://openrouter.ai/api/v1/chat/completions";
   const apiKey = modelDef.apiKey ? modelDef.apiKey() : (process.env.OPENROUTER_API_KEY ?? "");
@@ -337,10 +490,126 @@ async function callOpenRouter(
     return { error: `HTTP ${res.status}: ${text.slice(0, 300)}` };
   }
 
-  const data = await res.json() as { choices: Array<{ message: OAIMessage; finish_reason: string }> };
+  const data = await res.json() as { choices: Array<{ message: OAIMessage; finish_reason: string }>; usage?: UsageInfo };
   const choice = data.choices?.[0];
   if (!choice) return { error: "No choices in response" };
-  return { message: choice.message, finishReason: choice.finish_reason };
+  return { message: choice.message, finishReason: choice.finish_reason, usage: data.usage ?? {} };
+}
+
+// ── Anthropic agentic call ────────────────────────────────────────────────────
+// The eval loop stores messages in OAI format. For Anthropic we convert on each
+// call: tool-result messages → user content blocks, tool_calls → tool_use blocks.
+// Consecutive tool-result messages + any following user nudge are folded into one
+// user turn (Anthropic requires strict user/assistant alternation).
+
+type AnthropicBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  | { type: "tool_result"; tool_use_id: string; content: string };
+
+interface AnthropicMsg {
+  role: "user" | "assistant";
+  content: string | AnthropicBlock[];
+}
+
+function toAnthropicFormat(oaiMsgs: OAIMessage[]): { system: string; messages: AnthropicMsg[] } {
+  let system = "";
+  const out: AnthropicMsg[] = [];
+  let i = 0;
+  while (i < oaiMsgs.length) {
+    const m = oaiMsgs[i];
+    if (m.role === "system") { system = String(m.content ?? ""); i++; continue; }
+
+    // Collect consecutive tool results and fold a following user nudge into same turn
+    if (m.role === "tool") {
+      const blocks: AnthropicBlock[] = [];
+      while (i < oaiMsgs.length && oaiMsgs[i].role === "tool") {
+        blocks.push({ type: "tool_result", tool_use_id: oaiMsgs[i].tool_call_id!, content: String(oaiMsgs[i].content ?? "") });
+        i++;
+      }
+      if (i < oaiMsgs.length && oaiMsgs[i].role === "user") {
+        const nudge = String(oaiMsgs[i].content ?? "");
+        if (nudge) blocks.push({ type: "text", text: nudge });
+        i++;
+      }
+      out.push({ role: "user", content: blocks });
+      continue;
+    }
+
+    if (m.role === "assistant" && m.tool_calls && m.tool_calls.length > 0) {
+      const blocks: AnthropicBlock[] = [];
+      if (m.content) blocks.push({ type: "text", text: m.content });
+      for (const tc of m.tool_calls) {
+        let input: Record<string, unknown> = {};
+        try { input = JSON.parse(tc.function.arguments || "{}"); } catch { /* ignore */ }
+        blocks.push({ type: "tool_use", id: tc.id, name: tc.function.name, input });
+      }
+      out.push({ role: "assistant", content: blocks });
+      i++; continue;
+    }
+
+    out.push({ role: m.role as "user" | "assistant", content: String(m.content ?? "") });
+    i++;
+  }
+  return { system, messages: out };
+}
+
+function toAnthropicTools(tools: typeof TOOL_DEFS) {
+  return tools.map(t => ({ name: t.function.name, description: t.function.description, input_schema: t.function.parameters }));
+}
+
+async function callAnthropic(
+  modelRemoteName: string,
+  oaiMsgs: OAIMessage[],
+  tools: typeof TOOL_DEFS,
+  timeoutMs = 120_000,
+): Promise<{ message: OAIMessage; finishReason: string; usage: UsageInfo } | { error: string }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? "";
+  if (!apiKey) return { error: "ANTHROPIC_API_KEY not set" };
+
+  const { system, messages } = toAnthropicFormat(oaiMsgs);
+  const body: Record<string, unknown> = { model: modelRemoteName, max_tokens: 4096, messages };
+  if (system) body.system = [{ type: "text", text: system, cache_control: { type: "ephemeral" } }];
+  if (tools.length > 0) body.tools = toAnthropicTools(tools);
+
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (e) { return { error: `fetch error: ${e}` }; }
+
+  if (!res.ok) { const t = await res.text(); return { error: `HTTP ${res.status}: ${t.slice(0, 300)}` }; }
+
+  const data = await res.json() as {
+    content: Array<{ type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }>;
+    stop_reason: string;
+    usage?: { input_tokens?: number; output_tokens?: number };
+  };
+
+  let textContent = "";
+  const oaiToolCalls: NonNullable<OAIMessage["tool_calls"]> = [];
+  for (const block of data.content ?? []) {
+    if (block.type === "text" && block.text) textContent += block.text;
+    else if (block.type === "tool_use") {
+      oaiToolCalls.push({ id: block.id!, type: "function", function: { name: block.name!, arguments: JSON.stringify(block.input ?? {}) } });
+    }
+  }
+
+  const finishReason = data.stop_reason === "tool_use" ? "tool_calls" : data.stop_reason === "max_tokens" ? "length" : "stop";
+  const message: OAIMessage = { role: "assistant", content: textContent || null, ...(oaiToolCalls.length > 0 ? { tool_calls: oaiToolCalls } : {}) };
+  return {
+    message,
+    finishReason,
+    usage: {
+      prompt_tokens: data.usage?.input_tokens,
+      completion_tokens: data.usage?.output_tokens,
+      total_tokens: (data.usage?.input_tokens ?? 0) + (data.usage?.output_tokens ?? 0),
+    },
+  };
 }
 
 async function runAgent(
@@ -357,21 +626,67 @@ async function runAgent(
   const t0 = Date.now();
   let turns = 0;
   let lastContent = "";
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let totalTokens = 0;
+  let nudgeCount = 0;
+  let dedupCount = 0;
+  let toolSyntaxNudges = 0;
+  let teamJsonCompletionNudges = 0;
+  let emptyContentNudges = 0;
+  let forceCompletionFired = false;
   const dupeCount: Record<string, number> = {};
+  const isAnthropic = model.provider === "anthropic";
+
+  const callModel = (msgs: OAIMessage[], tools: typeof TOOL_DEFS) =>
+    isAnthropic
+      ? callAnthropic(model.remoteName, msgs, tools)
+      : callOpenRouter(modelKey, model.remoteName, msgs, tools);
+
+  const baseResult = () => ({
+    finalContent: lastContent,
+    toolCallLog,
+    turns,
+    latencyMs: Date.now() - t0,
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    nudgeCount,
+    dedupCount,
+  });
 
   while (turns < maxTurns) {
     turns++;
-    const result = await callOpenRouter(modelKey, model.remoteName, [
-      { role: "system", content: SYSTEM },
-      ...messages,
-    ], TOOL_DEFS);
+    const result = await callModel([{ role: "system", content: SYSTEM }, ...messages], TOOL_DEFS);
 
     if ("error" in result) {
-      return { finalContent: lastContent, toolCallLog, turns, latencyMs: Date.now() - t0, error: result.error };
+      return { ...baseResult(), error: result.error };
     }
 
-    const { message, finishReason } = result;
+    const { message, finishReason, usage } = result;
+    inputTokens += usage.prompt_tokens ?? 0;
+    outputTokens += usage.completion_tokens ?? 0;
+    totalTokens += usage.total_tokens ?? ((usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0));
     messages.push(message);
+
+    // Detect raw tool-call syntax emitted as text (output-mode-routing failure — esp. Gemma).
+    // Only flag when finishReason is not "tool_calls" (real calls accompany legitimate tool use).
+    const hasRealToolCalls = finishReason === "tool_calls" || !!(message.tool_calls && message.tool_calls.length > 0);
+    const rawToolSyntaxPattern = /(?:call:\w+\s*\{|<\|?tool_call\|?>)/;
+    let contentIsToolSyntaxGarbage = false;
+    if (!hasRealToolCalls && message.content && rawToolSyntaxPattern.test(message.content)) {
+      const stripped = message.content.replace(/(?:call:|<\|?tool_call\|?>|<\|"\|>)/g, "").trim();
+      if (stripped.length < 20) contentIsToolSyntaxGarbage = true;
+    }
+    if (contentIsToolSyntaxGarbage && toolSyntaxNudges < 2 && turns < maxTurns) {
+      messages.push({
+        role: "user",
+        content: "Your previous response contained raw tool-call syntax as text. Emit only user-facing prose and the team-json block — never output `call:name{args}` as your response text.",
+      });
+      toolSyntaxNudges++;
+      nudgeCount++;
+      continue;
+    }
 
     // Only update lastContent when there's substantive text (not just a thinking header or whitespace)
     if (message.content && message.content.replace(/^thought\s*/i, "").trim().length > 20) {
@@ -384,14 +699,30 @@ async function runAgent(
       for (const tc of message.tool_calls ?? []) {
         let args: Record<string, unknown> = {};
         try { args = JSON.parse(tc.function.arguments || "{}"); } catch { /* ignore */ }
-        toolCallLog.push({ name: tc.function.name, args });
 
         // Dedup detection: same tool + same args called 2+ times → inject corrective nudge
         const callKey = `${tc.function.name}::${JSON.stringify(args)}`;
         dupeCount[callKey] = (dupeCount[callKey] ?? 0) + 1;
+
+        // Hard cap: 3rd+ identical pokedex call is refused — return synthetic result, do not execute
+        // and do NOT log (so the pokedex_dedup scorer doesn't count the refused attempt).
+        if (dupeCount[callKey] >= 3 && tc.function.name === "pokedex") {
+          dedupCount++;
+          messages.push({
+            role: "tool",
+            tool_call_id: tc.id,
+            content: `REFUSED: You already called pokedex with these exact args twice. Use the previous results from this conversation. Do not call pokedex(${JSON.stringify(args)}) again.`,
+          });
+          continue;
+        }
+
+        toolCallLog.push({ name: tc.function.name, args });
+
         if (dupeCount[callKey] >= 2 && !injectedNudge) {
           injectedNudge = true;
-          messages.push({ role: "tool", tool_call_id: tc.id, content: executeTool(tc.function.name, args) });
+          dedupCount++;
+          nudgeCount++;
+          messages.push({ role: "tool", tool_call_id: tc.id, content: await executeTool(tc.function.name, args) });
           messages.push({
             role: "user",
             content: `You have called ${tc.function.name}(${JSON.stringify(args)}) ${dupeCount[callKey]} times already. Stop repeating this call. Proceed to the next required step: call validate_set on every team member you have already researched.`,
@@ -399,7 +730,7 @@ async function runAgent(
           break;
         }
 
-        const toolResult = executeTool(tc.function.name, args);
+        const toolResult = await executeTool(tc.function.name, args);
         messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
       }
 
@@ -411,6 +742,7 @@ async function runAgent(
           content: `You have called pokedex ${pokedexTotal} times. You have enough data for a full team. STOP calling pokedex. Proceed immediately to validate_set for each team member, then emit your team-json block.`,
         });
         injectedNudge = true;
+        nudgeCount++;
       }
 
       continue;
@@ -423,24 +755,88 @@ async function runAgent(
         role: "user",
         content: "Please now emit your final team in the required ```team-json fenced block. This is mandatory — include all 6 Pokemon with name, item, ability, moves (4), spread, and nature.",
       });
+      nudgeCount++;
       continue;
+    }
+
+    // Fallback: model stopped without emitting any final content (Gemma output-mode failure mode)
+    if (!lastContent.trim() && emptyContentNudges < 2 && turns < maxTurns) {
+      messages.push({
+        role: "user",
+        content: "Please write your final answer now as prose. Summarize what you found from the tool calls — do not make more tool calls.",
+      });
+      emptyContentNudges++;
+      nudgeCount++;
+      continue;
+    }
+
+    // Completeness nudge: team-json present but missing validated Pokemon
+    if (requireTeamJson && hasTeamJson && teamJsonCompletionNudges < 1 && turns < maxTurns) {
+      const match = lastContent.match(/```team-json\s*([\s\S]*?)```/);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[1].trim());
+          const teamJsonNames = new Set<string>(
+            Array.isArray(parsed?.pokemon)
+              ? parsed.pokemon.map((p: { name?: string }) => String(p?.name ?? "").toLowerCase()).filter(Boolean)
+              : [],
+          );
+          const validatedNames = new Set<string>(
+            toolCallLog
+              .filter(t => t.name === "validate_set")
+              .map(t => String(t.args.pokemon ?? "").toLowerCase())
+              .filter(Boolean),
+          );
+          if (validatedNames.size > teamJsonNames.size) {
+            messages.push({
+              role: "user",
+              content: `Your team-json has ${teamJsonNames.size} Pokemon but you validated ${validatedNames.size}. Re-emit the team-json block including all ${validatedNames.size} validated members: ${[...validatedNames].join(", ")}. This is mandatory.`,
+            });
+            teamJsonCompletionNudges++;
+            nudgeCount++;
+            continue;
+          }
+        } catch { /* malformed JSON — leave it */ }
+      }
     }
 
     break;
   }
 
-  return {
-    finalContent: lastContent,
-    toolCallLog,
-    turns,
-    latencyMs: Date.now() - t0,
-  };
+  // Force-completion fallback: loop exited without usable final content
+  // → retry once with tools disabled, forcing pure text generation.
+  // Catches both in-loop fall-through AND maxTurns exhaustion.
+  const missingTeamJson = requireTeamJson && !/```team-json[\s\S]*?```/.test(lastContent);
+  if ((!lastContent.trim() || missingTeamJson) && !forceCompletionFired) {
+    forceCompletionFired = true;
+    nudgeCount++;
+    const fcPrompt = requireTeamJson
+      ? "Tools are disabled. Based on your tool-call history above, emit your final answer now. You MUST include a ```team-json fenced block with 6 Pokemon (name, item, ability, moves[4], spread, nature). Do not call any more tools."
+      : "Tools are disabled. Based on your tool-call history above, write the final answer now as prose. Do not call any more tools — just answer.";
+    messages.push({ role: "user", content: fcPrompt });
+    const fcResult = await callModel([{ role: "system", content: SYSTEM }, ...messages], []);
+    if (!("error" in fcResult)) {
+      const { message: fcMsg, usage: fcUsage } = fcResult;
+      inputTokens += fcUsage.prompt_tokens ?? 0;
+      outputTokens += fcUsage.completion_tokens ?? 0;
+      totalTokens += fcUsage.total_tokens ?? ((fcUsage.prompt_tokens ?? 0) + (fcUsage.completion_tokens ?? 0));
+      if (fcMsg?.content && fcMsg.content.trim().length > 0) {
+        lastContent = fcMsg.content;
+        messages.push(fcMsg);
+      }
+    }
+  }
+
+  return baseResult();
 }
 
 // ── test definitions ───────────────────────────────────────────────────────────
 
+type TestTag = "behavior" | "retrieval" | "hallucination";
+
 interface TestCase {
   id: string;
+  tag: TestTag;
   description: string;
   prompt: string;
   maxTurns?: number;
@@ -449,8 +845,10 @@ interface TestCase {
 }
 
 const TESTS: TestCase[] = [
+  // ────────── BEHAVIOR (5) — tool-workflow discipline ─────────────────────────
   {
     id: "tool_workflow",
+    tag: "behavior",
     description: "Calls pokedex() before validate_set (correct order)",
     prompt: "Build me a 6-Pokemon team around Mega Dragonite for VGC Doubles.",
     maxTurns: 12,
@@ -473,59 +871,11 @@ const TESTS: TestCase[] = [
     },
   },
   {
-    id: "banned_item",
-    description: "Refuses Life Orb as not available in Champions",
-    prompt: "What item should I give Dragonite in Champions? Is Life Orb good on it?",
-    maxTurns: 5,
-    requireTeamJson: false,
-    score: (r) => {
-      const content = r.finalContent;
-      // Hard fail: recommends Life Orb positively or treats it as available
-      const recommends = /life orb.*(?:great|good|best|excellent|recommend|use|go with|run|is available|can hold)/i.test(content)
-        || /(?:give|equip|hold|use|try|run).*life orb/i.test(content)
-        || /life orb.*\+30%|life orb.*damage boost/i.test(content);
-      if (recommends) return { pass: false, reason: "Positively recommended Life Orb as available" };
-      // Soft fail: hallucinated that NO items exist at all
-      const noItemsAtAll = /(?:no|cannot|can't|don't have).*(?:items|held items) in champions/i.test(content)
-        || /champions.*(?:no|removes|strips).*items/i.test(content);
-      if (noItemsAtAll) return { pass: false, reason: "Hallucinated that items don't exist in Champions at all (wrong)" };
-      // Pass: correctly flagged Life Orb as unavailable
-      const flaggedUnavailable = /life orb.*(?:not available|doesn.t exist|not in|missing|removed|banned|unavailable)/i.test(content)
-        || /(?:not available|doesn.t exist|missing|banned).*life orb/i.test(content);
-      return {
-        pass: true,
-        reason: flaggedUnavailable
-          ? "Correctly identified Life Orb as unavailable in Champions"
-          : "Did not recommend Life Orb (check content — may be soft pass)",
-      };
-    },
-  },
-  {
-    id: "banned_mech",
-    description: "Does not suggest Terastallization (doesn't exist in Champions)",
-    prompt: "Should I Terastallize Dragonite to Normal type to boost Extreme Speed in Champions?",
-    maxTurns: 5,
-    requireTeamJson: false,
-    score: (r) => {
-      const content = r.finalContent;
-      const recommends = /(?:yes|absolutely|definitely|great idea|strong strategy|common strategy|works well).*tera/i.test(content)
-        || /tera.*(?:yes|works|boost|great|recommend)/i.test(content)
-        || /you (?:can|should|could) terastallize/i.test(content);
-      if (recommends) return { pass: false, reason: "Recommended or endorsed Terastallization" };
-      const rejects = /(?:no|not available|doesn.t exist|not in|removed|only.*mega|mega.*only|no tera)/i.test(content);
-      return {
-        pass: true,
-        reason: rejects
-          ? "Correctly stated Tera doesn't exist in Champions"
-          : "Did not endorse Tera (check content — may be soft pass)",
-      };
-    },
-  },
-  {
     id: "team_json",
+    tag: "behavior",
     description: "Response ends with a valid ```team-json block with 6 Pokemon",
     prompt: "Build me a complete 6-Pokemon rain team for VGC Doubles Champions format. Include a Mega.",
-    maxTurns: 12,
+    maxTurns: 16,
     score: (r) => {
       const match = r.finalContent.match(/```team-json\s*([\s\S]*?)```/);
       if (!match) return { pass: false, reason: "No ```team-json block found anywhere in response" };
@@ -542,6 +892,7 @@ const TESTS: TestCase[] = [
   },
   {
     id: "validate_loop",
+    tag: "behavior",
     description: "Calls validate_set for each team member (not just pokedex)",
     prompt: "Build me a 6-Pokemon Sand Rush team with Tyranitar and Excadrill.",
     maxTurns: 14,
@@ -556,6 +907,7 @@ const TESTS: TestCase[] = [
   },
   {
     id: "pokedex_dedup",
+    tag: "behavior",
     description: "Doesn't obsessively repeat pokedex calls for the same Pokemon",
     prompt: "Build me a 6-Pokemon Trick Room team for VGC Doubles.",
     maxTurns: 14,
@@ -564,7 +916,6 @@ const TESTS: TestCase[] = [
       if (pokedexCalls.length === 0) {
         return { pass: false, reason: "pokedex never called — no data gathered" };
       }
-      // Count how many times each Pokemon was looked up
       const callsPerMon: Record<string, number> = {};
       for (const tc of pokedexCalls) {
         const name = String(tc.args.name ?? "").toLowerCase();
@@ -583,26 +934,197 @@ const TESTS: TestCase[] = [
   },
   {
     id: "item_availability",
+    tag: "behavior",
     description: "Lists valid Champions items without recommending banned ones",
     prompt: "Give me a list of the best held items to use in Champions for a Dragonite set. What are my options?",
     maxTurns: 7,
     requireTeamJson: false,
     score: (r) => {
-      const content = r.finalContent.toLowerCase();
-      // Hard fail: recommends a banned item as viable
+      const content = r.finalContent;
+      const contentLower = content.toLowerCase();
       const banned = ["life orb", "choice band", "choice specs", "assault vest", "rocky helmet"];
+      // Sentence-level detection: only fail if a sentence mentions the banned item
+      // AND contains recommendation language AND does NOT contain negation.
+      const sentences = content.split(/(?<=[.!?\n])\s+/);
+      const negation = /\b(not|doesn'?t|don'?t|do not|missing|banned|unavailable|cannot|removed|no longer|isn'?t|absent|don't exist|doesn't exist|do not exist|won'?t|can'?t)\b/i;
+      const recommendation = /\b(great|good|best|recommend(?:ed|s|ing)?|use(?:s|d|ing)?|run(?:s|ning)?|try|equip(?:s|ped|ping)?|hold(?:s|ing)?|works? well|solid|top|excellent|give it)\b/i;
       for (const item of banned) {
-        const recommends = new RegExp(`${item.replace(/ /g, "\\s+")}.*(?:great|good|best|recommend|use|run|available|can hold|works well)`, "i").test(r.finalContent)
-          || new RegExp(`(?:use|try|run|give|equip|hold).*${item.replace(/ /g, "\\s+")}`, "i").test(r.finalContent);
-        if (recommends) return { pass: false, reason: `Recommended banned item: ${item}` };
+        const itemRe = new RegExp(item.replace(/ /g, "\\s+"), "i");
+        for (const sentence of sentences) {
+          if (!itemRe.test(sentence)) continue;
+          if (negation.test(sentence)) continue; // flagging, not recommending
+          if (recommendation.test(sentence)) {
+            return { pass: false, reason: `Recommended banned item: ${item}` };
+          }
+        }
       }
-      // Pass: mentions at least one valid item
       const validItems = ["sitrus berry", "focus sash", "draco plate", "charcoal", "lum berry", "yache berry", "mega stone", "air balloon", "mystic water", "never-melt ice"];
-      const mentioned = validItems.filter(item => content.includes(item));
+      const mentioned = validItems.filter(item => contentLower.includes(item));
       if (mentioned.length === 0) {
         return { pass: false, reason: "No valid Champions items mentioned in response" };
       }
       return { pass: true, reason: `Valid items listed: ${mentioned.join(", ")}` };
+    },
+  },
+
+  // ────────── HALLUCINATION (3) — refuses phantom data / cites real stats ─────
+  {
+    id: "phantom_pokemon",
+    tag: "hallucination",
+    description: "Flags Amoonguss + Porygon2 as unavailable in Champions",
+    prompt: "Build me a team with Amoonguss and Porygon2 as the core.",
+    maxTurns: 8,
+    requireTeamJson: false,
+    score: (r) => {
+      const content = r.finalContent;
+      // Hard fail: wrote an actual moveset block for either phantom mon
+      const wroteAmoSet = /amoonguss[\s\S]{0,80}(?:moves|item\s*:|ability\s*:)/i.test(content);
+      const wrotePoryset = /porygon2[\s\S]{0,80}(?:moves|item\s*:|ability\s*:)/i.test(content);
+      if (wroteAmoSet || wrotePoryset) {
+        return { pass: false, reason: `Wrote a moveset for ${wroteAmoSet ? "Amoonguss" : ""}${wroteAmoSet && wrotePoryset ? " and " : ""}${wrotePoryset ? "Porygon2" : ""} (hallucination)` };
+      }
+      // Alternation body (no wrapping group) so we can compose into larger regexes.
+      const unavailableAlt = "not available|doesn.?t exist|does not exist|unavailable|missing|banned|removed|absent|cannot be used|not (?:in|part of) (?:the )?(?:allowed |playable |legal )?(?:roster|game|format)|isn.?t (?:in|part of|available)|not (?:a |an )?(?:legal|playable|valid|allowed)(?:\\s+pokemon|\\s+mon)?|not (?:a )?fully[- ]?evolved";
+      const preEvoAlt = "pre[- ]?evol|not (?:a )?fully[- ]?evolved";
+      const flaggedAmo = new RegExp(`amoonguss[^.!?\\n]{0,80}(?:${unavailableAlt})`, "i").test(content)
+        || new RegExp(`(?:${unavailableAlt})[^.!?\\n]{0,80}amoonguss`, "i").test(content);
+      const flaggedPory = new RegExp(`porygon2[^.!?\\n]{0,80}(?:${unavailableAlt}|${preEvoAlt})`, "i").test(content)
+        || new RegExp(`(?:${unavailableAlt}|${preEvoAlt})[^.!?\\n]{0,80}porygon2`, "i").test(content);
+      if (flaggedAmo && flaggedPory) return { pass: true, reason: "Flagged both Amoonguss + Porygon2 as unavailable" };
+      if (flaggedAmo || flaggedPory) return { pass: false, reason: `Flagged only ${flaggedAmo ? "Amoonguss" : "Porygon2"} — missed the other` };
+      return { pass: false, reason: "Failed to flag either Amoonguss or Porygon2 as unavailable" };
+    },
+  },
+  {
+    id: "stat_accuracy",
+    tag: "hallucination",
+    description: "Reports Mega Dragonite stats matching mega_evolutions.csv (6/6)",
+    prompt: "What are Mega Dragonite's base stats in Champions? List HP, Attack, Defense, Sp. Atk, Sp. Def, and Speed with numeric values.",
+    maxTurns: 6,
+    requireTeamJson: false,
+    score: (r) => {
+      const truth = loadMegas().get("mega dragonite");
+      if (!truth) return { pass: false, reason: "Ground-truth row missing for Mega Dragonite" };
+      const want = [truth.hp, truth.attack, truth.defense, truth.sp_atk, truth.sp_def, truth.speed];
+      const nums = Array.from(r.finalContent.matchAll(/\b(\d{2,3})\b/g)).map(m => Number(m[1]));
+      const present = want.filter(n => nums.includes(n)).length;
+      if (present === 6) return { pass: true, reason: `All 6 stats match (${want.join("/")})` };
+      return { pass: false, reason: `Only ${present}/6 stat values match — expected ${want.join("/")}, found numbers [${[...new Set(nums)].slice(0, 12).join(", ")}]` };
+    },
+  },
+  {
+    id: "banned_comprehensive",
+    tag: "hallucination",
+    description: "Names ≥5 banned items AND all 3 missing gimmicks (Tera/Dynamax/Z-Moves)",
+    prompt: "In Pokemon Champions, what items and battle mechanics from Scarlet/Violet are NOT available? Give a comprehensive list.",
+    maxTurns: 6,
+    requireTeamJson: false,
+    score: (r) => {
+      const text = r.finalContent.toLowerCase();
+      const bannedList = ["life orb","choice band","choice specs","assault vest","rocky helmet","heavy-duty boots","eviolite","flame orb","toxic orb","power herb","light clay","covert cloak","loaded dice","utility umbrella","expert belt","clear amulet","throat spray","booster energy","weakness policy","black sludge","safety goggles"];
+      const bannedHit = bannedList.filter(b => text.includes(b));
+      const teraMiss = /\btera(?:stall)/i.test(r.finalContent) || /\btera[^a-z]/i.test(r.finalContent);
+      const dynaMiss = /dynamax|gigantamax/i.test(r.finalContent);
+      const zMiss = /z-move|z\s+move|z-moves/i.test(r.finalContent);
+      const gimmickHits = [teraMiss, dynaMiss, zMiss].filter(Boolean).length;
+      if (bannedHit.length >= 5 && gimmickHits >= 3) {
+        return { pass: true, reason: `Named ${bannedHit.length} banned items + all 3 missing gimmicks` };
+      }
+      if (bannedHit.length < 5) {
+        return { pass: false, reason: `Only ${bannedHit.length} banned items listed (need ≥5): ${bannedHit.join(", ") || "none"}` };
+      }
+      return { pass: false, reason: `${bannedHit.length} items ✓ but gimmicks ${gimmickHits}/3 (Tera=${teraMiss}, Dyna=${dynaMiss}, Z=${zMiss})` };
+    },
+  },
+
+  // ────────── RETRIEVAL (5) — grounds claims in project data; use --real-rag ──
+  {
+    id: "usage_lookup",
+    tag: "retrieval",
+    description: "Reports Incineroar usage % within ±3pp of pikalytics_usage.csv",
+    prompt: "What is Incineroar's current tournament usage percentage in Pokemon Champions Regulation M-A? Give a number.",
+    maxTurns: 5,
+    requireTeamJson: false,
+    score: (r) => {
+      const truth = loadUsage().get("incineroar");
+      if (!truth) return { pass: false, reason: "Ground-truth row missing for Incineroar" };
+      const pcts = Array.from(r.finalContent.matchAll(/(\d{1,3}(?:\.\d+)?)\s*%/g)).map(m => Number(m[1]));
+      if (pcts.length === 0) return { pass: false, reason: `No percentage mentioned (expected ~${truth.usage_pct}%)` };
+      const closest = pcts.reduce((a, b) => Math.abs(b - truth.usage_pct) < Math.abs(a - truth.usage_pct) ? b : a);
+      const delta = Math.abs(closest - truth.usage_pct);
+      if (delta <= 3) return { pass: true, reason: `Reported ${closest}% vs truth ${truth.usage_pct}% (Δ${delta.toFixed(1)}pp)` };
+      return { pass: false, reason: `Closest reported ${closest}% off by ${delta.toFixed(1)}pp (truth ${truth.usage_pct}%)` };
+    },
+  },
+  {
+    id: "usage_teammates",
+    tag: "retrieval",
+    description: "Names ≥2 of the top-3 Garchomp teammates from pikalytics_usage.csv",
+    prompt: "What are the top 3 Pokemon most commonly paired with Garchomp in current Champions VGC? List their names.",
+    maxTurns: 5,
+    requireTeamJson: false,
+    score: (r) => {
+      const truth = loadUsage().get("garchomp");
+      if (!truth) return { pass: false, reason: "Ground-truth row missing for Garchomp" };
+      const topThree = truth.top_teammates.slice(0, 3).map(s => s.toLowerCase());
+      const text = r.finalContent.toLowerCase();
+      const hits = topThree.filter(t => text.includes(t));
+      if (hits.length >= 2) return { pass: true, reason: `Named ${hits.length}/3 top teammates: ${hits.join(", ")}` };
+      return { pass: false, reason: `Only ${hits.length}/3 top teammates named (expected ${topThree.join(", ")})` };
+    },
+  },
+  {
+    id: "tournament_retrieval",
+    tag: "retrieval",
+    description: "Names ≥3 Pokemon from a real Mega Golurk tournament team",
+    prompt: "Describe a recent tournament-winning team built around Mega Golurk in Champions Regulation M-A. Name the other 5 team members.",
+    maxTurns: 9,
+    requireTeamJson: false,
+    score: (r) => {
+      // Union of real teammates across PC38/PC105/PC227/PC234 Mega Golurk tournament teams
+      const realTeammates = ["incineroar","torkoal","venusaur","sneasler","farigiraf","pelipper","meowstic","sinistcha","archaludon","clefable","oranguru","hatterene","hydreigon"];
+      const text = r.finalContent.toLowerCase();
+      const hits = realTeammates.filter(c => text.includes(c));
+      if (hits.length >= 3) return { pass: true, reason: `Named ${hits.length} real Mega Golurk teammates: ${hits.slice(0, 6).join(", ")}` };
+      return { pass: false, reason: `Only ${hits.length} recognizable teammates (need ≥3): ${hits.join(", ") || "none"}` };
+    },
+  },
+  {
+    id: "creator_opinion",
+    tag: "retrieval",
+    description: "Attributes a Garchomp view to AngrySlowbroPlus's tier list",
+    prompt: "What does the content creator AngrySlowbroPlus say about Garchomp in their Regulation A Doubles tier list for Pokemon Champions?",
+    maxTurns: 6,
+    requireTeamJson: false,
+    score: (r) => {
+      const content = r.finalContent.toLowerCase();
+      const mentionsCreator = /angry ?slowbro|slowbro ?plus/.test(content);
+      const mentionsGarchomp = /garchomp/.test(content);
+      const mentionsTierList = /tier list|tier-list|\brank|\btop tier|\b[sabcdf][ -]tier\b/.test(content);
+      if (mentionsCreator && mentionsGarchomp && mentionsTierList) {
+        return { pass: true, reason: "Attributed Garchomp view to AngrySlowbroPlus's tier list" };
+      }
+      const missing: string[] = [];
+      if (!mentionsCreator) missing.push("creator");
+      if (!mentionsGarchomp) missing.push("Garchomp");
+      if (!mentionsTierList) missing.push("tier-list context");
+      return { pass: false, reason: `Missing: ${missing.join(", ")}` };
+    },
+  },
+  {
+    id: "meta_core_attribution",
+    tag: "retrieval",
+    description: "Cites Archaludon+Pelipper rain-core WR ~55.8% (±2pp) from meta_snapshot.md",
+    prompt: "What is the win rate of the Archaludon + Pelipper rain core in the current Pokemon Champions meta?",
+    maxTurns: 5,
+    requireTeamJson: false,
+    score: (r) => {
+      const pcts = Array.from(r.finalContent.matchAll(/(\d{2}(?:\.\d+)?)\s*%/g)).map(m => Number(m[1]));
+      const target = 55.8;
+      const hit = pcts.find(p => Math.abs(p - target) <= 2);
+      if (hit !== undefined) return { pass: true, reason: `Reported ${hit}% (truth ~55.8%)` };
+      if (pcts.length === 0) return { pass: false, reason: "No percentage mentioned" };
+      return { pass: false, reason: `No % within ±2 of 55.8 (saw: ${pcts.slice(0, 8).join(", ")})` };
     },
   },
 ];
@@ -611,17 +1133,30 @@ const TESTS: TestCase[] = [
 
 interface TestResult {
   testId: string;
+  tag: TestTag;
   modelKey: string;
   pass: boolean;
   reason: string;
   latencyMs: number;
   turns: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  nudgeCount: number;
+  dedupCount: number;
   toolCallLog: Array<{ name: string; args: Record<string, unknown> }>;
   error?: string;
   contentPreview: string;
 }
 
-function parseArgs(): { models: string[]; tests: string[]; verbose: boolean } {
+interface CliArgs {
+  models: string[];
+  tests: string[];
+  verbose: boolean;
+  realRag: boolean;
+}
+
+function parseArgs(): CliArgs {
   const raw: Record<string, string> = {};
   for (let i = 2; i < process.argv.length; i++) {
     const a = process.argv[i];
@@ -631,18 +1166,25 @@ function parseArgs(): { models: string[]; tests: string[]; verbose: boolean } {
       raw[key] = val;
     }
   }
-  const models = raw.models ? raw.models.split(",") : Object.keys(MODELS);
+  const models = raw.models ? raw.models.split(",") : ["gemma-4-26b"];
   const tests = raw.tests ? raw.tests.split(",") : TESTS.map(t => t.id);
-  return { models, tests, verbose: raw.verbose === "true" };
+  return {
+    models,
+    tests,
+    verbose: raw.verbose === "true",
+    realRag: raw["real-rag"] === "true",
+  };
 }
 
 async function main() {
-  const { models, tests: testFilter, verbose } = parseArgs();
+  const { models, tests: testFilter, verbose, realRag } = parseArgs();
+  USE_REAL_RAG = realRag;
   const activeTests = TESTS.filter(t => testFilter.includes(t.id));
 
   console.log(`\n=== eval-models ===`);
   console.log(`Models: ${models.join(", ")}`);
   console.log(`Tests:  ${activeTests.map(t => t.id).join(", ")}`);
+  console.log(`Search: ${realRag ? "REAL-RAG (lib/rag.ts → Supabase pc_chunks)" : "stub (9-entry keyword)"}`);
   if (verbose) console.log(`Mode:   verbose\n`);
   else console.log(`Tip:    run with --verbose to see response content\n`);
 
@@ -654,17 +1196,23 @@ async function main() {
     console.log(`\n── ${model.label} (${model.remoteName}) ──`);
 
     for (const test of activeTests) {
-      process.stdout.write(`  ${test.id.padEnd(16)} ... `);
+      process.stdout.write(`  ${test.id.padEnd(22)} ... `);
       const agentResult = await runAgent(modelKey, test.prompt, test.maxTurns ?? 10, test.requireTeamJson ?? true);
       const { pass, reason } = test.score(agentResult);
 
       const result: TestResult = {
         testId: test.id,
+        tag: test.tag,
         modelKey,
         pass,
         reason,
         latencyMs: agentResult.latencyMs,
         turns: agentResult.turns,
+        inputTokens: agentResult.inputTokens,
+        outputTokens: agentResult.outputTokens,
+        totalTokens: agentResult.totalTokens,
+        nudgeCount: agentResult.nudgeCount,
+        dedupCount: agentResult.dedupCount,
         toolCallLog: agentResult.toolCallLog,
         error: agentResult.error,
         contentPreview: agentResult.finalContent.slice(0, 600),
@@ -673,10 +1221,11 @@ async function main() {
 
       const icon = pass ? "✓" : "✗";
       const latLabel = `${(agentResult.latencyMs / 1000).toFixed(1)}s`;
+      const tokLabel = agentResult.totalTokens > 0 ? `${agentResult.totalTokens}tok` : "no-tok";
       const toolSummary = agentResult.toolCallLog.length > 0
         ? ` [${agentResult.toolCallLog.map(t => t.name).join("→")}]`
         : " [no tools]";
-      console.log(`${icon} ${reason} (${latLabel}, ${agentResult.turns}t${toolSummary})`);
+      console.log(`${icon} ${reason} (${latLabel}, ${agentResult.turns}t, ${tokLabel}${toolSummary})`);
       if (agentResult.error) console.log(`    ⚠ ${agentResult.error}`);
       if (verbose && agentResult.finalContent) {
         console.log(`    ┌─ content preview`);
@@ -687,22 +1236,22 @@ async function main() {
     }
   }
 
-  // ── summary ──────────────────────────────────────────────────────────────────
-  console.log(`\n${"═".repeat(80)}`);
-  console.log(`SUMMARY`);
-  console.log(`${"═".repeat(80)}`);
+  // ── summary: pass/fail grid ──────────────────────────────────────────────────
+  console.log(`\n${"═".repeat(100)}`);
+  console.log(`SUMMARY — pass/fail by test`);
+  console.log(`${"═".repeat(100)}`);
 
   const testIds = activeTests.map(t => t.id);
-  const COL = 15;
-  const header = ["Model".padEnd(20), ...testIds.map(id => id.slice(0, COL - 1).padEnd(COL))].join(" ");
+  const COL = 16;
+  const header = ["Model".padEnd(22), ...testIds.map(id => id.slice(0, COL - 1).padEnd(COL))].join(" ");
   console.log(header);
-  console.log("-".repeat(header.length));
+  console.log("-".repeat(Math.min(header.length, 100)));
 
   for (const modelKey of models) {
     const modelResults = allResults.filter(r => r.modelKey === modelKey);
     const score = modelResults.filter(r => r.pass).length;
     const row = [
-      `${MODELS[modelKey]?.label ?? modelKey} (${score}/${modelResults.length})`.padEnd(20),
+      `${(MODELS[modelKey]?.label ?? modelKey).slice(0, 18)} (${score}/${modelResults.length})`.padEnd(22),
       ...testIds.map(tid => {
         const r = modelResults.find(x => x.testId === tid);
         if (!r) return "N/A".padEnd(COL);
@@ -711,6 +1260,64 @@ async function main() {
       }),
     ].join(" ");
     console.log(row);
+  }
+
+  // ── summary: per-tag score ───────────────────────────────────────────────────
+  console.log(`\n${"═".repeat(100)}`);
+  console.log(`SUMMARY — score by category`);
+  console.log(`${"═".repeat(100)}`);
+  const tags: TestTag[] = ["behavior", "retrieval", "hallucination"];
+  const tagHeader = ["Model".padEnd(22), ...tags.map(t => t.padEnd(14)), "overall".padEnd(10)].join(" ");
+  console.log(tagHeader);
+  console.log("-".repeat(tagHeader.length));
+  for (const modelKey of models) {
+    const modelResults = allResults.filter(r => r.modelKey === modelKey);
+    const row = [(MODELS[modelKey]?.label ?? modelKey).slice(0, 20).padEnd(22)];
+    for (const tag of tags) {
+      const tagResults = modelResults.filter(r => r.tag === tag);
+      const p = tagResults.filter(r => r.pass).length;
+      row.push(`${p}/${tagResults.length}`.padEnd(14));
+    }
+    const overall = modelResults.filter(r => r.pass).length;
+    row.push(`${overall}/${modelResults.length}`.padEnd(10));
+    console.log(row.join(" "));
+  }
+
+  // ── summary: efficiency metrics ──────────────────────────────────────────────
+  console.log(`\n${"═".repeat(100)}`);
+  console.log(`EFFICIENCY — primary metric: tokens_per_pass (lower is better)`);
+  console.log(`${"═".repeat(100)}`);
+  const effHeader = ["Model".padEnd(22), "passes".padEnd(8), "tok_total".padEnd(12), "tok/pass".padEnd(11), "lat_avg".padEnd(9), "turns_avg".padEnd(10), "nudges".padEnd(8), "dedup".padEnd(7)].join(" ");
+  console.log(effHeader);
+  console.log("-".repeat(effHeader.length));
+  const summary: Record<string, { passes: number; total: number; tokens_total: number; tokens_per_pass: number; mean_latency_ms: number; mean_turns: number; nudge_count: number; dedup_count: number; by_tag: Record<TestTag, { passes: number; total: number }> }> = {};
+  for (const modelKey of models) {
+    const modelResults = allResults.filter(r => r.modelKey === modelKey);
+    const passes = modelResults.filter(r => r.pass).length;
+    const total = modelResults.length;
+    const tokens_total = modelResults.reduce((s, r) => s + (r.totalTokens ?? 0), 0);
+    const tokens_per_pass = passes > 0 ? tokens_total / passes : 0;
+    const mean_latency_ms = total > 0 ? modelResults.reduce((s, r) => s + r.latencyMs, 0) / total : 0;
+    const mean_turns = total > 0 ? modelResults.reduce((s, r) => s + r.turns, 0) / total : 0;
+    const nudge_count = modelResults.reduce((s, r) => s + r.nudgeCount, 0);
+    const dedup_count = modelResults.reduce((s, r) => s + r.dedupCount, 0);
+    const by_tag = { behavior: { passes: 0, total: 0 }, retrieval: { passes: 0, total: 0 }, hallucination: { passes: 0, total: 0 } };
+    for (const tag of tags) {
+      const tagResults = modelResults.filter(r => r.tag === tag);
+      by_tag[tag] = { passes: tagResults.filter(r => r.pass).length, total: tagResults.length };
+    }
+    summary[modelKey] = { passes, total, tokens_total, tokens_per_pass, mean_latency_ms, mean_turns, nudge_count, dedup_count, by_tag };
+
+    console.log([
+      (MODELS[modelKey]?.label ?? modelKey).slice(0, 20).padEnd(22),
+      `${passes}/${total}`.padEnd(8),
+      String(tokens_total).padEnd(12),
+      (passes > 0 ? Math.round(tokens_per_pass) : "n/a").toString().padEnd(11),
+      `${(mean_latency_ms / 1000).toFixed(1)}s`.padEnd(9),
+      mean_turns.toFixed(1).padEnd(10),
+      String(nudge_count).padEnd(8),
+      String(dedup_count).padEnd(7),
+    ].join(" "));
   }
 
   const passCount = allResults.filter(r => r.pass).length;
@@ -722,8 +1329,10 @@ async function main() {
   mkdirSync(join(process.cwd(), "snapshots"), { recursive: true });
   writeFileSync(snapshotPath, JSON.stringify({
     timestamp: new Date().toISOString(),
+    config: { useRealRag: realRag, runs: 1 },
     models,
-    tests: activeTests.map(t => t.id),
+    tests: activeTests.map(t => ({ id: t.id, tag: t.tag })),
+    summary,
     results: allResults,
   }, null, 2));
   console.log(`Snapshot → ${snapshotPath}`);

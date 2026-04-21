@@ -1,0 +1,533 @@
+{
+  "timestamp": "2026-04-20T20:25:34.193Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 3,
+      "tokens_total": 104748,
+      "tokens_per_pass": 104748,
+      "mean_latency_ms": 48705.666666666664,
+      "mean_turns": 11.333333333333334,
+      "nudge_count": 25,
+      "dedup_count": 12,
+      "by_tag": {
+        "behavior": {
+          "passes": 1,
+          "total": 2
+        },
+        "retrieval": {
+          "passes": 0,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "team-json has only 5/6 Pokemon",
+      "latencyMs": 63028,
+      "turns": 11,
+      "inputTokens": 55514,
+      "outputTokens": 2369,
+      "totalTokens": 57883,
+      "nudgeCount": 9,
+      "dedupCount": 8,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Venusaur"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Blastoise"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Charizard X"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Charizard Y"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Slowbro"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Pinsir"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Aerodactyl"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Beedrill"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Kangaskhan"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Salamence"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hurricane",
+              "Weather Ball",
+              "Tailwind",
+              "Protect"
+            ],
+            "pokemon": "Pelipper"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Mega Launcher",
+            "item": "Blastoisinite",
+            "moves": [
+              "Water Spout",
+              "Dark Pulse",
+              "Ice Beam",
+              "Protect"
+            ],
+            "pokemon": "Blastoise"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Stamina",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Electro Shot",
+              "Flash Cannon",
+              "Draco Meteor",
+              "Protect"
+            ],
+            "pokemon": "Archaludon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Chlorophyll",
+            "item": "Life Orb",
+            "moves": [
+              "Energy Ball",
+              "Weather Ball",
+              "Giga Drain",
+              "Protect"
+            ],
+            "pokemon": "Venusaur"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hydro Pump",
+              "Ice Beam",
+              "Weather Ball",
+              "Protect"
+            ],
+            "pokemon": "Kingdra"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Intimidate",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Waterfall",
+              "Ice Fang",
+              "Dragon Dance",
+              "Protect"
+            ],
+            "pokemon": "Gyarados"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Chlorophyll",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Energy Ball",
+              "Weather Ball",
+              "Giga Drain",
+              "Protect"
+            ],
+            "pokemon": "Venusaur"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hydro Pump",
+              "Ice Beam",
+              "Weather Ball",
+              "Protect"
+            ],
+            "pokemon": "Kingdra"
+          }
+        }
+      ],
+      "contentPreview": "I apologize for the error in the final block. While I identified that Kingdra was unavailable in the Champions roster through the `pokedex` tool, I mistakenly included it in the instruction to re-emit the 6 members. Per the rules, I cannot include Kingdra in the `team-json` because it is not in the Champions roster and thus cannot pass `validate_set`.\n\nHowever, I will ensure the final block contains all **legal** members that were successfully validated. Since Kingdra failed validation due to being unavailable, the maximum number of valid members is 5.\n\n```team-json\n{\n  \"archetype\": \"Rain\",\n  "
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Efficient: 20 pokedex calls, 18 unique mons (all ≤2 calls each)",
+      "latencyMs": 48015,
+      "turns": 14,
+      "inputTokens": 15538,
+      "outputTokens": 470,
+      "totalTokens": 16008,
+      "nudgeCount": 13,
+      "dedupCount": 2,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Indeedee-F"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Charizard Y"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Iron Hands"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Porygon-Z"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Clefable"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Blissey"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dusknoir"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Scizor"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gardevoir"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Electivire"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Magmortar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gliscor"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Snorlax"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        }
+      ],
+      "contentPreview": ""
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Only 0 recognizable teammates (need ≥3): none",
+      "latencyMs": 35074,
+      "turns": 9,
+      "inputTokens": 29556,
+      "outputTokens": 1301,
+      "totalTokens": 30857,
+      "nudgeCount": 3,
+      "dedupCount": 2,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Talonflame"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Glimmora"
+          }
+        }
+      ],
+      "contentPreview": "In the recent Champions Regulation M-A tournament, a highly successful archetype emerged centered around the overwhelming physical pressure of **Mega Golurk**. This team utilizes a \"Sand Balance\" core to provide both defensive utility and offensive momentum, allowing Mega Golurk to bypass protective measures and clean up weakened opponents.\n\n### Team Analysis: Mega Golurk Sand Balance\n\nThe strategy revolves around setting up Sandstorm to chip away at opponents and boost specific teammates, while Mega Golurk uses its **Unseen Fist** ability to strike through *Protect*, making it incredibly diff"
+    }
+  ]
+}

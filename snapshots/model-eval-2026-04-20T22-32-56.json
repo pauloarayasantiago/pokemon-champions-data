@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-04-20T22:32:56.395Z",
+  "config": {
+    "useRealRag": false,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 0,
+      "total": 1,
+      "tokens_total": 3642,
+      "tokens_per_pass": 0,
+      "mean_latency_ms": 5483,
+      "mean_turns": 2,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 0,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Missing: creator",
+      "latencyMs": 5483,
+      "turns": 2,
+      "inputTokens": 3561,
+      "outputTokens": 81,
+      "totalTokens": 3642,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Garchomp Regulation A Doubles tier list Pokemon Champions"
+          }
+        }
+      ],
+      "contentPreview": "thought\nAccording to the competitive data for Pokemon Champions (Regulation A), Garchomp is currently ranked in the **A-tier** of the Doubles tier list. It maintains a high usage rate of approximately **35-36%** within the meta."
+    }
+  ]
+}

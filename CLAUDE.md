@@ -52,7 +52,35 @@ Life Orb, Choice Band, Choice Specs, Assault Vest, Rocky Helmet, Heavy-Duty Boot
 ### Roster
 - 186 fully-evolved Pokemon + Pikachu only
 - No Legendaries, Mythicals, Restricted, or Paradox Pokemon
-- No Amoonguss, no pre-evolutions (Porygon2, Clefairy, Dusclops are absent)
+- No Amoonguss
+- No pre-evolutions — if a user names one, refuse and suggest the evolved form instead:
+
+| Pre-evo (NOT in Champions) | Use this fully-evolved form |
+|----------------------------|-----------------------------|
+| Porygon / Porygon2         | Porygon-Z                   |
+| Cleffa / Clefairy          | Clefable                    |
+| Happiny / Chansey          | Blissey                     |
+| Rhyhorn / Rhydon           | Rhyperior                   |
+| Duskull / Dusclops         | Dusknoir                    |
+| Elekid / Electabuzz        | Electivire                  |
+| Magby / Magmar             | Magmortar                   |
+| Gligar                     | Gliscor                     |
+| Dratini / Dragonair        | Dragonite                   |
+| Scyther                    | Scizor                      |
+| Ralts / Kirlia             | Gardevoir                   |
+| Litwick / Lampent          | Chandelure                  |
+| Zubat / Golbat             | Crobat                      |
+| Honedge / Doublade         | Aegislash                   |
+| Togepi / Togetic           | Togekiss                    |
+| Budew / Roselia            | Roserade                    |
+| Sneasel                    | Weavile                     |
+| Swinub / Piloswine         | Mamoswine                   |
+| Murkrow                    | Honchkrow                   |
+| Misdreavus                 | Mismagius                   |
+| Yanma                      | Yanmega                     |
+| Lickitung                  | Lickilicky                  |
+| Tangela                    | Tangrowth                   |
+
 - Incineroar lost Knock Off and U-turn
 
 ### New Abilities

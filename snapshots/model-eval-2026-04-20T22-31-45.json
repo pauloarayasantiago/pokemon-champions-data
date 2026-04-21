@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-04-20T22:31:45.327Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 15274,
+      "tokens_per_pass": 15274,
+      "mean_latency_ms": 24186,
+      "mean_turns": 4,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 1,
+          "total": 1
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf",
+      "latencyMs": 24186,
+      "turns": 4,
+      "inputTokens": 14378,
+      "outputTokens": 896,
+      "totalTokens": 15274,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Clefable"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Oranguru"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hydreigon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Venusaur"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Sneasler"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Farigiraf"
+          }
+        }
+      ],
+      "contentPreview": "thought\nOne notable tournament-winning team from the Champions Regulation M-A era built around Mega Golurk was used by the player **JoeUX9**. \n\nThis team functions as a **Sun-based offensive core**, utilizing Torkoal to set up sun, which facilitates high-powered attacks and provides momentum for Mega Golurk to sweep through opponents with its enhanced physical bulk and Unseen Fist ability.\n\nThe other five team members on JoeUX9's winning roster are:\n1. **Torkoal**\n2. **Incineroar**\n3. **Venusaur**\n4. **Sneasler**\n5. **Farigiraf**\n\n```team-json\n{\n  \"archetype\": \"Sun\",\n  \"pokemon\": [\n    {\n     "
+    }
+  ]
+}

@@ -14,7 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AVAILABLE_MODELS } from "@/lib/llm";
+import { AVAILABLE_MODELS, TEAM_BUILDING_MODEL } from "@/lib/llm";
 import type { ModelId, Provider } from "@/lib/llm/types";
 
 type Role = "user" | "assistant";
@@ -92,7 +92,7 @@ function newId(): string {
 export default function TeamPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [model, setModel] = useState<ModelId>("nemotron-super");
+  const [model, setModel] = useState<ModelId>(TEAM_BUILDING_MODEL);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<HealthResponse | null>(null);
