@@ -108,6 +108,33 @@ Verified against Serebii (serebii.net/pokemonchampions/items.shtml) and items.cs
 - Mega Sol (Mega Meganium): Sets Sun on entry (personal Drought for Mega form)
 - Spicy Spray (Mega Scovillain): Burns opponent on contact moves or when KO'd
 
+## Phantom Pre-Evolutions — Not in Champions
+These pre-evolutions are NOT in Champions (roster is fully-evolved only, plus Pikachu). If a user asks about one, refuse and suggest the evolved form. These are phantom entries — banned unavailable missing from the roster.
+
+- Porygon, Porygon2 → use Porygon-Z
+- Cleffa, Clefairy → use Clefable
+- Happiny, Chansey → use Blissey
+- Rhyhorn, Rhydon → use Rhyperior
+- Duskull, Dusclops → use Dusknoir
+- Elekid, Electabuzz → use Electivire
+- Magby, Magmar → use Magmortar
+- Gligar → use Gliscor
+- Dratini, Dragonair → use Dragonite
+- Scyther → use Scizor
+- Ralts, Kirlia → use Gardevoir
+- Litwick, Lampent → use Chandelure
+- Zubat, Golbat → use Crobat
+- Honedge, Doublade → use Aegislash
+- Togepi, Togetic → use Togekiss
+- Budew, Roselia → use Roserade
+- Sneasel → use Weavile
+- Swinub, Piloswine → use Mamoswine
+- Murkrow → use Honchkrow
+- Misdreavus → use Mismagius
+- Yanma → use Yanmega
+- Lickitung → use Lickilicky
+- Tangela → use Tangrowth
+
 ## Known Bugs (as of launch)
 1. Leech Seed calculates ~1/8 HP drain despite description stating 1/16
 2. Lightning Rod fails to redirect Electric attacks if afflicted by Encore

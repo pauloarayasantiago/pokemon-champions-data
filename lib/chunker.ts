@@ -28,6 +28,71 @@ function slug(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Stage 4.2 — Metadata prefix
+//
+// Injected at the start of chunk.text so both the embedding vector AND the
+// tsvector (GENERATED column on pc_chunks.text) pick up canonical identity
+// tokens and (for champions_rules.md) banned-entity / phantom pre-evo tokens.
+// ---------------------------------------------------------------------------
+
+// File-level tag prefix for knowledge documents. Applied to every chunk of
+// these files. champions_rules.md is the adversarial target — it must surface
+// for banned-item, banned-mechanic, phantom-pre-evo, and banned-entity queries.
+// Short file-level tags (~15-25 tokens) — just enough to give FTS a canonical
+// category token per doc without dominating the body via self-similarity. The
+// detailed content (banned items, phantom pre-evos) lives in the doc body
+// itself so different sections of the doc can still differentiate.
+const FILE_LEVEL_TAGS: Record<string, string> = {
+  "champions_rules.md":
+    "[rules] Champions Regulation M-A rules banned items banned mechanics phantom pre-evolutions.",
+  "team_building_theory.md":
+    "[theory] Team building theory VGC Doubles counters role compression speed control.",
+  "team_archetypes.md":
+    "[archetype] Team archetypes Sun Rain Sand Snow Trick Room Tailwind Balance Goodstuffs.",
+  "type_chart.md":
+    "[types] Type chart effectiveness weakness resistance immunity.",
+  "meta_snapshot.md":
+    "[meta] Current meta snapshot top usage win rates tier list cores archetypes.",
+  "speed_tiers.md":
+    "[speed] Speed tiers benchmarks Trick Room Tailwind priority brackets.",
+  "damage_calc.md":
+    "[calc] Damage calculation Stat Points system modifiers STAB weather.",
+};
+
+// Pre-evolution -> evolved-form tokens. Keys match Pokemon csv `name` field
+// (evolved form); values are pre-evo tokens to inject into that Pokemon's
+// chunk so phantom-pre-evo queries route to the evolved form.
+const PRE_EVOS: Record<string, string[]> = {
+  "Gardevoir": ["ralts", "kirlia"],
+  "Scizor": ["scyther"],
+  "Weavile": ["sneasel"],
+  "Chandelure": ["litwick", "lampent"],
+  "Gliscor": ["gligar"],
+  "Togekiss": ["togepi", "togetic"],
+  "Porygon-Z": ["porygon", "porygon2"],
+  "Clefable": ["cleffa", "clefairy"],
+  "Blissey": ["happiny", "chansey"],
+  "Rhyperior": ["rhyhorn", "rhydon"],
+  "Dusknoir": ["duskull", "dusclops"],
+  "Electivire": ["elekid", "electabuzz"],
+  "Magmortar": ["magby", "magmar"],
+  "Dragonite": ["dratini", "dragonair"],
+  "Crobat": ["zubat", "golbat"],
+  "Aegislash": ["honedge", "doublade"],
+  "Roserade": ["budew", "roselia"],
+  "Mamoswine": ["swinub", "piloswine"],
+  "Honchkrow": ["murkrow"],
+  "Mismagius": ["misdreavus"],
+  "Yanmega": ["yanma"],
+  "Lickilicky": ["lickitung"],
+  "Tangrowth": ["tangela"],
+};
+
+function prefix(parts: (string | null | undefined | false)[]): string {
+  return parts.filter((p): p is string => !!p && typeof p === "string").join(" ");
+}
+
+// ---------------------------------------------------------------------------
 // 1. pokemon_champions.csv
 // ---------------------------------------------------------------------------
 
@@ -43,7 +108,15 @@ export async function chunkPokemonCsv(filePath: string, source: string): Promise
     const statLine = r.hp
       ? ` Base stats: HP ${r.hp}, Atk ${r.attack}, Def ${r.defense}, SpA ${r.sp_atk}, SpD ${r.sp_def}, Spe ${r.speed} (BST ${r.bst}).`
       : "";
-    const text = `${r.name} is a ${typeStr} type Pokémon.${statLine} Abilities: ${abilities}. Moves: ${moves}.`;
+    const preEvos = PRE_EVOS[r.name];
+    const prefixLine = prefix([
+      "[pokemon]",
+      r.name.toLowerCase(),
+      r.type1?.toLowerCase(),
+      r.type2?.toLowerCase(),
+      preEvos ? `also known by pre-evolution ${preEvos.join(", ")}` : "",
+    ]);
+    const text = `${prefixLine}\n${r.name} is a ${typeStr} type Pokémon.${statLine} Abilities: ${abilities}. Moves: ${moves}.`;
 
     return {
       id: `pokemon:${slug(r.name)}`,
@@ -81,7 +154,16 @@ export async function chunkMegaEvolutionsCsv(filePath: string, source: string): 
     const statLine = r.hp
       ? ` Base stats: HP ${r.hp}, Atk ${r.attack}, Def ${r.defense}, SpA ${r.sp_atk}, SpD ${r.sp_def}, Spe ${r.speed} (BST ${r.bst}).`
       : "";
-    const text = `${r.mega_name} is the Mega Evolution of ${r.base_pokemon}. Type: ${typeStr}. Ability: ${r.ability}.${statLine}`;
+    const prefixLine = prefix([
+      "[mega]",
+      r.mega_name?.toLowerCase(),
+      r.base_pokemon?.toLowerCase(),
+      r.type1?.toLowerCase(),
+      r.type2?.toLowerCase(),
+      r.ability?.toLowerCase(),
+      "mega-evolution",
+    ]);
+    const text = `${prefixLine}\n${r.mega_name} is the Mega Evolution of ${r.base_pokemon}. Type: ${typeStr}. Ability: ${r.ability}.${statLine}`;
 
     return {
       id: `mega:${slug(r.mega_name)}:${i}`,
@@ -126,9 +208,15 @@ export async function chunkMovesCsv(filePath: string, source: string): Promise<C
     }
     if (r.effect) parts.push(r.effect);
 
+    const prefixLine = prefix([
+      "[move]",
+      r.name?.toLowerCase(),
+      r.type?.toLowerCase(),
+      r.category?.toLowerCase(),
+    ]);
     return {
       id: `move:${slug(r.name)}`,
-      text: parts.join(" "),
+      text: `${prefixLine}\n${parts.join(" ")}`,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -152,7 +240,8 @@ export async function chunkItemsCsv(filePath: string, source: string): Promise<C
   const rows = parseCsv(raw);
 
   return rows.map((r) => {
-    const text = `${r.name} is an item. ${r.effect} Location: ${r.location}.`;
+    const prefixLine = prefix(["[item]", r.name?.toLowerCase()]);
+    const text = `${prefixLine}\n${r.name} is an item. ${r.effect} Location: ${r.location}.`;
 
     return {
       id: `item:${slug(r.name)}`,
@@ -192,7 +281,14 @@ export async function chunkUpdatedAttacksCsv(filePath: string, source: string): 
     ].join(", ");
 
     const effect = r.champions_effect ? ` ${r.champions_effect}` : "";
-    const text = `${r.name} was updated in Pokémon Champions. Champions: ${champParts}.${effect} In Scarlet/Violet: ${svParts}.`;
+    const prefixLine = prefix([
+      "[updated-attack]",
+      r.name?.toLowerCase(),
+      r.champions_type?.toLowerCase(),
+      r.champions_category?.toLowerCase(),
+      "nerfed changed",
+    ]);
+    const text = `${prefixLine}\n${r.name} was updated in Pokémon Champions. Champions: ${champParts}.${effect} In Scarlet/Violet: ${svParts}.`;
 
     return {
       id: `updated-attack:${slug(r.name)}`,
@@ -219,7 +315,8 @@ export async function chunkNewAbilitiesCsv(filePath: string, source: string): Pr
   const rows = parseCsv(raw);
 
   return rows.map((r) => {
-    const text = `${r.name} is a new ability introduced in Pokémon Champions. Effect: ${r.effect}`;
+    const prefixLine = prefix(["[ability]", r.name?.toLowerCase(), "new-ability"]);
+    const text = `${prefixLine}\n${r.name} is a new ability introduced in Pokémon Champions. Effect: ${r.effect}`;
 
     return {
       id: `ability:${slug(r.name)}`,
@@ -244,7 +341,14 @@ export async function chunkMegaAbilitiesCsv(filePath: string, source: string): P
 
   return rows.map((r) => {
     const typeStr = r.type2 ? `${r.type1}/${r.type2}` : r.type1;
-    const text = `${r.pokemon} has the ability ${r.ability}. Type: ${typeStr}.`;
+    const prefixLine = prefix([
+      "[mega-ability]",
+      r.pokemon?.toLowerCase(),
+      r.ability?.toLowerCase(),
+      r.type1?.toLowerCase(),
+      r.type2?.toLowerCase(),
+    ]);
+    const text = `${prefixLine}\n${r.pokemon} has the ability ${r.ability}. Type: ${typeStr}.`;
 
     return {
       id: `mega-ability:${slug(r.pokemon)}`,
@@ -273,16 +377,30 @@ export async function chunkTournamentTeamsCsv(filePath: string, source: string):
     const pokemon = [r.pokemon1, r.pokemon2, r.pokemon3, r.pokemon4, r.pokemon5, r.pokemon6].filter(Boolean);
     const items = [r.item1, r.item2, r.item3, r.item4, r.item5, r.item6];
     const paired = pokemon.map((p, i) => items[i] ? `${p} @ ${items[i]}` : p).join(", ");
+    const archetype = inferArchetype(pokemon, r.description || "");
+    const roster = pokemon.map((p) => p.toLowerCase()).join(" ");
+
+    // Stage 4.1 archetype-coherent framing: [team] tokens + archetype + roster
+    // on the first line so matchup/counter queries can lexically reach the team.
+    const prefixLine = prefix([
+      "[team]",
+      r.team_id?.toLowerCase(),
+      r.player?.toLowerCase(),
+      archetype ? archetype.toLowerCase() : "",
+      roster,
+    ]);
     const parts = [`Tournament team ${r.team_id} by ${r.player}`];
     if (r.tournament && r.tournament !== "-") parts[0] += ` from ${r.tournament}`;
     if (r.player_rank && r.player_rank !== "-") parts[0] += ` (${r.player_rank})`;
     parts[0] += `: ${paired}.`;
+    if (archetype) parts.push(`Archetype: ${archetype}.`);
+    if (pokemon.length > 0) parts.push(`Core: ${pokemon.join(", ")}.`);
     if (r.description) parts.push(r.description + ".");
     if (r.replica_code) parts.push(`Replica code: ${r.replica_code}.`);
 
     return {
       id: `team:${slug(r.team_id)}`,
-      text: parts.join(" "),
+      text: `${prefixLine}\n${parts.join(" ")}`,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -290,6 +408,7 @@ export async function chunkTournamentTeamsCsv(filePath: string, source: string):
         player: r.player,
         tournament: r.tournament || null,
         player_rank: r.player_rank || null,
+        archetype: archetype || null,
         pokemon,
         items: items.filter(Boolean),
         replica_code: r.replica_code || null,
@@ -297,6 +416,21 @@ export async function chunkTournamentTeamsCsv(filePath: string, source: string):
       },
     };
   });
+}
+
+// Heuristic archetype classifier from team roster + description. Drives Stage
+// 4.1 archetype coherence — tags each team chunk with Sun/Rain/Sand/TR/etc so
+// archetype queries (e.g. "sand team tyranitar excadrill") route correctly.
+function inferArchetype(pokemon: string[], description: string): string | null {
+  const hay = (pokemon.join(" ") + " " + description).toLowerCase();
+  const tags: string[] = [];
+  if (/\btorkoal\b|\bninetales-alola\b|\bvenusaur\b.*(drought|chlorophyll)|\bmega meganium\b/.test(hay) || /\bsun\b|drought/.test(hay)) tags.push("Sun");
+  if (/\bpelipper\b|\bkingdra\b|\barchaludon\b.*\bswift swim\b|\bswift swim\b|\brain\b|drizzle/.test(hay)) tags.push("Rain");
+  if (/\btyranitar\b|\bhippowdon\b|\bgigalith\b|\bsand\b|sand stream|sand rush/.test(hay)) tags.push("Sand");
+  if (/\bninetales\b(?!-alola)|\bsnow\b|snow warning|slush rush/.test(hay)) tags.push("Snow");
+  if (/trick room|\btr\b|\bfarigiraf\b|\bdusknoir\b|\bporygon-?z\b.*\btrick room\b/.test(hay)) tags.push("Trick Room");
+  if (/tailwind|\baerodactyl\b|\bwhimsicott\b.*\btailwind\b/.test(hay)) tags.push("Tailwind");
+  return tags.length ? tags.join(" / ") : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -366,9 +500,14 @@ export async function chunkPikalyticsUsageCsv(filePath: string, source: string):
     const topItem = items ? items.split("|")[0]?.split(":")[0] : null;
     const topAbility = abilities ? abilities.split("|")[0]?.split(":")[0] : null;
 
+    const prefixLine = prefix([
+      "[usage]",
+      r.pokemon?.toLowerCase(),
+      "pikalytics usage tournament",
+    ]);
     return {
       id: `usage:${slug(r.pokemon)}`,
-      text: parts.join(" "),
+      text: `${prefixLine}\n${parts.join(" ")}`,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -417,13 +556,17 @@ export async function chunkMatchupMatrixCsv(filePath: string, source: string): P
     const avgDmg = matchups.reduce((s, m) => s + Number(m.damage_pct), 0) / matchups.length;
     const ohkoCount = matchups.filter((m) => Number(m.damage_pct) >= 100).length;
 
+    const prefixLine = prefix([
+      "[matchup]",
+      attacker.toLowerCase(),
+    ]);
     const parts = [`${attacker} matchup profile: avg damage ${avgDmg.toFixed(1)}%, OHKOs ${ohkoCount}/${matchups.length} matchups.`];
     parts.push(`Best matchups: ${beats}.`);
     if (walls) parts.push(`Walled by: ${walls}.`);
 
     chunks.push({
       id: `matchup:${slug(attacker)}`,
-      text: parts.join(" "),
+      text: `${prefixLine}\n${parts.join(" ")}`,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -446,7 +589,8 @@ export async function chunkPlainTextFile(filePath: string, source: string): Prom
   const raw = await readFile(filePath, "utf-8");
   const filename = basename(source, ".txt");
   const title = filename.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const text = `${title}: ${raw.trim()}`;
+  const prefixLine = prefix(["[text]", filename.toLowerCase(), title.toLowerCase()]);
+  const text = `${prefixLine}\n${title}: ${raw.trim()}`;
 
   return [
     {
@@ -470,6 +614,10 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
   const lines = raw.split("\n");
   const chunks: Chunk[] = [];
 
+  const filename = basename(source);
+  const fileTag = FILE_LEVEL_TAGS[filename] || "";
+  const fileTagLine = fileTag ? `${fileTag}\n` : "";
+
   let currentHeading = "(top)";
   let currentBody: string[] = [];
   let sectionIndex = 0;
@@ -478,7 +626,7 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
     const body = currentBody.join("\n").trim();
     if (!body) return;
 
-    const fullText = `${currentHeading}\n${body}`;
+    const fullText = `${fileTagLine}${currentHeading}\n${body}`;
 
     if (fullText.length <= MAX_SECTION_CHARS) {
       chunks.push({
@@ -500,7 +648,7 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
           : parts[j].trim();
         chunks.push({
           id: `md:${source}:${sectionIndex}`,
-          text: `${currentHeading}\n${chunkBody}`,
+          text: `${fileTagLine}${currentHeading}\n${chunkBody}`,
           source,
           sourceType: "markdown-section",
           metadata: { heading: currentHeading, section_index: sectionIndex },
