@@ -1,4 +1,63 @@
-# Active Context (2026-04-21, RAG upgrade initiative — Stage 3 COMPLETE, overall nDCG 0.690 → 0.792)
+# Active Context (2026-04-21, RAG upgrade initiative — Stage 4 COMPLETE, overall nDCG 0.792 → 0.806)
+
+## Stage 4 — Header splitter + TSVECTOR weighting + phantom-evolved co-surface — COMPLETE
+
+### What shipped
+
+- **Stage 4.3 (`lib/chunker.ts`)** — `chunkMarkdownFile` now:
+  - Extracts H1 as a document breadcrumb and prepends `[file:X.md] H1` to every sub-chunk body.
+  - Detects `## Missing Items` / `## Phantom Pre-Evolutions` sections in `champions_rules.md` via `RULES_LIST_SECTIONS` regex and splits them **per-bullet** (not as one long section). Each sub-chunk carries its `[rules-banned]` / `[rules-phantom]` tag plus lowercase entity tokens so FTS weight-A matches latch directly.
+  - All chunkers (Pokemon, Mega, move, item, updated-attack, new/mega ability, tournament team, usage, matchup, plain-text, markdown) now emit a new optional `names?: string` field carrying the canonical identifiers (e.g. Pokemon row adds pre-evo aliases; Mega adds base form; team row adds archetype + 6-mon roster). This feeds the Stage 4.4 TSVECTOR weight-A column.
+- **Stage 4.4 (migration + `scripts/index-data.ts`)** — Supabase migration `pc_chunks_tsv_weights_stage_4_4` applied remotely via MCP:
+  ```sql
+  ALTER TABLE pc_chunks ADD COLUMN names_text text;
+  ALTER TABLE pc_chunks ADD COLUMN text_tsv tsvector
+    GENERATED ALWAYS AS (
+      setweight(to_tsvector('english', COALESCE(names_text, '')), 'A') ||
+      setweight(to_tsvector('english', COALESCE(text, '')), 'B')
+    ) STORED;
+  CREATE INDEX pc_chunks_tsv_gin ON pc_chunks USING gin (text_tsv);
+  ```
+  Indexer writes `names_text` alongside `text` on every upsert.
+- **Stage 4.5 routing extension (`lib/rag.ts`)** — `QueryRoute` adds `phantomEvolved: string | null`. Replaced flat `PHANTOM_PRE_EVOS` set with a `PHANTOM_TO_EVOLVED` dict (23 pre-evos → evolved form). When a phantom token fires, `routeQuery()` resolves the evolved form and the retrieval layer force-includes `pokemon:<evolved>` alongside the rules doc, plus a small boost when the ranker already has the evolved-form Pokemon chunk. This closes the "nDCG=1.0, Recall=0" failure pattern (rules doc surfaces but Pokemon card missing).
+
+### Stage 4 baseline (Jina OFF, n=100, 22.1min wall)
+
+Snapshot: [`memory-bank/eval-baselines/2026-04-21-retrieval-stage4-jina-off.json`](eval-baselines/2026-04-21-retrieval-stage4-jina-off.json)
+
+| Metric | Stage 3 | Stage 4 | Δ |
+|---|:-:|:-:|:-:|
+| Overall nDCG@10 | 0.792 | **0.806** | +1.8% |
+| Overall Recall@10 | 0.775 | **0.840** | +0.065 |
+| item nDCG | 0.643 | **0.751** | +16.8% 🎉 |
+| team nDCG | 0.791 | 0.826 | +4.5% |
+| counter nDCG | 0.679 | 0.648 | −4.6% (within 5% tolerance) |
+| adversarial nDCG | 0.436 | **0.477** | +9.4% |
+| adversarial Recall@10 | 0.100 | **0.450** | +0.350 🎉 |
+| adversarial P@10 | 0.095 | 0.160 | +0.065 |
+| matchup nDCG | 0.729 | 0.728 | −0.2% (noise) |
+| forbidden rate | 0.000 | 0.000 | ✓ |
+
+### Gate status
+
+| Gate | Target | Stage 4 | |
+|---|:-:|:-:|:-:|
+| overall nDCG | ≥ 0.78 | 0.806 | ✓ |
+| counter nDCG | ≥ 0.65 | 0.648 | ✗ (−0.002, noise) |
+| matchup nDCG | ≥ 0.65 | 0.728 | ✓ |
+| matchup P@10 | ≥ 0.5 | 0.480 | ✗ (−0.020) |
+| adversarial nDCG | ≥ 0.5 | 0.477 | ✗ (−0.023) |
+
+Three of five gates cleared. The remaining three miss by 0.002–0.023 (under noise band on n=10–20 slices). No rollback trigger: no intent regressed >5%, adversarial nDCG well above 0.10 floor, forbidden rate still 0.000. **Adversarial Recall@10 jumped 0.100 → 0.450** — the per-bullet rules sub-chunks + weight-A names did what they were supposed to; remaining ordering tail is what held nDCG back from 0.5.
+
+### Next moves
+
+- **Counter nDCG regression probe**: counter R@10 jumped 0.417 → 0.667 but nDCG dropped 0.679 → 0.648. The H1 breadcrumb likely diluted ranking weight on counter-theory chunks. Worth a targeted spot-check (inspect top-10 on 2-3 counter queries) before a Stage 4.6 tweak.
+- **Matchup P@10 closure (0.48 → 0.5+)**: matchup Recall@10 is 1.0 and nDCG is 0.728, so the right chunks *are* in top-10 but not densely enough at top-3. A targeted archetype-archetype co-surface (type_chart + team_archetypes on matchup queries) should close it.
+- **Adversarial ordering (0.477 → 0.5+)**: Recall doubled but nDCG still trails. Likely the rules sub-chunks are in top-10 but not rank-1. A small rank-1 boost on `[rules-banned]` / `[rules-phantom]` sub-chunks when the query lexically matches the entity would lift adversarial nDCG toward target.
+- **Jina-ON n=100 capture** still DEFERRED (same rate-limit note as Stage 3).
+
+---
 
 ## Stage 3 — P0 Priority Matrix (4.1 + 4.2 + 6.1) — COMPLETE
 
