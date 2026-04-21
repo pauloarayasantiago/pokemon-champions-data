@@ -1,4 +1,20 @@
-# Active Context (2026-04-21, RAG upgrade initiative — Stage 4 COMPLETE, overall nDCG 0.792 → 0.806)
+# Active Context (2026-04-21, RAG upgrade initiative — Stage 5 ABANDONED; baseline Stage 4.6 @ nDCG 0.849)
+
+## Stage 5 — EmbeddingGemma shadow migration — ABANDONED 2026-04-21
+
+Full handover: [`memory-bank/handover-2026-04-21-stage5-rollback.md`](handover-2026-04-21-stage5-rollback.md).
+
+**One-line:** Built shadow dual-write to `google/embeddinggemma-300m` MRL-truncated to 384 dims. User confirmed Italian queries are not a product requirement → multilingual value prop withdrawn. On pure English, Gemma is −1.3% overall nDCG and regresses `team` intent by −6.6% (two creator-named queries collapse to `meta_snapshot.md` chunks). Strict gate policy → rollback.
+
+**Restored baseline** (post-rollback smoke test, [snapshot](eval-baselines/retrieval-shadow-2026-04-21T20-34-15-464Z.json) preserved untracked):
+- Overall nDCG@10 = **0.849** (Stage 4.6 level, unchanged)
+- Stage 5 code reverted via `git checkout --`; never committed
+- Supabase: `embedding_v2` column + HNSW index + `pc_hybrid_search_v2` RPC dropped via migration `stage5_rollback_drop_embedding_v2`
+- Preserved dormant: `evals/golden-set-bilingual.jsonl` (100-line manual IT translation fixture) and two shadow snapshots — if multilingual ever returns, these are the starting point
+
+**What changed in current tree vs HEAD:** memory-bank docs only. `lib/*` and `scripts/*` are clean.
+
+---
 
 ## Stage 4 — Header splitter + TSVECTOR weighting + phantom-evolved co-surface — COMPLETE
 

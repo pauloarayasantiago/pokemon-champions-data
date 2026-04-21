@@ -2,6 +2,13 @@
 
 ## Completed
 
+### Stage 5 — EmbeddingGemma shadow migration — ABANDONED (2026-04-21)
+- **Status:** abandoned. Italian support not a product requirement; Gemma MRL-384 is strictly worse than BGE on English (−1.3% overall, −6.6% `team` intent).
+- Built end-to-end shadow dual-write (`bge-small-en-v1.5` → `google/embeddinggemma-300m` MRL-truncated to 384) and fully evaluated before rollback.
+- Code reverted (never committed); Supabase `embedding_v2` column/index/RPC dropped via migration `stage5_rollback_drop_embedding_v2`.
+- Preserved dormant (untracked): `evals/golden-set-bilingual.jsonl` + two shadow snapshots in `memory-bank/eval-baselines/`.
+- Full handover: [`memory-bank/handover-2026-04-21-stage5-rollback.md`](handover-2026-04-21-stage5-rollback.md).
+
 ### Direct RAG vs Gemma Agentic Comparison (2026-04-20)
 - **Full 13-test suite with --real-rag** on Gemma 4 26B A4B: **11/13 passed, 18,570 tok/pass, 18.4s avg** (snapshot: `model-eval-2026-04-20T22-40-13.json`)
 - Category: behavior 4/5 (team_json ✗), retrieval 4/5 (tournament_retrieval ✗ 1/4 runs), hallucination 3/3
