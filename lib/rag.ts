@@ -187,7 +187,8 @@ const MATCHUP_KEYWORDS = [
   "matchup", "matchups", "beats", "walls", "checks", "counters",
   "what beats", "who beats", "loses to", "weak to", "strong against",
   "favored", "unfavored", "best matchup", "worst matchup",
-  "ohko", "one-shot", "damage calc", "vs",
+  "ohko", "one-shot", "damage calc", "vs", "pivot", "pivots into",
+  "defensive options",
 ];
 
 export function classifyQuery(question: string): QueryIntent {
@@ -195,11 +196,21 @@ export function classifyQuery(question: string): QueryIntent {
   const names = getPokemonNames();
   const moves = getMoveNames();
 
+  // Word-boundary name match. Single-word names like "counter" or "protect"
+  // collide with common English usage ("what counters Incineroar" would otherwise
+  // extract move:counter). Names containing spaces/hyphens are unambiguous and
+  // can fall back to substring matching. Escape regex metacharacters defensively.
+  const hasName = (name: string): boolean => {
+    if (name.includes(" ") || name.includes("-")) return q.includes(name);
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b${escaped}\\b`).test(q);
+  };
+
   // Extract Pokemon name from query (longest match first)
   let pokemonName: string | null = null;
   const sortedNames = [...names].sort((a, b) => b.length - a.length);
   for (const name of sortedNames) {
-    if (q.includes(name)) {
+    if (hasName(name)) {
       pokemonName = name;
       break;
     }
@@ -210,7 +221,7 @@ export function classifyQuery(question: string): QueryIntent {
   const sortedMoves = [...moves].sort((a, b) => b.length - a.length);
   for (const name of sortedMoves) {
     if (name === pokemonName) continue; // Avoid collision
-    if (q.includes(name)) {
+    if (hasName(name)) {
       moveName = name;
       break;
     }
@@ -222,7 +233,7 @@ export function classifyQuery(question: string): QueryIntent {
   const sortedItems = [...items].sort((a, b) => b.length - a.length);
   for (const name of sortedItems) {
     if (name === pokemonName || name === moveName) continue;
-    if (q.includes(name)) {
+    if (hasName(name)) {
       itemName = name;
       break;
     }
@@ -248,7 +259,7 @@ export function classifyQuery(question: string): QueryIntent {
   // (e.g. "I have Garchomp Incineroar Whimsicott, what should I add").
   let pokemonMentionCount = 0;
   for (const name of names) {
-    if (q.includes(name)) pokemonMentionCount++;
+    if (hasName(name)) pokemonMentionCount++;
     if (pokemonMentionCount >= 2) break;
   }
   const hasTeamKeyword = TEAM_KEYWORDS.some(matchKeyword) || pokemonMentionCount >= 2;
@@ -310,6 +321,94 @@ export function classifyQuery(question: string): QueryIntent {
 }
 
 // ---------------------------------------------------------------------------
+// Stage 6.1 — Self-RAG-lite routing gate
+// Rules-based pre-retrieval router. Detects theory-shaped (archetype-counter,
+// vs-pair, phantom pre-evo) queries and emits hints that drive downstream
+// candidate-pool sizing, force-include, and boost logic. No paid-API call.
+// ---------------------------------------------------------------------------
+
+export interface QueryRoute {
+  /** "theory"  — strategic/matchup question best answered by knowledge docs;
+   *  "data"    — entity lookup best answered by CSV rows;
+   *  "both"    — mixed (default). */
+  route: "theory" | "data" | "both";
+  /** Named archetype detected (sun/rain/sand/snow/trick room/tailwind). */
+  archetype: string | null;
+  /** Two-Pokemon comparison query ("A vs B"). Both names lowercased. */
+  vsPair: [string, string] | null;
+  /** Phantom pre-evolution name present in query → force-include rules doc. */
+  phantomName: string | null;
+}
+
+const ARCHETYPE_PATTERNS: Array<{ re: RegExp; tag: string }> = [
+  { re: /\b(sunny|drought|chlorophyll)\b|\bsun\b/i, tag: "sun" },
+  { re: /\b(rain|drizzle|swift ?swim)\b/i, tag: "rain" },
+  { re: /\b(sand(?: ?storm)?|sand ?rush|sand ?stream)\b/i, tag: "sand" },
+  { re: /\b(snow|hail|slush ?rush)\b/i, tag: "snow" },
+  { re: /\btrick ?room\b|\btr (?:team|setter|mode|squad)\b/i, tag: "trick room" },
+  { re: /\btailwind\b/i, tag: "tailwind" },
+];
+
+// Phantom pre-evolutions (lowercase). Keep in sync with PRE_EVOS in
+// lib/chunker.ts — matching tokens here force-include champions_rules.md's
+// "Phantom Pre-Evolutions" body section so adversarial queries route there.
+const PHANTOM_PRE_EVOS = new Set([
+  "ralts", "kirlia", "scyther", "sneasel", "litwick", "lampent", "gligar",
+  "togepi", "togetic", "porygon", "porygon2", "cleffa", "clefairy", "happiny",
+  "chansey", "rhyhorn", "rhydon", "duskull", "dusclops", "elekid", "electabuzz",
+  "magby", "magmar", "dratini", "dragonair", "zubat", "golbat", "honedge",
+  "doublade", "budew", "roselia", "swinub", "piloswine", "murkrow", "misdreavus",
+  "yanma", "lickitung", "tangela",
+]);
+
+export function routeQuery(question: string, intent: QueryIntent): QueryRoute {
+  const q = question.toLowerCase();
+
+  let archetype: string | null = null;
+  for (const p of ARCHETYPE_PATTERNS) {
+    if (p.re.test(q)) { archetype = p.tag; break; }
+  }
+
+  // Two-Pokemon "A vs B" / "A handles B" / "A into B" comparison. Split on
+  // the comparison verb/preposition and take the longest Pokemon-name
+  // substring on each side. Directional verbs (handle/beat/wall/check) are
+  // included so "how does Charizard handle Rotom-Wash" surfaces both
+  // Pokemon chunks. "into" covers lead-matchup phrasing.
+  let vsPair: [string, string] | null = null;
+  const vsMatch = q.match(/^(.*?)\b(?:vs\.?|versus|against|handles?|beats?|walls?|checks?|into)\b(.*?)$/);
+  if (vsMatch) {
+    const names = getPokemonNames();
+    const findName = (seg: string): string | null => {
+      const s = seg.toLowerCase();
+      let best: string | null = null;
+      for (const n of names) {
+        if (s.includes(n) && (best === null || n.length > best.length)) best = n;
+      }
+      return best;
+    };
+    const left = findName(vsMatch[1]);
+    const right = findName(vsMatch[2]);
+    if (left && right && left !== right) vsPair = [left, right];
+  }
+
+  let phantomName: string | null = null;
+  for (const token of q.split(/\W+/)) {
+    if (PHANTOM_PRE_EVOS.has(token)) { phantomName = token; break; }
+  }
+
+  // Route selection
+  let route: "theory" | "data" | "both" = "both";
+  const isStrategic = intent.isCounterQuery || intent.isMatchupQuery;
+  const hasEntity = !!(intent.pokemonName || intent.moveName || intent.itemName);
+  if (archetype && (isStrategic || intent.hasTeamKeyword)) route = "theory";
+  else if (isStrategic && !hasEntity) route = "theory";
+  else if (vsPair) route = "theory";          // comparisons want type_chart + theory support
+  else if (hasEntity && !isStrategic && !intent.hasTeamKeyword) route = "data";
+
+  return { route, archetype, vsPair, phantomName };
+}
+
+// ---------------------------------------------------------------------------
 // Main query function
 // ---------------------------------------------------------------------------
 
@@ -365,12 +464,17 @@ export async function query(
   onProgress?.("embed_end", { ms: Date.now() - embedT0, dim: vector?.length ?? 0 });
 
   const intent = classifyQuery(question);
+  const route = routeQuery(question, intent);
   const supabase = supabaseServer();
 
   // Always fetch a healthy candidate pool so rerank boosts can surface the
   // right chunk even when topK is small (e.g. Protect in moves.csv can sit
-  // outside the raw RRF top-20 but #1 after move-name boost).
-  const fetchK = Math.max(topK * 8, 80);
+  // outside the raw RRF top-20 but #1 after move-name boost). Strategic /
+  // theory-routed queries get a larger floor because Pokemon chunks can
+  // rank past 80 when FTS match is weak on strategic vocabulary (e.g.
+  // "pivots into Tyranitar" — Pokemon chunk has no "pivot/defensive" terms).
+  const baseFloor = route.route === "theory" || intent.isCounterQuery || intent.isMatchupQuery ? 160 : 80;
+  const fetchK = Math.max(topK * 8, baseFloor);
 
   const rpcT0 = Date.now();
   onProgress?.("rpc_start", {
@@ -455,8 +559,87 @@ export async function query(
     }
   }
 
+  // Stage 6.1: phantom pre-evolution force-include. Adversarial queries
+  // that name a pre-evolution not in Champions (e.g. "Scyther EV spread")
+  // should always surface the rules doc's "Phantom Pre-Evolutions" section.
+  // FTS on the phantom name against that single file is a guaranteed hit.
+  let phantomResults: Record<string, unknown>[] = [];
+  if (route.phantomName) {
+    const { data: phantomRows } = await supabase
+      .from("pc_chunks")
+      .select("*")
+      .eq("source", "data/knowledge/champions_rules.md")
+      .textSearch("text_tsv", route.phantomName, { config: "english" })
+      .limit(3);
+    phantomResults = (phantomRows ?? []) as Record<string, unknown>[];
+  }
+
+  // Stage 6.1: vs-pair force-include. For A-vs-B queries, the weaker side
+  // can fall outside the RPC candidate pool (embedding signal collapses to
+  // one Pokemon). Guarantee both primary chunks are present by fetching
+  // the pokemon_champions.csv row for each name directly. pokemon_name is
+  // stored CamelCase ("Rotom-Wash"), so match case-insensitively via ilike.
+  let vsResults: Record<string, unknown>[] = [];
+  if (route.vsPair) {
+    const [aName, bName] = route.vsPair;
+    const { data: vsRows } = await supabase
+      .from("pc_chunks")
+      .select("*")
+      .eq("source", "pokemon_champions.csv")
+      .or(`pokemon_name.ilike.${aName},pokemon_name.ilike.${bName}`)
+      .limit(4);
+    vsResults = (vsRows ?? []) as Record<string, unknown>[];
+  }
+
+  // Stage 6.1: exact-entity force-include. When the query names a specific
+  // move / item / strategic Pokemon, the RPC can still rank that chunk
+  // outside top-10 if FTS matches noisier long-form chunks (e.g.
+  // "Fake Out restriction Champions" → transcripts hit all 4 terms while
+  // move:fake-out hits only 2). Force-include by id.
+  let entityResults: Record<string, unknown>[] = [];
+  const entityIds: string[] = [];
+  if (intent.moveName) entityIds.push(`move:${intent.moveName.replace(/\s+/g, "-")}`);
+  if (intent.itemName) entityIds.push(`item:${intent.itemName.replace(/\s+/g, "-")}`);
+  // Strategic Pokemon queries (counter / matchup / "pivots into") — fetch
+  // the Pokemon row so it can co-surface with theory docs.
+  if (intent.pokemonName && (intent.isCounterQuery || intent.isMatchupQuery)) {
+    entityIds.push(`pokemon:${intent.pokemonName.replace(/\s+/g, "-")}`);
+  }
+  if (entityIds.length > 0) {
+    const { data: entityRows } = await supabase
+      .from("pc_chunks")
+      .select("*")
+      .in("id", entityIds);
+    entityResults = (entityRows ?? []) as Record<string, unknown>[];
+  }
+
+  // Synthetic rrf_score for force-included rows. Force-included rows come
+  // from plain table selects (no rrf_score column). If the RPC already has
+  // the same row, we use max(rpcScore, baseScore) so a high RPC score isn't
+  // clipped to the floor. If the RPC doesn't have it, we set baseScore so
+  // boosts can lift it into top-10 instead of leaving it at 0.
+  const rpcScoreById = new Map<string, number>();
+  for (const r of raw) {
+    const s = typeof r.rrf_score === "number" ? r.rrf_score : Number(r.rrf_score ?? 0);
+    rpcScoreById.set(r.id as string, s);
+  }
+  const rpcIds = new Set(raw.map((r) => r.id as string));
+  const augmentForced = (rows: Record<string, unknown>[], baseScore: number) =>
+    rows.map((r) => {
+      const rpcScore = rpcScoreById.get(r.id as string);
+      const finalScore = rpcScore !== undefined ? Math.max(rpcScore, baseScore) : baseScore;
+      return { ...r, rrf_score: finalScore };
+    });
+
   const structuredIds = new Set(structuredResults.map((r) => r.id as string));
-  const allRaw = [...structuredResults, ...rulesResults, ...raw];
+  const allRaw = [
+    ...structuredResults,
+    ...augmentForced(rulesResults, 0.08),
+    ...augmentForced(phantomResults, 0.10),
+    ...augmentForced(vsResults, 0.08),
+    ...augmentForced(entityResults, 0.08),
+    ...raw,
+  ];
 
   // Deduplicate by id
   const seen = new Set<string>();
@@ -608,6 +791,62 @@ export async function query(
     const isRulesDoc = r.source === "data/knowledge/champions_rules.md";
     if (isRulesDoc && /\b(change|changed|differ|different|differently|banned|unavailable|missing|nerf|nerfed|how does)\b/i.test(question)) {
       boost += 0.035;
+    }
+
+    // Stage 6.1 routing boosts. When routeQuery() classifies the question
+    // as "theory", lift the three curated strategy docs (team_building_theory,
+    // team_archetypes, type_chart). When an archetype token is detected,
+    // give team_archetypes.md an extra bump and lift tournament-team chunks
+    // whose text mentions that archetype. For A-vs-B comparisons, boost
+    // both Pokemon chunks and the type chart.
+    if (route.route === "theory") {
+      const theorySources = new Set([
+        "data/knowledge/team_building_theory.md",
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/type_chart.md",
+      ]);
+      if (theorySources.has(r.source)) boost += 0.025;
+    }
+    if (route.archetype) {
+      const archLower = route.archetype;
+      const textLower = r.text.toLowerCase();
+      if (r.source === "data/knowledge/team_archetypes.md" && textLower.includes(archLower)) {
+        boost += 0.025;
+      }
+      if (isTeamChunk && textLower.includes(archLower)) {
+        boost += 0.02;
+      }
+    }
+    if (route.vsPair) {
+      const [aName, bName] = route.vsPair;
+      // metadata.pokemon may be a string (Pokemon/mega chunks) or an array
+      // (tournament-team chunks); guard against the array shape.
+      const pickStr = (v: unknown): string | undefined =>
+        typeof v === "string" ? v.toLowerCase() : undefined;
+      const chunkPokemon = pickStr(r.metadata.pokemon)
+        ?? pickStr(r.metadata.name)
+        ?? pickStr(r.metadata.base_pokemon);
+      // +0.12 for the primary Pokemon rows: force-included rows enter with
+      // rrf_score=0 so the bump must clear the RPC top-tier band (~0.10) to
+      // guarantee both chunks land in top-10. Dragonite-side rows already
+      // high in the pool won't over-rank because type_chart+theory boosts
+      // still sum higher.
+      if (chunkPokemon === aName || chunkPokemon === bName) boost += 0.12;
+      // Team chunks listing both names are valuable supporting evidence.
+      if (Array.isArray(r.metadata.pokemon)) {
+        const arr = (r.metadata.pokemon as unknown[]).map((x) =>
+          typeof x === "string" ? x.toLowerCase() : "",
+        );
+        const hasA = arr.includes(aName);
+        const hasB = arr.includes(bName);
+        if (hasA && hasB) boost += 0.04;
+      }
+      if (r.source === "data/knowledge/type_chart.md") boost += 0.02;
+    }
+    if (route.phantomName && isRulesDoc && r.text.toLowerCase().includes(route.phantomName)) {
+      // +0.12 same reasoning — phantom section chunk is force-included and
+      // needs enough lift to clear the RPC top band.
+      boost += 0.12;
     }
 
     // Speed tiers doc: boost on any speed-benchmark question
