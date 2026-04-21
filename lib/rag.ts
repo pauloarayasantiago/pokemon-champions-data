@@ -338,6 +338,11 @@ export interface QueryRoute {
   vsPair: [string, string] | null;
   /** Phantom pre-evolution name present in query → force-include rules doc. */
   phantomName: string | null;
+  /** Evolved-form slug for the detected phantom name (e.g. "litwick" →
+   *  "chandelure"). Used to force-include the evolved Pokemon chunk so
+   *  adversarial phantom queries return both the rules doc AND the
+   *  correct evolved-form card. */
+  phantomEvolved: string | null;
 }
 
 const ARCHETYPE_PATTERNS: Array<{ re: RegExp; tag: string }> = [
@@ -349,17 +354,36 @@ const ARCHETYPE_PATTERNS: Array<{ re: RegExp; tag: string }> = [
   { re: /\btailwind\b/i, tag: "tailwind" },
 ];
 
-// Phantom pre-evolutions (lowercase). Keep in sync with PRE_EVOS in
-// lib/chunker.ts — matching tokens here force-include champions_rules.md's
-// "Phantom Pre-Evolutions" body section so adversarial queries route there.
-const PHANTOM_PRE_EVOS = new Set([
-  "ralts", "kirlia", "scyther", "sneasel", "litwick", "lampent", "gligar",
-  "togepi", "togetic", "porygon", "porygon2", "cleffa", "clefairy", "happiny",
-  "chansey", "rhyhorn", "rhydon", "duskull", "dusclops", "elekid", "electabuzz",
-  "magby", "magmar", "dratini", "dragonair", "zubat", "golbat", "honedge",
-  "doublade", "budew", "roselia", "swinub", "piloswine", "murkrow", "misdreavus",
-  "yanma", "lickitung", "tangela",
-]);
+// Phantom pre-evolutions → evolved-form slug. Keep in sync with PRE_EVOS in
+// lib/chunker.ts — matching tokens here force-include both champions_rules.md's
+// "Phantom Pre-Evolutions" body section AND the evolved-form Pokemon chunk
+// so adversarial queries surface the correct fully-evolved card.
+const PHANTOM_TO_EVOLVED: Record<string, string> = {
+  ralts: "gardevoir", kirlia: "gardevoir",
+  scyther: "scizor",
+  sneasel: "weavile",
+  litwick: "chandelure", lampent: "chandelure",
+  gligar: "gliscor",
+  togepi: "togekiss", togetic: "togekiss",
+  porygon: "porygon-z", porygon2: "porygon-z",
+  cleffa: "clefable", clefairy: "clefable",
+  happiny: "blissey", chansey: "blissey",
+  rhyhorn: "rhyperior", rhydon: "rhyperior",
+  duskull: "dusknoir", dusclops: "dusknoir",
+  elekid: "electivire", electabuzz: "electivire",
+  magby: "magmortar", magmar: "magmortar",
+  dratini: "dragonite", dragonair: "dragonite",
+  zubat: "crobat", golbat: "crobat",
+  honedge: "aegislash", doublade: "aegislash",
+  budew: "roserade", roselia: "roserade",
+  swinub: "mamoswine", piloswine: "mamoswine",
+  murkrow: "honchkrow",
+  misdreavus: "mismagius",
+  yanma: "yanmega",
+  lickitung: "lickilicky",
+  tangela: "tangrowth",
+};
+const PHANTOM_PRE_EVOS = new Set(Object.keys(PHANTOM_TO_EVOLVED));
 
 export function routeQuery(question: string, intent: QueryIntent): QueryRoute {
   const q = question.toLowerCase();
@@ -392,8 +416,13 @@ export function routeQuery(question: string, intent: QueryIntent): QueryRoute {
   }
 
   let phantomName: string | null = null;
+  let phantomEvolved: string | null = null;
   for (const token of q.split(/\W+/)) {
-    if (PHANTOM_PRE_EVOS.has(token)) { phantomName = token; break; }
+    if (PHANTOM_PRE_EVOS.has(token)) {
+      phantomName = token;
+      phantomEvolved = PHANTOM_TO_EVOLVED[token];
+      break;
+    }
   }
 
   // Route selection
@@ -405,7 +434,7 @@ export function routeQuery(question: string, intent: QueryIntent): QueryRoute {
   else if (vsPair) route = "theory";          // comparisons want type_chart + theory support
   else if (hasEntity && !isStrategic && !intent.hasTeamKeyword) route = "data";
 
-  return { route, archetype, vsPair, phantomName };
+  return { route, archetype, vsPair, phantomName, phantomEvolved };
 }
 
 // ---------------------------------------------------------------------------
@@ -574,6 +603,21 @@ export async function query(
     phantomResults = (phantomRows ?? []) as Record<string, unknown>[];
   }
 
+  // Stage 4.3 extension: evolved-form co-surface for phantom queries. When
+  // the user names a pre-evolution (Litwick), also inject the evolved-form
+  // Pokemon chunk (Chandelure) so they get a directly actionable answer
+  // alongside the rules doc. Closes the Recall gap on phantom adversarial
+  // cases (nDCG was 1.0 because rules doc ranked first, but Recall was 0
+  // because the expected pokemon:chandelure chunk never appeared).
+  let phantomEvolvedResults: Record<string, unknown>[] = [];
+  if (route.phantomEvolved) {
+    const { data: evoRows } = await supabase
+      .from("pc_chunks")
+      .select("*")
+      .eq("id", `pokemon:${route.phantomEvolved}`);
+    phantomEvolvedResults = (evoRows ?? []) as Record<string, unknown>[];
+  }
+
   // Stage 6.1: vs-pair force-include. For A-vs-B queries, the weaker side
   // can fall outside the RPC candidate pool (embedding signal collapses to
   // one Pokemon). Guarantee both primary chunks are present by fetching
@@ -624,7 +668,10 @@ export async function query(
     rpcScoreById.set(r.id as string, s);
   }
   const rpcIds = new Set(raw.map((r) => r.id as string));
-  const augmentForced = (rows: Record<string, unknown>[], baseScore: number) =>
+  const augmentForced = (
+    rows: Record<string, unknown>[],
+    baseScore: number,
+  ): Record<string, unknown>[] =>
     rows.map((r) => {
       const rpcScore = rpcScoreById.get(r.id as string);
       const finalScore = rpcScore !== undefined ? Math.max(rpcScore, baseScore) : baseScore;
@@ -636,6 +683,7 @@ export async function query(
     ...structuredResults,
     ...augmentForced(rulesResults, 0.08),
     ...augmentForced(phantomResults, 0.10),
+    ...augmentForced(phantomEvolvedResults, 0.09),
     ...augmentForced(vsResults, 0.08),
     ...augmentForced(entityResults, 0.08),
     ...raw,
@@ -847,6 +895,12 @@ export async function query(
       // +0.12 same reasoning — phantom section chunk is force-included and
       // needs enough lift to clear the RPC top band.
       boost += 0.12;
+    }
+    // Evolved-form co-surface: lift the Pokemon chunk matching the phantom
+    // pre-evo's evolved form (e.g. Chandelure for Litwick query).
+    if (route.phantomEvolved && r.dataCategory === "pokemon") {
+      const chunkName = (r.metadata.name as string)?.toLowerCase();
+      if (chunkName === route.phantomEvolved) boost += 0.10;
     }
 
     // Speed tiers doc: boost on any speed-benchmark question
