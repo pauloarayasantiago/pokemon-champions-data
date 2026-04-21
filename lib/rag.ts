@@ -588,6 +588,31 @@ export async function query(
     }
   }
 
+  // Stage 4.6 P2: adversarial banned-item force-include. The rulesResults
+  // trigger above only fires on mechanic-change keywords and misses natural
+  // queries like "Life Orb best Pokemon for damage boost" that name a
+  // banned item without using any of those words. Fetch every banned-item
+  // bullet (~23 rows) and filter in-memory by whether the question text
+  // contains any of its entries. Rank-1 comes from the +0.15 boost in the
+  // accumulator below; baseline 0.08 puts the chunk in the pool so the
+  // boost has something to lift.
+  let bannedItemResults: Record<string, unknown>[] = [];
+  {
+    const { data: bannedRows } = await supabase
+      .from("pc_chunks")
+      .select("*")
+      .eq("source", "data/knowledge/champions_rules.md")
+      .filter("metadata->>list_kind", "eq", "banned-item");
+    const qLower = question.toLowerCase();
+    bannedItemResults = ((bannedRows ?? []) as Record<string, unknown>[]).filter((r) => {
+      const entries = (r.metadata as { entries?: unknown })?.entries;
+      if (!Array.isArray(entries)) return false;
+      return entries.some(
+        (e) => typeof e === "string" && qLower.includes(e.toLowerCase()),
+      );
+    });
+  }
+
   // Stage 6.1: phantom pre-evolution force-include. Adversarial queries
   // that name a pre-evolution not in Champions (e.g. "Scyther EV spread")
   // should always surface the rules doc's "Phantom Pre-Evolutions" section.
@@ -686,6 +711,7 @@ export async function query(
     ...augmentForced(phantomEvolvedResults, 0.09),
     ...augmentForced(vsResults, 0.08),
     ...augmentForced(entityResults, 0.08),
+    ...augmentForced(bannedItemResults, 0.08),
     ...raw,
   ];
 
@@ -839,6 +865,21 @@ export async function query(
     const isRulesDoc = r.source === "data/knowledge/champions_rules.md";
     if (isRulesDoc && /\b(change|changed|differ|different|differently|banned|unavailable|missing|nerf|nerfed|how does)\b/i.test(question)) {
       boost += 0.035;
+    }
+
+    // Stage 4.6 P2: adversarial banned-item rank-1 boost. When the query
+    // names an item in a banned-item bullet's metadata.entries, lift that
+    // per-bullet chunk +0.15 so it clears the RPC top-tier band (~0.10) and
+    // wins rank-1. Restricted to list_kind === "banned-item" (NOT
+    // phantom-pre-evo — those queries expect the evolved Pokemon chunk at
+    // rank-1 per golden set, handled by the phantomEvolved boost above).
+    if (r.metadata.list_kind === "banned-item" && Array.isArray(r.metadata.entries)) {
+      const entries = r.metadata.entries as unknown[];
+      const qLower = question.toLowerCase();
+      const hit = entries.some((e) =>
+        typeof e === "string" && qLower.includes(e.toLowerCase())
+      );
+      if (hit) boost += 0.15;
     }
 
     // Stage 6.1 routing boosts. When routeQuery() classifies the question
