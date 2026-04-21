@@ -17,6 +17,7 @@
     "test:team": "tsx scripts/eval-team.ts",
     "eval:models": "tsx scripts/eval-models.ts",
     "test:rag": "tsx scripts/eval.ts",
+    "test:retrieval": "tsx scripts/eval-retrieval.ts",
     "test:integration": "tsx scripts/test-suite.ts",
     "test:stress": "tsx scripts/stress-test.ts"
   },

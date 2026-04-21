@@ -1,0 +1,1102 @@
+{
+  "timestamp": "2026-04-21T06:26:46.868Z",
+  "filter": {},
+  "overall": {
+    "n": 30,
+    "ndcg": 0.8041824933698856,
+    "recall": 0.7833333333333333,
+    "precision": 0.37000000000000005,
+    "mrr": 0.8375,
+    "forbiddenRate": 0
+  },
+  "per_intent": {
+    "counter": {
+      "n": 4,
+      "ndcg": 0.6302401526621961,
+      "recall": 0.75,
+      "precision": 0.5,
+      "mrr": 0.75,
+      "forbiddenRate": 0
+    },
+    "item": {
+      "n": 4,
+      "ndcg": 0.75,
+      "recall": 0.5,
+      "precision": 0.30000000000000004,
+      "mrr": 0.75,
+      "forbiddenRate": 0
+    },
+    "move": {
+      "n": 4,
+      "ndcg": 0.98673092841555,
+      "recall": 0.875,
+      "precision": 0.25,
+      "mrr": 1,
+      "forbiddenRate": 0
+    },
+    "stat": {
+      "n": 10,
+      "ndcg": 0.7142075613358579,
+      "recall": 0.7,
+      "precision": 0.24,
+      "mrr": 0.7125,
+      "forbiddenRate": 0
+    },
+    "team": {
+      "n": 4,
+      "ndcg": 0.9460413966183135,
+      "recall": 1,
+      "precision": 0.7,
+      "mrr": 1,
+      "forbiddenRate": 0
+    },
+    "usage": {
+      "n": 4,
+      "ndcg": 0.9328373192384377,
+      "recall": 1,
+      "precision": 0.425,
+      "mrr": 1,
+      "forbiddenRate": 0
+    }
+  },
+  "per_difficulty": {
+    "easy": {
+      "n": 14,
+      "ndcg": 0.9956816584169215,
+      "recall": 1,
+      "precision": 0.3642857142857143,
+      "mrr": 1,
+      "forbiddenRate": 0
+    },
+    "medium": {
+      "n": 9,
+      "ndcg": 0.8224934924020983,
+      "recall": 0.7222222222222222,
+      "precision": 0.47777777777777786,
+      "mrr": 0.8888888888888888,
+      "forbiddenRate": 0
+    },
+    "hard": {
+      "n": 2,
+      "ndcg": 0.8683379989506516,
+      "recall": 1,
+      "precision": 0.65,
+      "mrr": 1,
+      "forbiddenRate": 0
+    },
+    "adversarial": {
+      "n": 5,
+      "ndcg": 0.2093628307478959,
+      "recall": 0.2,
+      "precision": 0.08,
+      "mrr": 0.225,
+      "forbiddenRate": 0
+    }
+  },
+  "cases": [
+    {
+      "id": "charizard-stats",
+      "query": "what are Charizard's stats and moves",
+      "intent_tag": "stat",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "data/knowledge/meta_snapshot.md",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv"
+      ]
+    },
+    {
+      "id": "garchomp-stats",
+      "query": "Garchomp base stats abilities and movepool",
+      "intent_tag": "stat",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "pokemon_champions.csv",
+        "data/knowledge/speed_tiers.md",
+        "pikalytics_usage.csv"
+      ]
+    },
+    {
+      "id": "incineroar-stats",
+      "query": "Incineroar stats and moves",
+      "intent_tag": "stat",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/team_archetypes.md"
+      ]
+    },
+    {
+      "id": "mega-dragonite-stats",
+      "query": "Mega Dragonite stats and ability",
+      "intent_tag": "stat",
+      "difficulty_tier": "easy",
+      "ndcg": 0.992619504174702,
+      "recall": 1,
+      "precision": 0.3,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "mega_evolutions.csv",
+        "pokemon_champions.csv",
+        "mega_abilities.csv",
+        "pikalytics_usage.csv",
+        "matchup_matrix.csv"
+      ]
+    },
+    {
+      "id": "azumarill-stats",
+      "query": "Azumarill stats abilities and moves",
+      "intent_tag": "stat",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv"
+      ]
+    },
+    {
+      "id": "fake-out-mechanics",
+      "query": "Fake Out mechanics in Champions",
+      "intent_tag": "move",
+      "difficulty_tier": "medium",
+      "ndcg": 1,
+      "recall": 0.5,
+      "precision": 0.1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [
+        "updated_attacks.csv"
+      ],
+      "top_sources": [
+        "moves.csv",
+        "data/transcripts/unknown_pokeaimmd-huge-competitive-move-buffs-pokemon-champions.md",
+        "data/transcripts/unknown_moxie-boosted-we-need-to-talk-about-the-new-mega-abilities-in-pokemon-champions.md",
+        "data/transcripts/unknown_adrive-easy-team-building-guide-for-pokemon-champions.md",
+        "data/transcripts/unknown_ck49-the-best-pokemon-for-every-role-in-champions.md"
+      ]
+    },
+    {
+      "id": "protect-mechanics",
+      "query": "how does Protect work in Champions",
+      "intent_tag": "move",
+      "difficulty_tier": "medium",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.4,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        2,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "moves.csv",
+        "data/knowledge/champions_rules.md",
+        "data/knowledge/champions_rules.md",
+        "data/knowledge/champions_rules.md",
+        "data/transcripts/unknown_ck49-the-best-pokemon-for-every-role-in-champions.md"
+      ]
+    },
+    {
+      "id": "earthquake-move",
+      "query": "Earthquake move power type accuracy",
+      "intent_tag": "move",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "moves.csv",
+        "moves.csv",
+        "moves.csv",
+        "data/knowledge/team_building_theory.md",
+        "moves.csv"
+      ]
+    },
+    {
+      "id": "trick-room-move",
+      "query": "Trick Room move details",
+      "intent_tag": "move",
+      "difficulty_tier": "easy",
+      "ndcg": 0.9469237136622,
+      "recall": 1,
+      "precision": 0.4,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        0,
+        0,
+        0,
+        1,
+        2,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "moves.csv",
+        "data/knowledge/team_archetypes.md",
+        "moves.csv",
+        "moves.csv",
+        "moves.csv"
+      ]
+    },
+    {
+      "id": "focus-sash-item",
+      "query": "Focus Sash item effect",
+      "intent_tag": "item",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "items.csv",
+        "items.csv",
+        "items.csv",
+        "items.csv",
+        "items.csv"
+      ]
+    },
+    {
+      "id": "physical-attacker-items",
+      "query": "best items for physical attackers",
+      "intent_tag": "item",
+      "difficulty_tier": "medium",
+      "ndcg": 1,
+      "recall": 0,
+      "precision": 1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 2,
+      "missed_grade3": [
+        "team_building_theory.md"
+      ],
+      "top_sources": [
+        "items.csv",
+        "items.csv",
+        "items.csv",
+        "items.csv",
+        "items.csv"
+      ]
+    },
+    {
+      "id": "choice-scarf-item",
+      "query": "Choice Scarf item effect",
+      "intent_tag": "item",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "items.csv",
+        "items.csv",
+        "items.csv",
+        "items.csv",
+        "items.csv"
+      ]
+    },
+    {
+      "id": "incineroar-counters",
+      "query": "what counters Incineroar in doubles",
+      "intent_tag": "counter",
+      "difficulty_tier": "medium",
+      "ndcg": 0.7842846127474816,
+      "recall": 1,
+      "precision": 0.7,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        2,
+        3,
+        1,
+        0,
+        3,
+        3,
+        0,
+        0,
+        3,
+        1
+      ],
+      "top_hit_rank": 1,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "matchup_matrix.csv",
+        "data/knowledge/team_building_theory.md",
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/team_building_theory.md"
+      ]
+    },
+    {
+      "id": "beat-rain-teams",
+      "query": "how to beat rain teams",
+      "intent_tag": "counter",
+      "difficulty_tier": "hard",
+      "ndcg": 0.8691594210104314,
+      "recall": 1,
+      "precision": 0.4,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        2,
+        2,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/type_chart.md",
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/type_chart.md",
+        "data/knowledge/type_chart.md"
+      ]
+    },
+    {
+      "id": "beat-trick-room",
+      "query": "how to deal with Trick Room teams",
+      "intent_tag": "counter",
+      "difficulty_tier": "hard",
+      "ndcg": 0.8675165768908717,
+      "recall": 1,
+      "precision": 0.9,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        2,
+        3,
+        3,
+        1,
+        2,
+        2,
+        0,
+        1,
+        2,
+        1
+      ],
+      "top_hit_rank": 1,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "data/knowledge/team_building_theory.md",
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/team_building_theory.md"
+      ]
+    },
+    {
+      "id": "fast-water-special",
+      "query": "fast Water type Pokemon with good special attack",
+      "intent_tag": "stat",
+      "difficulty_tier": "medium",
+      "ndcg": 0.8339912323981488,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        2,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 1,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "mega_evolutions.csv",
+        "mega_evolutions.csv"
+      ]
+    },
+    {
+      "id": "slow-tr-pokemon",
+      "query": "slowest Pokemon for Trick Room",
+      "intent_tag": "stat",
+      "difficulty_tier": "medium",
+      "ndcg": 0,
+      "recall": 0,
+      "precision": 0,
+      "mrr": 0,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": null,
+      "top_hit_grade": 0,
+      "missed_grade3": [
+        "speed_tiers.md"
+      ],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv"
+      ]
+    },
+    {
+      "id": "highest-attack",
+      "query": "Pokemon with highest attack stat",
+      "intent_tag": "stat",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 2,
+      "missed_grade3": [],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv",
+        "pokemon_champions.csv"
+      ]
+    },
+    {
+      "id": "most-used-pokemon",
+      "query": "most used Pokemon in tournaments",
+      "intent_tag": "usage",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 1,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv"
+      ]
+    },
+    {
+      "id": "garchomp-usage",
+      "query": "Garchomp competitive usage stats top moves items",
+      "intent_tag": "usage",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pikalytics_usage.csv",
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv"
+      ]
+    },
+    {
+      "id": "charizard-usage",
+      "query": "Charizard usage rate and common moves",
+      "intent_tag": "usage",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.2,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pikalytics_usage.csv",
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv"
+      ]
+    },
+    {
+      "id": "char-y-teammates",
+      "query": "best teammates for Mega Charizard Y",
+      "intent_tag": "team",
+      "difficulty_tier": "medium",
+      "ndcg": 0.9196461703481416,
+      "recall": 1,
+      "precision": 0.9,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        0,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "pikalytics_usage.csv",
+        "pokemon_champions.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv",
+        "pikalytics_usage.csv"
+      ]
+    },
+    {
+      "id": "sand-team-core",
+      "query": "sand team archetype Tyranitar Excadrill core",
+      "intent_tag": "team",
+      "difficulty_tier": "medium",
+      "ndcg": 0.9314398918168966,
+      "recall": 1,
+      "precision": 0.5,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        2,
+        3,
+        2,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/meta_snapshot.md",
+        "tournament_teams.csv"
+      ]
+    },
+    {
+      "id": "speed-tiers",
+      "query": "speed tiers and benchmarks at level 50",
+      "intent_tag": "team",
+      "difficulty_tier": "easy",
+      "ndcg": 1,
+      "recall": 1,
+      "precision": 0.9,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/speed_tiers.md"
+      ]
+    },
+    {
+      "id": "current-meta",
+      "query": "current meta top Pokemon win rates tier list",
+      "intent_tag": "team",
+      "difficulty_tier": "medium",
+      "ndcg": 0.9330795243082163,
+      "recall": 1,
+      "precision": 0.5,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        3,
+        3,
+        0,
+        3,
+        0,
+        3,
+        3,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 0,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/transcripts/unknown_panfro-games-new-ranking-every-pokémon-in-pokémon-champions-meta-tier-list.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/transcripts/unknown_angryslowbroplus-the-definitive-pokemon-champions-regulation-a-doubles-tier-list.md"
+      ]
+    },
+    {
+      "id": "adv-togetic-phantom",
+      "query": "Togetic best moves and stats",
+      "intent_tag": "stat",
+      "difficulty_tier": "adversarial",
+      "ndcg": 0.3154648767857287,
+      "recall": 0,
+      "precision": 0.1,
+      "mrr": 0.125,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      "top_hit_rank": 7,
+      "top_hit_grade": 2,
+      "missed_grade3": [
+        "pokemon:togekiss"
+      ],
+      "top_sources": [
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/team_building_theory.md"
+      ]
+    },
+    {
+      "id": "adv-porygon2-phantom",
+      "query": "best Porygon2 moveset",
+      "intent_tag": "stat",
+      "difficulty_tier": "adversarial",
+      "ndcg": 0,
+      "recall": 0,
+      "precision": 0,
+      "mrr": 0,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": null,
+      "top_hit_grade": 0,
+      "missed_grade3": [
+        "pokemon:porygon-z"
+      ],
+      "top_sources": [
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/team_building_theory.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/team_archetypes.md"
+      ]
+    },
+    {
+      "id": "adv-life-orb-banned",
+      "query": "Life Orb best Pokemon for damage boost",
+      "intent_tag": "item",
+      "difficulty_tier": "adversarial",
+      "ndcg": 0,
+      "recall": 0,
+      "precision": 0,
+      "mrr": 0,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": null,
+      "top_hit_grade": 0,
+      "missed_grade3": [
+        "champions_rules.md"
+      ],
+      "top_sources": [
+        "data/knowledge/team_archetypes.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/transcripts/unknown_mrsteelixyourgirl-30-pokemon-you-need-to-use-in-pokemon-champions.md",
+        "data/transcripts/unknown_angryslowbroplus-the-definitive-pokemon-champions-regulation-a-doubles-tier-list.md",
+        "data/transcripts/unknown_moxie-boosteds-gym-moxie-boosted-ranks-every-mega-evolution-in-pokemon-champions.md"
+      ]
+    },
+    {
+      "id": "adv-amoonguss-banned",
+      "query": "Amoonguss Redirect strategy",
+      "intent_tag": "usage",
+      "difficulty_tier": "adversarial",
+      "ndcg": 0.7313492769537508,
+      "recall": 1,
+      "precision": 0.3,
+      "mrr": 1,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        2,
+        2,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": 4,
+      "top_hit_grade": 3,
+      "missed_grade3": [],
+      "top_sources": [
+        "data/knowledge/team_building_theory.md",
+        "data/knowledge/team_building_theory.md",
+        "data/knowledge/speed_tiers.md",
+        "data/knowledge/meta_snapshot.md",
+        "data/knowledge/champions_rules.md"
+      ]
+    },
+    {
+      "id": "adv-terastal-banned",
+      "query": "Terastallize Charizard strategy",
+      "intent_tag": "counter",
+      "difficulty_tier": "adversarial",
+      "ndcg": 0,
+      "recall": 0,
+      "precision": 0,
+      "mrr": 0,
+      "forbidden_count": 0,
+      "graded_ranks": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top_hit_rank": null,
+      "top_hit_grade": 0,
+      "missed_grade3": [
+        "champions_rules.md"
+      ],
+      "top_sources": [
+        "pokemon_champions.csv",
+        "mega_evolutions.csv",
+        "mega_evolutions.csv",
+        "matchup_matrix.csv",
+        "pikalytics_usage.csv"
+      ]
+    }
+  ]
+}
