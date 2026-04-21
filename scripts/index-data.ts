@@ -209,6 +209,7 @@ async function main() {
     return {
       id: c.id,
       text: c.text,
+      names_text: c.names ?? null,
       source: c.source,
       source_type: c.sourceType,
       data_category: c.data_category,

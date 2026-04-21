@@ -9,6 +9,13 @@ export interface Chunk {
   source: string;
   sourceType: "csv-row" | "markdown-section" | "text-section";
   metadata: Record<string, unknown>;
+  /**
+   * Space-separated canonical names / identity tokens for this chunk.
+   * Stored in pc_chunks.names_text and lifted to setweight('A') in the
+   * generated text_tsv, so FTS queries for a Pokemon / move / item / banned
+   * entity name rank the matching chunk far above incidental mentions.
+   */
+  names?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,10 +124,15 @@ export async function chunkPokemonCsv(filePath: string, source: string): Promise
       preEvos ? `also known by pre-evolution ${preEvos.join(", ")}` : "",
     ]);
     const text = `${prefixLine}\n${r.name} is a ${typeStr} type Pokémon.${statLine} Abilities: ${abilities}. Moves: ${moves}.`;
+    // Weight-A names: canonical Pokemon name + pre-evo aliases. Pre-evos go
+    // into names so phantom-pre-evo FTS queries (e.g. "Litwick moveset") rank
+    // the evolved-form chunk (Chandelure) high via setweight('A').
+    const names = [r.name, ...(preEvos ?? [])].join(" ");
 
     return {
       id: `pokemon:${slug(r.name)}`,
       text,
+      names,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -164,10 +176,12 @@ export async function chunkMegaEvolutionsCsv(filePath: string, source: string): 
       "mega-evolution",
     ]);
     const text = `${prefixLine}\n${r.mega_name} is the Mega Evolution of ${r.base_pokemon}. Type: ${typeStr}. Ability: ${r.ability}.${statLine}`;
+    const names = `${r.mega_name} ${r.base_pokemon}`;
 
     return {
       id: `mega:${slug(r.mega_name)}:${i}`,
       text,
+      names,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -217,6 +231,7 @@ export async function chunkMovesCsv(filePath: string, source: string): Promise<C
     return {
       id: `move:${slug(r.name)}`,
       text: `${prefixLine}\n${parts.join(" ")}`,
+      names: r.name,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -246,6 +261,7 @@ export async function chunkItemsCsv(filePath: string, source: string): Promise<C
     return {
       id: `item:${slug(r.name)}`,
       text,
+      names: r.name,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -293,6 +309,7 @@ export async function chunkUpdatedAttacksCsv(filePath: string, source: string): 
     return {
       id: `updated-attack:${slug(r.name)}`,
       text,
+      names: r.name,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -321,6 +338,7 @@ export async function chunkNewAbilitiesCsv(filePath: string, source: string): Pr
     return {
       id: `ability:${slug(r.name)}`,
       text,
+      names: r.name,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -349,10 +367,12 @@ export async function chunkMegaAbilitiesCsv(filePath: string, source: string): P
       r.type2?.toLowerCase(),
     ]);
     const text = `${prefixLine}\n${r.pokemon} has the ability ${r.ability}. Type: ${typeStr}.`;
+    const names = `${r.pokemon} ${r.ability}`;
 
     return {
       id: `mega-ability:${slug(r.pokemon)}`,
       text,
+      names,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -398,9 +418,14 @@ export async function chunkTournamentTeamsCsv(filePath: string, source: string):
     if (r.description) parts.push(r.description + ".");
     if (r.replica_code) parts.push(`Replica code: ${r.replica_code}.`);
 
+    // Weight-A names for team chunks: team_id + archetype + full roster so
+    // matchup queries naming two Pokemon on a team rank the team chunk.
+    const names = [r.team_id, archetype ?? "", ...pokemon].filter(Boolean).join(" ");
+
     return {
       id: `team:${slug(r.team_id)}`,
       text: `${prefixLine}\n${parts.join(" ")}`,
+      names,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -508,6 +533,7 @@ export async function chunkPikalyticsUsageCsv(filePath: string, source: string):
     return {
       id: `usage:${slug(r.pokemon)}`,
       text: `${prefixLine}\n${parts.join(" ")}`,
+      names: r.pokemon,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -567,6 +593,7 @@ export async function chunkMatchupMatrixCsv(filePath: string, source: string): P
     chunks.push({
       id: `matchup:${slug(attacker)}`,
       text: `${prefixLine}\n${parts.join(" ")}`,
+      names: attacker,
       source,
       sourceType: "csv-row" as const,
       metadata: {
@@ -596,6 +623,7 @@ export async function chunkPlainTextFile(filePath: string, source: string): Prom
     {
       id: `txt:${source}`,
       text,
+      names: title,
       source,
       sourceType: "text-section" as const,
       metadata: { filename: basename(source) },
@@ -609,6 +637,43 @@ export async function chunkPlainTextFile(filePath: string, source: string): Prom
 
 const MAX_SECTION_CHARS = 2000;
 
+// Stage 4.3: sections within champions_rules.md that benefit from per-item
+// sub-chunking. Each bullet becomes its own chunk with the item / phantom
+// name lifted into `names` (weight-A tsvector). FTS queries for a specific
+// banned item ("Life Orb") or phantom pre-evo ("Litwick") then land on a
+// dense-match chunk instead of competing with transcript mentions.
+const RULES_LIST_SECTIONS: Array<{ re: RegExp; kind: "banned-item" | "phantom-pre-evo" }> = [
+  { re: /missing items/i, kind: "banned-item" },
+  { re: /phantom pre-evolution/i, kind: "phantom-pre-evo" },
+];
+
+function headingToText(heading: string): string {
+  return heading.replace(/^#+\s*/, "").trim();
+}
+
+function extractH1(lines: string[]): string {
+  for (const l of lines) {
+    if (/^#\s/.test(l)) return headingToText(l);
+  }
+  return "";
+}
+
+function parseBullet(line: string): { raw: string; names: string[] } | null {
+  const t = line.trim();
+  if (!/^[-*]\s/.test(t)) return null;
+  const content = t.replace(/^[-*]\s*/, "");
+  // "- Porygon, Porygon2 → use Porygon-Z" or "- Life Orb" or
+  // "- **Survival:** Focus Sash, Focus Band, ..." — extract the list of
+  // comma-separated entity tokens before any colon / arrow / parenthetical.
+  const head = content.split(/[→:(]/, 1)[0];
+  const names = head
+    .replace(/\*/g, "")
+    .split(/[,/]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { raw: content, names };
+}
+
 export async function chunkMarkdownFile(filePath: string, source: string): Promise<Chunk[]> {
   const raw = await readFile(filePath, "utf-8");
   const lines = raw.split("\n");
@@ -617,21 +682,69 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
   const filename = basename(source);
   const fileTag = FILE_LEVEL_TAGS[filename] || "";
   const fileTagLine = fileTag ? `${fileTag}\n` : "";
+  const h1 = extractH1(lines);
+  const h1Prefix = h1 ? `[doc] ${h1.toLowerCase()}` : "";
 
   let currentHeading = "(top)";
   let currentBody: string[] = [];
   let sectionIndex = 0;
 
+  function namesForSection(): string {
+    // Combine H1 + section heading so both breadcrumb levels get weight A.
+    const headingText = headingToText(currentHeading);
+    return [h1, headingText].filter(Boolean).join(" ");
+  }
+
   function flush() {
     const body = currentBody.join("\n").trim();
     if (!body) return;
 
-    const fullText = `${fileTagLine}${currentHeading}\n${body}`;
+    const headingText = headingToText(currentHeading);
+
+    // Stage 4.3 special case: split rules-doc list sections per bullet so
+    // each banned item / phantom pre-evo has its own dense-match chunk.
+    const listKind = filename === "champions_rules.md"
+      ? RULES_LIST_SECTIONS.find((s) => s.re.test(headingText))?.kind
+      : undefined;
+    if (listKind) {
+      const bullets = currentBody
+        .map(parseBullet)
+        .filter((b): b is { raw: string; names: string[] } => b !== null);
+      if (bullets.length > 0) {
+        for (let j = 0; j < bullets.length; j++) {
+          const b = bullets[j];
+          const entityTokens = b.names.map((n) => n.toLowerCase()).join(" ");
+          const kindPrefix = listKind === "banned-item"
+            ? `[rules-banned] banned item unavailable missing champions ${entityTokens}`
+            : `[rules-phantom] phantom pre-evolution not in champions ${entityTokens}`;
+          chunks.push({
+            id: `md:${source}:${sectionIndex}:${j}`,
+            text: `${fileTagLine}${currentHeading}\n${kindPrefix}\n- ${b.raw}`,
+            names: `${h1} ${headingText} ${b.names.join(" ")}`.trim(),
+            source,
+            sourceType: "markdown-section",
+            metadata: {
+              heading: currentHeading,
+              section_index: sectionIndex,
+              sub_index: j,
+              list_kind: listKind,
+              entries: b.names,
+            },
+          });
+        }
+        sectionIndex++;
+        return;
+      }
+    }
+
+    const breadcrumb = h1Prefix ? `${h1Prefix}\n${currentHeading}` : currentHeading;
+    const fullText = `${fileTagLine}${breadcrumb}\n${body}`;
 
     if (fullText.length <= MAX_SECTION_CHARS) {
       chunks.push({
         id: `md:${source}:${sectionIndex}`,
         text: fullText,
+        names: namesForSection(),
         source,
         sourceType: "markdown-section",
         metadata: { heading: currentHeading, section_index: sectionIndex },
@@ -648,7 +761,8 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
           : parts[j].trim();
         chunks.push({
           id: `md:${source}:${sectionIndex}`,
-          text: `${fileTagLine}${currentHeading}\n${chunkBody}`,
+          text: `${fileTagLine}${breadcrumb}\n${chunkBody}`,
+          names: namesForSection(),
           source,
           sourceType: "markdown-section",
           metadata: { heading: currentHeading, section_index: sectionIndex },
@@ -659,7 +773,13 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
   }
 
   for (const line of lines) {
-    if (/^#{1,6}\s/.test(line)) {
+    // Start a new section on H2+, but let H1 pass into the first flush so
+    // the H1-only body (usually intro paragraph) is captured.
+    if (/^#{2,6}\s/.test(line)) {
+      flush();
+      currentHeading = line;
+      currentBody = [];
+    } else if (/^#\s/.test(line)) {
       flush();
       currentHeading = line;
       currentBody = [];
