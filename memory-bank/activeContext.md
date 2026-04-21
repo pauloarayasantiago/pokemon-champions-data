@@ -1,4 +1,144 @@
-# Active Context (2026-04-21, RAG upgrade initiative — Stage 1 COMPLETE, Stage 2 up next)
+# Active Context (2026-04-21, RAG upgrade initiative — Stage 3 COMPLETE, overall nDCG 0.690 → 0.792)
+
+## Stage 3 — P0 Priority Matrix (4.1 + 4.2 + 6.1) — COMPLETE
+
+### What shipped (3 bisectable commits)
+
+- **[87e4d9b](../.git/COMMIT_EDITMSG)** `feat(chunker): metadata prefix + team archetype coherence [Stage 4.1+4.2]`
+  - `lib/chunker.ts` — FILE_LEVEL_TAGS injected into every knowledge-doc chunk (7 docs get `[rules]`/`[theory]`/`[archetype]`/`[types]`/`[meta]`/`[speed]`/`[calc]` tag lines). PRE_EVOS dictionary maps evolved forms to pre-evo tokens so phantom queries route to the evolved Pokemon. Every CSV chunker (pokemon, mega, move, item, updated-attack, new-ability, mega-ability, usage, matchup) gets a `[kind] <name> <type> <category>` prefix line. Tournament-team chunks use new `inferArchetype()` to tag Sun/Rain/Sand/Snow/Trick Room/Tailwind and lead with `[team] <id> <player> <archetype> <roster>\nCore: ...`.
+  - `data/knowledge/champions_rules.md` — Phantom Pre-Evolutions body section (23 pre-evos) so FTS on phantom tokens lands inside the rules doc.
+  - Required: full reindex `tsx scripts/index-data.ts --force` (batched with 6.1).
+- **[f56ea69](../.git/COMMIT_EDITMSG)** `feat(rag): Self-RAG-lite routing gate with force-include [Stage 6.1]`
+  - `lib/rag.ts::routeQuery()` — pure-rules router returning `{route: theory|data|both, archetype, vsPair, phantomName}`. ARCHETYPE_PATTERNS matches weather + TR + tailwind; vsPair regex splits on `vs|versus|against|handles|beats|walls|checks|into`; PHANTOM_PRE_EVOS keyed to rules-doc force-include.
+  - Force-includes (outside RPC pool): champions_rules.md on mechanic-change queries; phantom section on phantom token; pokemon_champions.csv rows for both sides of a vsPair (ilike for CamelCase); exact entity by id for move/item/pokemon.
+  - Synthetic rrf_score: force-included rows seeded to 0.08-0.10 baseline; when RPC also has the row, `max(rpcScore, baseScore)` keeps either source above floor.
+  - `classifyQuery()` moveName/itemName/pokemonName extraction now uses `\b` word boundaries for single-word names so "counters" stops extracting `move:counter`.
+  - Candidate-pool floor raised to 160 (from 80) for theory/counter/matchup routes — strategic vocab ("pivots into", "defensive options") has weak FTS overlap with Pokemon chunks, so they rank past 80 without the bump.
+- **[7ae28c5](../.git/COMMIT_EDITMSG)** `feat(evals): retrieval eval harness + n=100 golden set + Stage 2/3 baselines`
+  - Evals infrastructure: `evals/golden-set.jsonl` (100 cases), `scripts/eval-retrieval.ts`, `scripts/diff-eval.ts`, `package.json` test:retrieval script, all 3 baseline snapshots.
+  - Harness hyphen-slug fix (P2): `matchesIdPrefix` now matches both hyphenated and space-substituted slug variants so Rotom-Wash / Landorus-Therian resolve.
+
+### Stage 3 baseline (Jina OFF, n=100, 22.1min wall)
+
+Snapshot: [`memory-bank/eval-baselines/2026-04-21-retrieval-stage3-jina-off.json`](eval-baselines/2026-04-21-retrieval-stage3-jina-off.json)
+
+| Metric | Stage 2 | Stage 3 | Δ |
+|---|:-:|:-:|:-:|
+| Overall nDCG@10 | 0.690 | **0.792** | +14.7% |
+| counter nDCG | 0.404 | **0.679** | +68.0% |
+| matchup nDCG | 0.569 | **0.729** | +28.2% |
+| matchup P@10 | 0.310 | 0.480 | +54.8% |
+| adversarial nDCG | 0.100 | **0.436** | +336% |
+| usage nDCG | 0.854 | 0.978 | +14.5% |
+| stat nDCG | 0.761 | 0.841 | +10.5% |
+| team nDCG | 0.820 | 0.791 | -3.5% (under 5% threshold) |
+| forbidden rate | 0.000 | 0.000 | ✓ |
+
+### Gate status (from plan)
+
+| Gate | Target | Stage 3 | |
+|---|:-:|:-:|:-:|
+| counter nDCG | ≥ 0.65 | 0.679 | ✓ |
+| matchup nDCG | ≥ 0.65 | 0.729 | ✓ |
+| overall nDCG | ≥ 0.78 | 0.792 | ✓ |
+| matchup P@10 | ≥ 0.5 | 0.480 | ✗ (−0.02) |
+| adversarial nDCG | ≥ 0.5 | 0.436 | ✗ (−0.064) |
+
+Three of five gates pass. Remaining two are close and expected to close with Stages 4.3 (MarkdownHeaderTextSplitter on `speed_tiers.md`) + 4.4 (TSVECTOR weighting) per the plan's sequencing note ("Stages 4.3/4.4 + harness fix close out to ≥ 0.82 overall").
+
+### Next moves
+
+1. Stage 4.3 — MarkdownHeaderTextSplitter on `speed_tiers.md` (H2/H3-scoped sub-chunks). Target: stat nDCG 0.841 → 0.88, slow-tr-pokemon + stat-slowest-grass cases from 0 → hit.
+2. Stage 4.4 — TSVECTOR weighting via new Supabase migration: `setweight('A')` on canonical names, `setweight('B')` on prose. Target: matchup P@10 0.48 → ≥0.55.
+3. Jina-ON n=100 capture when workstation idle — `--pace 45000`, ~75min wall.
+
+---
+
+## Stage 2 — Evaluation Escape (P0) — COMPLETE (Jina-ON baseline pending quiet-window rerun)
+
+### What shipped
+
+- [evals/golden-set.jsonl](../evals/golden-set.jsonl) — **100** graded-relevance cases (30 from spike + 70 expansion). JSONL, one case per line.
+  - Expansion breakdown: 30 programmatic seed (10 Pokemon lookups, 5 moves incl. 3 updated-attacks, 5 items, 5 mid-tier usage, 5 tournament teams) + 25 manual backfill (10 **matchup** NEW intent, 5 counter, 5 structured-stat, 5 transcript-team) + 15 adversarial (5 phantom pre-evos, 5 banned items, 5 banned mechanics/entities)
+  - Schema: `{id, query, topK, intent_tag, difficulty_tier, expected_contexts[{id_prefix|source_substr, grade:1|2|3}], forbidden_ids[], description}`
+  - Grade scale: 3=perfect, 2=highly relevant, 1=tangential, 0=default/irrelevant
+  - Intents (all 7 now present): `usage|counter|stat|item|move|team|matchup`
+  - Difficulty tiers: `easy(29) | medium(25) | hard(26) | adversarial(20)`
+- [scripts/eval-retrieval.ts](../scripts/eval-retrieval.ts) — unchanged since spike (complete). nDCG@10 / Recall@10 / Context Precision@10 / MRR@10 with per-intent + per-difficulty slices. `--intent`, `--difficulty`, `--snapshot`, `--verbose`, `--pace` flags. Auto-paces 12s/case when `JINA_API_KEY` set.
+- [package.json:20](../package.json#L20) — `test:retrieval` npm script
+
+### Baseline (Jina OFF, 100 cases, 18.8s wall)
+
+Snapshot: [`memory-bank/eval-baselines/2026-04-21-retrieval-stage2-n100-jina-off.json`](eval-baselines/2026-04-21-retrieval-stage2-n100-jina-off.json)
+
+| Metric | Overall | counter | item | matchup | move | stat | team | usage |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| n (100) | 100 | 18 | 14 | 10 | 9 | 26 | 14 | 9 |
+| nDCG@10 | **0.690** | 0.404 | 0.592 | 0.569 | 0.982 | 0.761 | 0.820 | 0.854 |
+| Recall@10 (g=3) | 0.790 | 0.500 | 0.571 | 1.000 | 0.889 | 0.846 | 1.000 | 0.889 |
+| Ctx Precision@10 | 0.253 | 0.239 | 0.129 | 0.310 | 0.200 | 0.242 | 0.393 | 0.278 |
+| MRR@10 (g≥2) | 0.673 | 0.420 | 0.579 | 0.387 | 1.000 | 0.756 | 0.795 | 0.889 |
+
+| Difficulty | n | nDCG@10 | Recall@10 | Prec@10 | MRR@10 |
+|---|:-:|:-:|:-:|:-:|:-:|
+| easy | 29 | 0.994 | 0.983 | 0.262 | 1.000 |
+| medium | 25 | 0.807 | 0.860 | 0.256 | 0.813 |
+| hard | 26 | 0.694 | 1.000 | 0.404 | 0.636 |
+| **adversarial** | 20 | **0.100** | **0.150** | **0.040** | **0.072** |
+
+Forbidden-ID hit rate: **0.000** on all 100 cases (no explicit hard negatives retrieved).
+
+### Comparison: Spike n=30 (Jina OFF) → Expanded n=100 (Jina OFF)
+
+| Intent | n=30 nDCG | n=100 nDCG | Δ | Sampling effect |
+|---|:-:|:-:|:-:|---|
+| counter | 0.630 (n=4) | 0.404 (n=18) | **−0.226** | Small sample; expanded set reveals counter intent is much weaker than spike suggested |
+| item | 0.750 (n=4) | 0.592 (n=14) | **−0.158** | 10 new item cases (5 common + 5 adversarial banned) dropped it |
+| matchup | — (n=0) | 0.569 (n=10) | NEW | First baseline for this intent (was 0 cases before) |
+| move | 0.987 (n=4) | 0.982 (n=9) | −0.005 | Holds well; includes 3 updated-attacks + Protect + Fake Out |
+| stat | 0.714 (n=10) | 0.761 (n=26) | +0.047 | Slightly up despite 5 structured-filter additions |
+| team | 0.946 (n=3) | 0.820 (n=14) | −0.126 | Expansion adds team IDs + transcript-specific team cases |
+| usage | 0.933 (n=5) | 0.854 (n=9) | −0.079 | Smaller drop, mid-tier Pokemon slightly weaker |
+
+### Key signals (n=100 Jina-OFF)
+
+- **Counter** (0.404 nDCG, n=18) — confirmed the weakest non-adversarial intent at scale. Strategic counters (`counter Sun teams`, `counter Rain`, `counter Trick Room`) don't reliably surface `team_building_theory.md` at rank 1. **P0 for Stage 4.2 metadata prefix + Stage 6.1 Self-RAG gate.**
+- **Matchup** (0.569 nDCG, n=10, NEW) — R@10=1.000 means at least one grade-2/3 chunk is always in top-10, but ordering is poor (P@10=0.310). Matchup queries need **both** Pokemon chunks + `team_building_theory.md` + `type_chart.md` — current retrieval surfaces one but not all consistently. **P0 for Stage 4.1 team chunking and Stage 4.4 TSVECTOR weighting.**
+- **Item** (0.592 nDCG, 0.571 Recall@10, n=14) — Recall at 57% means 6 of 14 item queries don't get the right item chunk in top-10. Items are short (~1-2 sentences) and item queries often mention Pokemon context; **P1 for Stage 3.1 Contextual Retrieval if we ever revive it**.
+- **Adversarial** (0.100 nDCG, n=20) — 20 adversarial cases (5 existing + 15 new). 18 of 20 score 0 or near-0 — `champions_rules.md` is almost never retrieved for phantom/banned queries. This confirms the Stage 4.2 metadata prefix (inject banned tokens into chunk metadata) and Stage 6.1 Self-RAG gate (query-aware retrieval) as **P0 for adversarial robustness**.
+- **Stat** (0.761 nDCG, n=26) — the single worst case is still `slow-tr-pokemon` at 0 nDCG (`speed_tiers.md` not retrieved). Structured stat filters (`bulky Steel with Recover`, `fastest Dragon`) are weak — **P1 for Stage 4.3 MarkdownHeaderTextSplitter on `speed_tiers.md`** which would make speed-tier lookups retrievable by sub-section.
+- **Zero forbidden hits** — ranker correctly avoids explicit hard negatives (pokemon:kirlia, item:choice-band, etc.) across all 20 adversarial cases. This is the **one piece of good news** — the model knows these chunk IDs don't exist; the failure is not retrieving the "rules" chunk.
+
+### Known harness bug (captured for Stage 3 fixlet)
+
+[scripts/eval-retrieval.ts:90](../scripts/eval-retrieval.ts#L90) converts slug dashes to spaces before matching against CSV `name`/`pokemon` fields. This breaks matching for hyphenated Pokemon names like `Rotom-Wash`, `Tauros-Paldea-Aqua`, `Landorus-Therian`. Affects 3 of the 100 cases (`usage-rotom-wash`, `matchup-charizard-vs-rotom-wash`, `adv-landorus-ev`). Since the bug affects Jina-OFF and Jina-ON runs equally, per-intent deltas remain valid; absolute numbers are slightly biased downward.
+
+**Fix:** in `matchesIdPrefix` (pokemon/move/item/usage/updated-attack cases), match against both `slug` and `slugSpaced` — one-line change. Do before capturing the Stage 3 reference baseline.
+
+### Jina-ON n=100 snapshot status — DEFERRED
+
+Two attempts this session hit the Jina free-tier rolling-window rate limit (100k tokens/min) mid-run:
+
+- **Attempt 1** — `--pace 15000` (15s), killed after 10 cases (251k/100k at peak)
+- **Attempt 2** — `--pace 30000` (30s), killed after 57 cases with 35 cases falling back to RRF (429 rate)
+
+Actual per-call token usage is ~50k (higher than estimated 16k), which makes 30s pacing borderline. **Recommended pacing for next run: 45s (`--pace 45000`), ~75 min wall time**, or split across two 50-case runs with a 2-minute cooldown between. Run during a quiet window with no other Jina calls (no ad-hoc `search.ts` calls in parallel).
+
+Apples-to-apples Jina-ON vs Jina-OFF delta at n=30 (from the original spike set) is the first deliverable once Jina-ON runs cleanly. It isolates Jina's ordering lift from the sampling effect of expansion.
+
+### Next — Stage 3 priority matrix (data-driven)
+
+| Priority | Stage | Issue → Fix | Expected impact |
+|---|---|---|---|
+| **P0** | 4.2 Metadata prefix | Adversarial 0.100 nDCG — `champions_rules.md` almost never retrieved | Inject banned-token/entity metadata into chunk prefix → adversarial nDCG ≥ 0.5 |
+| **P0** | 6.1 Self-RAG gate | Counter 0.404 nDCG — strategic queries route to Pokemon cards instead of theory docs | `{retrieve: bool, route: "theory"|"data"}` gate → counter nDCG ≥ 0.65 |
+| **P0** | 4.1 Team chunking | Matchup 0.569 nDCG, P@10=0.310 — team info fragmented across Pokemon chunks | One chunk per team (archetype-coherent) → matchup P@10 ≥ 0.5 |
+| P1 | 4.4 TSVECTOR weighting | Matchup R@10=1.0 but ordering poor — lexical overlap isn't reaching top-3 | `setweight('A')` on names, `setweight('B')` on prose → MRR lift |
+| P1 | 4.3 MarkdownHeaderTextSplitter | Stat slow-tr-pokemon / fastest-electric miss speed_tiers.md entirely | H2/H3-scoped sub-chunks of speed_tiers.md → stat nDCG ≥ 0.85 |
+| P2 | Harness hyphen-slug fix | 3 cases biased downward | One-line matchesIdPrefix fix → clean absolute numbers |
+| P2 | Jina-ON n=100 baseline | Blocked on rate-limit | Run at `--pace 45000` during quiet window |
+
+---
 
 ## RAG Upgrade Initiative — Stage 1 Complete with Jina Active
 

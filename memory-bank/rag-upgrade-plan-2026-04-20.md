@@ -57,26 +57,67 @@ The Pokemon Champions VGC RAG system is architecturally sound: Gemma 4 26B score
 - Re-run eval 3× → expected 12/13 → 13/13 (creator_opinion unblocked), tokens roughly flat
 - Record `memory-bank/eval-baselines/2026-04-20-post-stage1.json`
 
-## Stage 2 — Evaluation Escape (Week 1–2, P0)
+## Stage 2 — Evaluation Escape (Week 1–2, P0) — COMPLETE (Jina-ON n=100 baseline deferred)
 
 **Goal:** Replace binary MRR with stratified suite so later stages have real signal.
 
-**2.1 Graded-relevance golden set**
-- Convert 25 existing cases from binary to graded {0,1,2,3} on top-10
-- Grow to ~100 by end of week 2
-- Format: JSONL `(query, expected_output, expected_contexts, intent_tag, difficulty_tier)`
-- Tiers: Easy / Medium / Hard / Adversarial
-- File: new `evals/golden-set.jsonl`, new `scripts/eval-retrieval.ts`
+- [x] **2.1 Graded-relevance golden set** — [evals/golden-set.jsonl](../evals/golden-set.jsonl) (30 spike cases).
+- [x] **2.1b Grow to ~100 cases** — **100 total** after 70-case expansion (30 programmatic seed + 25 manual backfill + 15 adversarial). All 7 intents now present (matchup added, n=10). Tournament team IDs (PC105, PC164, PC221, PC282, PC304), transcript-specific framework queries (CK49, AngrySlowBroPlus), updated-attacks (Salt Cure, Moonblast, Iron Head).
+- [x] **2.2 Retrieval metrics harness** — [scripts/eval-retrieval.ts](../scripts/eval-retrieval.ts) (unchanged since spike). Computes nDCG@10/Recall@10/Context Precision@10/MRR@10. Per-intent + per-difficulty slices. `--intent`, `--difficulty`, `--snapshot`, `--verbose`, `--pace` flags. Jina-aware default pacing. npm script: `test:retrieval`.
+- [x] **2.3 Hard-negative mining expansion** — 5 spike + 15 new adversarials (20 total) per arXiv 2505.18366: 5 phantom pre-evos (Kirlia/Scyther/Sneasel/Litwick/Gligar, verified evolved-form targets exist in roster), 5 banned items (Choice Band/Assault Vest/Rocky Helmet/Heavy-Duty Boots/Eviolite), 5 banned mechanics/entities (Dynamax/Tera/Z-Move/Gigantamax/Landorus).
+- ~~**2.4 Optional: Giskard RAGET**~~ — deferred, not on critical path
+- ~~**2.5 Optional: Langfuse TS SDK**~~ — dropped per 2026-04-20 decision (local JSONL only)
 
-**2.2 Retrieval metrics harness**
-- nDCG@10, Recall@10, Context Precision@10
-- Per-intent slices: 7 intents (usage, counter, stat, item, move, team, matchup)
-- Hard-negative mining (arXiv 2505.18366)
-- File: `scripts/eval-retrieval.ts`
+### Stage 2 Final Baseline (Jina OFF, 100 cases, 18.8s wall)
 
-**2.3 Optional: Giskard RAGET one-shot** — `giskard[llm]>=2,<3`, ~200 stratified cases
-**2.4 Optional: Langfuse TS SDK** — `@langfuse/tracing` + `@langfuse/client` (decide during stage)
-**2.5 Stage 2 verification** — publish per-intent metrics; identify weakest intents
+Snapshot: [`memory-bank/eval-baselines/2026-04-21-retrieval-stage2-n100-jina-off.json`](eval-baselines/2026-04-21-retrieval-stage2-n100-jina-off.json)
+
+| Metric | Overall | counter | item | matchup | move | stat | team | usage |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| n (100) | 100 | 18 | 14 | 10 | 9 | 26 | 14 | 9 |
+| nDCG@10 | **0.690** | 0.404 | 0.592 | 0.569 | 0.982 | 0.761 | 0.820 | 0.854 |
+| Recall@10 (g=3) | 0.790 | 0.500 | 0.571 | 1.000 | 0.889 | 0.846 | 1.000 | 0.889 |
+| Ctx Precision@10 | 0.253 | 0.239 | 0.129 | 0.310 | 0.200 | 0.242 | 0.393 | 0.278 |
+| MRR@10 (g≥2) | 0.673 | 0.420 | 0.579 | 0.387 | 1.000 | 0.756 | 0.795 | 0.889 |
+
+| Difficulty | n | nDCG@10 | Recall@10 | Prec@10 | MRR@10 |
+|---|:-:|:-:|:-:|:-:|:-:|
+| easy | 29 | 0.994 | 0.983 | 0.262 | 1.000 |
+| medium | 25 | 0.807 | 0.860 | 0.256 | 0.813 |
+| hard | 26 | 0.694 | 1.000 | 0.404 | 0.636 |
+| **adversarial** | 20 | **0.100** | **0.150** | **0.040** | **0.072** |
+
+Forbidden-ID hit rate: **0.000** on all 100 cases.
+
+### Spike n=30 → Final n=100 (Jina OFF) per-intent delta
+
+| Intent | n=30 nDCG | n=100 nDCG | Δ | Reading |
+|---|:-:|:-:|:-:|---|
+| counter | 0.630 (n=4) | **0.404** (n=18) | −0.226 | Confirmed weakest non-adversarial intent at scale |
+| item | 0.750 (n=4) | 0.592 (n=14) | −0.158 | Dropped by banned-item adversarials |
+| matchup | — (n=0) | **0.569** (n=10) | NEW | First-ever baseline for this intent |
+| move | 0.987 (n=4) | 0.982 (n=9) | −0.005 | Holds; updated-attacks retrieve cleanly |
+| stat | 0.714 (n=10) | 0.761 (n=26) | +0.047 | Slightly up |
+| team | 0.946 (n=3) | 0.820 (n=14) | −0.126 | Expansion stresses transcript-specific team queries |
+| usage | 0.933 (n=5) | 0.854 (n=9) | −0.079 | Small drop, mid-tier Pokemon weaker |
+
+### Jina-ON snapshot status
+
+**Status:** DEFERRED. Two attempts this session (15s pace, 30s pace) hit the Jina free-tier 100k tok/min rolling window — 429 fallback rate climbed to ~60% during the 30s run after ~15 minutes. Actual per-call token usage is ~50k (higher than estimated 16k).
+
+**Action for next session:** Run with `--pace 45000` (~75 min wall) or split into 2×50-case runs with 2-minute cooldown between. Must be during a quiet window — no ad-hoc `search.ts` or other Jina calls in parallel. The apples-to-apples n=30 delta (Jina-OFF vs Jina-ON on spike cases) is the primary deliverable once this runs cleanly.
+
+### Stage 3 Priority Matrix (data-driven from n=100 Jina-OFF baseline)
+
+| P | Stage | Observation → Fix | Target metric |
+|:-:|---|---|---|
+| **P0** | 4.2 Metadata prefix | Adversarial 0.100 nDCG, 0.150 Recall@10 — `champions_rules.md` almost never retrieved for phantom/banned queries | adversarial nDCG ≥ 0.5 |
+| **P0** | 6.1 Self-RAG gate | Counter 0.404 nDCG — strategic queries route to Pokemon cards not theory docs | counter nDCG ≥ 0.65 |
+| **P0** | 4.1 Team chunking | Matchup 0.569 nDCG, P@10=0.310 — team data fragmented per-Pokemon | matchup P@10 ≥ 0.5 |
+| P1 | 4.4 TSVECTOR weighting | Matchup R@10=1.0 but ordering poor — lexical overlap not reaching top-3 | matchup MRR ≥ 0.6 |
+| P1 | 4.3 MarkdownHeaderTextSplitter | `slow-tr-pokemon` / `fastest-electric` miss `speed_tiers.md` entirely | stat nDCG ≥ 0.85 |
+| P2 | Harness hyphen-slug fix | `matchesIdPrefix` converts `-` → space for `name`/`pokemon` fields, breaks `Rotom-Wash`/`Landorus-Therian` matching (3 cases biased) | clean absolute numbers |
+| P2 | Jina-ON n=100 capture | Blocked on Jina rate-limit | apples-to-apples delta |
 
 ## Stage 3 — Contextual Retrieval + Groundedness (Week 3–4, P1)
 
