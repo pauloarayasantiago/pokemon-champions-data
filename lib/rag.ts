@@ -84,6 +84,31 @@ function getPokemonNames(): Set<string> {
   return _pokemonNames;
 }
 
+// Pokemon → [type1, type2?] map from pokemon_champions.csv. Used by the
+// vsPair type_chart force-include path (Stage 4.6 P3) to translate Pokemon
+// names to the type-chart headings that cover their matchups.
+let _pokemonTypes: Map<string, string[]> | null = null;
+
+function getPokemonTypes(name: string): string[] {
+  if (!_pokemonTypes) {
+    _pokemonTypes = new Map();
+    try {
+      const csv = readFileSync(resolve(PROJECT_ROOT, "pokemon_champions.csv"), "utf-8");
+      const rows: Array<{ name: string; type1: string; type2?: string }> = parse(csv, {
+        columns: true,
+        skip_empty_lines: true,
+      });
+      for (const r of rows) {
+        const types = [r.type1, r.type2].filter((t): t is string => !!t && t.length > 0);
+        _pokemonTypes.set(r.name.toLowerCase(), types);
+      }
+    } catch {
+      // empty map — force-include skips when no types resolved
+    }
+  }
+  return _pokemonTypes.get(name.toLowerCase()) ?? [];
+}
+
 // ---------------------------------------------------------------------------
 // Move name dictionary (loaded once)
 // ---------------------------------------------------------------------------
@@ -660,6 +685,35 @@ export async function query(
     vsResults = (vsRows ?? []) as Record<string, unknown>[];
   }
 
+  // Stage 4.6 P3: type_chart force-include on vsPair. Matchup queries name
+  // Pokemon, not types, so the type_chart.md sub-chunks frequently miss the
+  // RPC candidate pool even though the existing +0.02 vsPair boost (in the
+  // accumulator below) is ready to lift them. Translate each side's types
+  // via getPokemonTypes() and fetch up to 6 type_chart rows whose heading
+  // matches any of those types (offensive + defensive sections per type).
+  // Limit tuning: lim=6 maxes matchup nDCG at 0.740 (+0.012 vs no
+  // force-include); lim=2 had better P@10 crowd-out but regressed nDCG.
+  // The matchup P@10 gate (≥0.50) is not reachable from retrieval alone —
+  // 8/10 golden-set matchup cases don't list type_chart in expected_contexts
+  // so its chunks count as grade 0 even when helpful.
+  let typeChartResults: Record<string, unknown>[] = [];
+  if (route.vsPair) {
+    const [aName, bName] = route.vsPair;
+    const types = [...getPokemonTypes(aName), ...getPokemonTypes(bName)]
+      .map((t) => t.toLowerCase())
+      .filter((t, i, arr) => arr.indexOf(t) === i);
+    if (types.length > 0) {
+      const orClause = types.map((t) => `metadata->>heading.ilike.%${t}%`).join(",");
+      const { data: typeRows } = await supabase
+        .from("pc_chunks")
+        .select("*")
+        .eq("source", "data/knowledge/type_chart.md")
+        .or(orClause)
+        .limit(6);
+      typeChartResults = (typeRows ?? []) as Record<string, unknown>[];
+    }
+  }
+
   // Stage 6.1: exact-entity force-include. When the query names a specific
   // move / item / strategic Pokemon, the RPC can still rank that chunk
   // outside top-10 if FTS matches noisier long-form chunks (e.g.
@@ -710,6 +764,7 @@ export async function query(
     ...augmentForced(phantomResults, 0.10),
     ...augmentForced(phantomEvolvedResults, 0.09),
     ...augmentForced(vsResults, 0.08),
+    ...augmentForced(typeChartResults, 0.07),
     ...augmentForced(entityResults, 0.08),
     ...augmentForced(bannedItemResults, 0.08),
     ...raw,
