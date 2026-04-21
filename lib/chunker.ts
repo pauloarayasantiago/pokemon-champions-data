@@ -690,9 +690,10 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
   let sectionIndex = 0;
 
   function namesForSection(): string {
-    // Combine H1 + section heading so both breadcrumb levels get weight A.
-    const headingText = headingToText(currentHeading);
-    return [h1, headingText].filter(Boolean).join(" ");
+    // H1 lives in the body via h1Prefix/breadcrumb (weight B). Keeping it out of
+    // weight-A names_text prevents every sub-chunk of the same file from
+    // matching identical H1 tokens, which dilutes canonical-name signal.
+    return headingToText(currentHeading);
   }
 
   function flush() {
@@ -720,7 +721,7 @@ export async function chunkMarkdownFile(filePath: string, source: string): Promi
           chunks.push({
             id: `md:${source}:${sectionIndex}:${j}`,
             text: `${fileTagLine}${currentHeading}\n${kindPrefix}\n- ${b.raw}`,
-            names: `${h1} ${headingText} ${b.names.join(" ")}`.trim(),
+            names: `${headingText} ${b.names.join(" ")}`.trim(),
             source,
             sourceType: "markdown-section",
             metadata: {

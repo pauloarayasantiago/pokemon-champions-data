@@ -891,16 +891,28 @@ export async function query(
       }
       if (r.source === "data/knowledge/type_chart.md") boost += 0.02;
     }
-    if (route.phantomName && isRulesDoc && r.text.toLowerCase().includes(route.phantomName)) {
+    if (
+      route.phantomName &&
+      isRulesDoc &&
+      !r.metadata.list_kind &&
+      r.text.toLowerCase().includes(route.phantomName)
+    ) {
       // +0.12 same reasoning — phantom section chunk is force-included and
-      // needs enough lift to clear the RPC top band.
+      // needs enough lift to clear the RPC top band. Narrowed to non-bullet
+      // chunks (!list_kind): per-bullet phantom sub-chunks from Stage 4.3
+      // already have strong lexical match + 0.10 force-include floor, so
+      // piling +0.12 on top displaces the grade-3 evolved Pokemon chunk from
+      // rank-1 on adv-kirlia-phantom et al.
       boost += 0.12;
     }
     // Evolved-form co-surface: lift the Pokemon chunk matching the phantom
-    // pre-evo's evolved form (e.g. Chandelure for Litwick query).
+    // pre-evo's evolved form (e.g. Chandelure for Litwick query). Must exceed
+    // the +0.12 phantomName+isRulesDoc boost above so the grade-3 evolved form
+    // wins rank-1 over the grade-2 rules-phantom bullet on counter-tagged
+    // adversarial queries (adv-kirlia, adv-scyther, adv-sneasel, adv-gligar).
     if (route.phantomEvolved && r.dataCategory === "pokemon") {
       const chunkName = (r.metadata.name as string)?.toLowerCase();
-      if (chunkName === route.phantomEvolved) boost += 0.10;
+      if (chunkName === route.phantomEvolved) boost += 0.14;
     }
 
     // Speed tiers doc: boost on any speed-benchmark question
