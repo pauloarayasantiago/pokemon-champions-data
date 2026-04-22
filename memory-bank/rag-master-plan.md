@@ -1,16 +1,17 @@
 # Pokemon Champions RAG — Master Plan (Canonical)
 
-_Last revision: 2026-04-22, post Phase 0 closeout. This doc is the canonical forward-looking plan; stage-by-stage history lives in [progress.md](progress.md)._
+_Last revision: 2026-04-22, post Phase 3 BLOCKED. This doc is the canonical forward-looking plan; stage-by-stage history lives in [progress.md](progress.md)._
 
 ---
 
 ## 30-second catch-up
 
-- **Current baseline:** retrieval nDCG@10 = **0.849** on the 100-case golden set (Jina OFF, Stage 4.6); 13-test agentic eval 12/13 at ~22k tok/pass for Gemma 4 26B.
-- **Shipped:** Stages 0–2 (eval harness + 100-case golden set), 3/4/4.6 (routing + chunking + precision refinements), 6.1 (Self-RAG routing gate), 6.3 (Plan-and-Execute DAG — shipped 2026-04-22, commit `b056e4c`, Phase 0 closeout verified variance).
+- **Current baseline:** retrieval nDCG@10 = **0.851** on the 100-case golden set (Phases 1 + 2 clean, RRF + boosts only); 13-test agentic eval 12-13/13 at ~25.5k tok/pass for Gemma 4 26B with citation_validity = 100%.
+- **Shipped:** Stages 0–2, 3/4/4.6, 6.1, 6.3 (commit `b056e4c`), Phase 1 cleanup (`7767a0a`), Phase 2 forced-JSON + chunk_id validation (`bc02d11`).
+- **BLOCKED:** Phase 3 reranker. Both attempts (Gemma pointwise, BGE cross-encoder via HF) regressed matchup nDCG by 15-18%. Code stays in [lib/rerank.ts](../lib/rerank.ts) behind `RERANKER` env var; default behavior unchanged from Phase 2. **Root cause: planner × reranker score-merge problem — structural, addressed by Phase 5.** See Phase 3 section.
 - **Abandoned:** Stage 5 (EmbeddingGemma — Italian not a requirement → rolled back). Stage 3 Contextual Retrieval + 6.2 CRAG dropped (paid APIs).
-- **Key constraint:** no paid APIs **except** OpenRouter Gemma 4 26B. Jina is permanently OFF (no balance top-up). See [memory/project_no_paid_apis.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
-- **Next move:** Phase 1 (cleanup) → Phase 2 (forced-JSON + chunk_id validation) → Phase 3 (Gemma pointwise reranker, single highest-leverage retrieval win). See Part 4.
+- **Key constraint:** no paid APIs **except** OpenRouter Gemma 4 26B + free HF Inference. Jina is permanently OFF. See [memory/project_no_paid_apis.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
+- **Next move:** Phase 4 (rag.ts split) → Phase 5 (executor redesign) → Phase 3 retry (flip `RERANKER=crossencoder`, re-run gates). See Part 4.
 
 ---
 
@@ -23,9 +24,9 @@ Update this table as each phase moves state. Source of truth for "what's done / 
 | 0 | Stage 6.3 commit + closeout | — | SHIPPED | 2026-04-21 | 2026-04-22 | `b056e4c` | `retrieval-2026-04-21T19-01-55-020Z.json` |
 | 1 | Cleanup + clean baseline | ½ session | SHIPPED | 2026-04-22 | 2026-04-22 | `7767a0a` | `retrieval-post-stage6.3-clean.json` |
 | 2 | Forced-JSON + chunk_id validation | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | `bc02d11` | n/a (adds `citation_validity_rate` → 100% on v4.1) |
-| 3 | Gemma pointwise reranker ⭐ | 1 session | NOT STARTED | — | — | — | `retrieval-post-phase3-gemma-rerank.json` |
-| 4 | `lib/rag.ts` split | 1 session | NOT STARTED | — | — | — | (bit-for-bit identical) |
-| 5 | Executor redesign | 1 session | NOT STARTED | — | — | — | `retrieval-post-phase5-executor.json` |
+| 3 | Reranker (Gemma + cross-encoder) | 2 sessions | BLOCKED-pending-Phase-5 | 2026-04-22 | — | — | `retrieval-phase3-{gemma,crossencoder}.json` |
+| 4 | `lib/rag.ts` split | 1 session | NOT STARTED → NEXT | — | — | — | (bit-for-bit identical) |
+| 5 | Executor redesign | 1 session | NOT STARTED → unblocks Phase 3 reranker | — | — | — | `retrieval-post-phase5-executor.json` |
 | 6 | Gemma behavior flakes | ½ session | NOT STARTED | — | — | — | agentic 13/13 |
 | 7 | Subagents + progressive disclosure | 1–2 sessions | NOT STARTED | — | — | — | smoke parity |
 | 8 | `scripts/eval-models.ts` split | 1 session | NOT STARTED | — | — | — | (bit-for-bit identical) |
@@ -39,15 +40,19 @@ Update this table as each phase moves state. Source of truth for "what's done / 
 
 ---
 
-## Reorder rationale (2026-04-22)
+## Reorder rationale (2026-04-22, post Phase 3 BLOCKED)
 
-The original order was 1 → 2 (reranker) → 3 (split) → 4 (executor) → 5 (forced-JSON) → 6 → 7. Changed to **1 → 2 (forced-JSON) → 3 (reranker) → 4 (split) → 5 (executor) → 6 → 7** because:
+**Current execution order: 1 → 2 → 3 (BLOCKED) → 4 → 5 → revisit 3 → 6 → 7.**
 
-1. **Forced-JSON before reranker reduces agentic-gate flake.** Phase 3's gate reads "3-run variance ≥ 12/13" — that gate is flaked by the `team_json` bug which Phase 2's forced-JSON may fix incidentally. Every downstream retrieval-phase gate runs under a cleaner variance baseline.
-2. **Faithfulness defense is orthogonal to retrieval.** Forced-JSON + `chunk_id` validation doesn't touch the retrieval path; no reason to wait.
-3. **Measurement trade-off accepted:** shipping the reranker after the executor redesign would isolate each contribution cleanly, but Phase 3 (reranker) is the biggest single visible win and users benefit from shipping it earlier. Documented the trade-off so future-agent doesn't re-debate.
+The 2026-04-22 morning order was 1 → 2 → 3 (reranker) → 4 → 5. Phase 3 was attempted twice (Gemma pointwise, then BGE cross-encoder via HF Inference) — both regressed matchup nDCG by 15-18%, triggering the master-plan rollback rule. The rerank code remains in [lib/rerank.ts](../lib/rerank.ts) behind `RERANKER` env var; default behavior is unchanged from Phase 2.
 
-Hard dependencies unchanged: Phase 4 (split) before Phase 5 (executor redesign).
+**Diagnostic:** the planner × reranker score-merge problem is structural. Stage 6.3 runs each sub-query through its own rerank pass, then max-merges. Sharp reranker scores create extreme disparities across sub-queries (the "right" chunk gets 0.95 from the "left" sub-query but 0.4 from the "original" — max-merge keeps 0.95 but the boost layer can't differentiate when other chunks also tie at 0.95 from different sub-queries). Cross-encoder makes this worse, not better, because its scores are sharper than Gemma's. Detail in Phase 3 section + [progress.md](progress.md) Phase 3 entry.
+
+**Phase 5 (executor redesign) is the structural fix.** Per its own task list: "after sub-query merge: call `collectForceIncludes(originalQuery, ...)` against the ORIGINAL query and apply `applyBoosts(pool, originalIntent, originalRoute, originalQuery, boostMul)`." This re-applies the boost layer post-merge against the user's original query, so force-includes/boosts no longer have to compete with sub-query reranker scores from different intents. Once Phase 5 ships, the reranker code in lib/rerank.ts can be re-enabled and re-evaluated.
+
+**Hard dependencies (unchanged):** Phase 4 (rag.ts split) before Phase 5 (executor redesign). Phase 3 reranker re-eval after Phase 5 ships.
+
+**Earlier Phase 2-before-Phase-3 reorder (still valid):** Forced-JSON before reranker reduced agentic-gate flake by stabilizing the `team_json` output. That win persists for any future Phase 3 retry.
 
 ---
 
@@ -249,32 +254,54 @@ Run 1 on the v4 prompt exposed `creator_opinion` collapsing to `{"claims": []}` 
 
 ---
 
-### Phase 3 — Gemma pointwise reranker ⭐ _(was original Phase 2)_
+### Phase 3 — Reranker (BLOCKED-pending-Phase-5)
 
-**Status:** NOT STARTED · Started: — · Shipped: — · Commit: — · Snapshot: `retrieval-post-phase3-gemma-rerank.json`
+**Status:** BLOCKED-pending-Phase-5 · Started: 2026-04-22 · Shipped: — · Commit: — · Snapshots: [retrieval-phase3-gemma.json](../memory-bank/eval-baselines/retrieval-phase3-gemma.json), [retrieval-phase3-crossencoder.json](../memory-bank/eval-baselines/retrieval-phase3-crossencoder.json)
 
-**Goal.** Replace dropped Jina path with free Gemma-based reranker. Lands the Stage 1.3 goal that's been open since the start; biggest single retrieval win.
+**Goal.** Replace dropped Jina path with a free reranker. Two attempts: Gemma 4 26B pointwise via OpenRouter, then BGE cross-encoder via HF Inference. Both regressed matchup nDCG by 15-18%, triggering the master-plan rollback rule. Phase 3 is structurally blocked by the planner × reranker score-merge problem — see Diagnostic below. Re-attempt after Phase 5 (executor redesign).
 
-**Design rationale.** Pointwise (not listwise) because Gemma's known JSON-completeness flake is fatal for a single listwise call but survivable for pointwise — individual candidate retries don't lose the whole rerank. Also caches per-candidate.
+**What landed (kept in tree behind `RERANKER` env var):**
+- [x] [lib/rerank.ts](../lib/rerank.ts): three reranker functions co-existing — `rerankCandidates` (Jina, ~80 LOC, dormant since balance ran out), `rerankWithGemma` (~140 LOC, pointwise OpenRouter, inline 10-slot worker pool, manual AbortController), `rerankWithCrossEncoder` (~80 LOC, batched HF Inference, single HTTP call, BAAI/bge-reranker-base).
+- [x] [lib/rag.ts:584-625](../lib/rag.ts) `RERANKER` env-var dispatch (`crossencoder|gemma|jina|none`, default falls through to existing Jina-or-no-reranker behavior). Legacy `GEMMA_RERANK_ENABLED=true` still selects gemma.
+- [x] [src/app/api/search/route.ts](../src/app/api/search/route.ts) `maxDuration = 30` (kept — needed when reranker re-enabled post-Phase 5).
+- [x] Retrieval evals run for both rerankers (snapshots above). 100 cases each, Jina OFF.
 
-**Tasks:**
-- [ ] Add `rerankWithGemma(query, candidates)` to [lib/rerank.ts](../lib/rerank.ts) alongside the existing `rerankCandidates()` (Jina, kept for future if budget changes).
-- [ ] Between hybrid RPC and boost layer in `query()`, take top-40 candidates. For each: prompt Gemma with `{query, candidate_snippet}` and ask for a 0.0–1.0 relevance score. Parse, validate, default to 0.5 on parse fail.
-- [ ] Cache by `sha256(normalize(query) ‖ sorted(candidate_ids).join(","))` keyed lookup (reuse existing cache infrastructure from Jina path).
-- [ ] Set `boostMul=20` when Gemma reranker is active (existing mechanic — keeps additive boost layer meaningful on top of reranker scores in [0,1]).
-- [ ] Graceful fallback to RRF ordering on timeout / parse fail / OpenRouter 5xx.
-- [ ] Full 100-case retrieval snapshot with reranker ON.
-- [ ] Full 13-test 3-run agentic variance run.
-- [ ] Cost check: `cost_per_query` estimate from actual token counts; extrapolate to monthly at current volume.
+**Eval results (retrieval, 100-case golden set, post-Phase 2 baseline 0.851):**
 
-**Gates:**
-- [ ] matchup nDCG ≥ 0.77 (from 0.740).
-- [ ] counter nDCG ≥ 0.72 (from 0.691).
-- [ ] Overall nDCG ≥ 0.87.
-- [ ] Agentic 3-run variance ≥ 12/13.
-- [ ] Monthly cost projection < $5.
+| Intent | Baseline | Gemma | Δ | Cross-encoder | Δ | Gate |
+|---|---|---|---|---|---|---|
+| **Overall** | 0.851 | 0.830 | −2.5% | 0.829 | −2.6% | ❌ ≥0.87 |
+| counter | 0.691 | 0.711 | +2.9% | 0.722 | **+4.5%** | ✅ ≥0.72 (cross-encoder only) |
+| **matchup** | 0.741 | 0.629 | **−15.1%** | 0.605 | **−18.4%** | ❌ ≥0.77 |
+| move | 0.995 | 0.876 | −12.0% | 0.958 | −3.7% | (cross-encoder recovered most) |
+| item | 0.991 | 0.983 | −0.8% | 1.000 | +0.9% | ✓ |
+| stat | 0.839 | 0.824 | −1.8% | 0.800 | −4.6% | ✗ (cross-encoder regressed) |
+| team | 0.844 | 0.860 | +1.9% | 0.829 | −1.8% | ✓ |
+| usage | 0.981 | 0.977 | −0.4% | 0.986 | +0.5% | ✓ |
+| **adversarial** | 0.685 | 0.694 | +1.3% | 0.652 | −4.8% | ❌ ≥0.68 (cross-encoder only) |
 
-**Target commit:** `feat(rag): Gemma pointwise reranker [Stage 1.3 replacement]`
+Wall time: Gemma 16 min ($0.80), cross-encoder 5.6 min (free).
+
+**Diagnostic — planner × reranker score-merge problem:**
+
+Pattern: passthrough queries improve under both rerankers; planner-decomposed queries (Stage 6.3 vsPair / counter-archetype / team-archetype strategies) regress. Matchup queries are almost all vsPair-decomposed → matchup regresses worst. Adversarial queries depend on force-included chunks (banned-item bullets, phantom co-surface) that the reranker scores low → adversarial regresses with sharper reranker scores.
+
+Mechanism: Stage 6.3's executor runs each sub-query through its own rerank pass, then max-merges. With the cross-encoder's sharp 0.95-vs-0.05 spread, the same chunk gets very different scores from different sub-queries (e.g., Garchomp chunk gets 0.95 from "left: garchomp moveset" sub-query but 0.4 from "original: Garchomp vs Charizard" sub-query). Max-merge keeps 0.95, but other "wrong" chunks also tie at 0.95 from different sub-queries. The boost layer can't differentiate when many chunks tie post-merge.
+
+Confirming evidence: smoke on a passthrough query ("Protect PP in Champions") moved the grade-3 chunk from rank 5 (Gemma) to rank 2 (cross-encoder), validating that the cross-encoder works on single-pass queries. Both attempts regressed only on planner-decomposed intents.
+
+**Phase 5 (executor redesign) is the structural fix.** Per Phase 5's task list: "after sub-query merge: call `collectForceIncludes(originalQuery, intent, route, supabase)`, inject into merged pool. Then apply `applyBoosts(pool, originalIntent, originalRoute, originalQuery, boostMul)`." This re-applies the force-includes and boost layer post-merge against the user's ORIGINAL query, so domain knowledge no longer competes with sub-query reranker scores from divergent intents. Once Phase 5 ships, flip `RERANKER=crossencoder` and re-run gates.
+
+**Gates (all unmet — code stays dormant):**
+- [ ] matchup nDCG ≥ 0.77 — measured 0.629 (Gemma) / 0.605 (cross-encoder)
+- [ ] counter nDCG ≥ 0.72 — measured 0.711 (Gemma) / **0.722 (cross-encoder, met)**
+- [ ] Overall nDCG ≥ 0.87 — measured 0.830 / 0.829
+- [ ] Agentic 3-run variance ≥ 12/13 — not run (would have burned credits on a known-failing config)
+- [ ] Monthly cost projection < $5 — N/A (cross-encoder is free; Gemma was on track at ~$1/eval)
+
+**Default behavior:** unchanged from Phase 2. `RERANKER` unset → falls through to "jina" → Jina returns null (no balance) → `boostMul=1` → RRF + boosts only, identical to post-Phase 2 nDCG = 0.851.
+
+**Target commit when re-attempted (post-Phase 5):** `feat(rag): cross-encoder reranker re-enabled [Phase 3 retry under Phase 5 executor]`
 
 ---
 
@@ -450,17 +477,19 @@ Run 1 on the v4 prompt exposed `creator_opinion` collapsing to `{"claims": []}` 
 ## Part 5 — Critical path + dependencies
 
 ```
-Phase 0 (Stage 6.3 commit)
+Phase 0 (Stage 6.3 commit)              [SHIPPED]
    ↓
-Phase 1 (cleanup + clean baseline)
+Phase 1 (cleanup + clean baseline)      [SHIPPED]
    ↓
-Phase 2 (forced-JSON + chunk_id) ──── faithfulness defense; may fix team_json flake
+Phase 2 (forced-JSON + chunk_id)        [SHIPPED] — faithfulness defense; fixed team_json flake
    ↓
-Phase 3 (Gemma reranker) ⭐────────── biggest single retrieval win
+Phase 3 (reranker — Gemma + cross-enc)  [BLOCKED] — both regressed matchup; planner × reranker structural issue
    ↓
-Phase 4 (rag.ts split) ────────────── behavior-preserving refactor
+Phase 4 (rag.ts split)                  [NEXT]    — behavior-preserving refactor
    ↓
-Phase 5 (executor redesign) ───────── closes Stage 6.3 aspirational gap
+Phase 5 (executor redesign)             [unblocks Phase 3 reranker re-attempt]
+   ↓
+Phase 3-retry (flip RERANKER=crossencoder, re-run gates)
    ↓
 Phase 6 (Gemma flakes — tournament_retrieval)
    ↓
@@ -476,10 +505,11 @@ Phase 13 (webapp)         — separate track
 **Hard dependencies:**
 - Phase 0 before Phase 1 (need clean HEAD to measure cleanup impact).
 - Phase 4 before Phase 5 (executor redesign needs `collectForceIncludes()` extracted).
+- **Phase 5 before Phase 3 retry** (post-merge force-includes are the structural fix the reranker needs to coexist with the planner — see Phase 3 Diagnostic).
 
 **Soft dependencies:**
-- Phase 2 before Phase 3 — reduces agentic-gate flake noise for Phase 3 and every downstream phase.
-- Phase 2 may resolve `team_json` incidentally, shrinking Phase 6 scope.
+- Phase 2 before Phase 3 — reduces agentic-gate flake noise. (Won during Phase 2; preserved for Phase 3 retry.)
+- Phase 2 may resolve `team_json` incidentally, shrinking Phase 6 scope. (Confirmed shipped.)
 - Phase 5 before Phase 7 if subagents emit validated JSON (can ship subagents earlier and retrofit).
 
 ---
@@ -489,11 +519,13 @@ Phase 13 (webapp)         — separate track
 | After phase | Overall nDCG | Driver |
 |---|---|---|
 | Current (Stage 6.3) | 0.849 | — |
-| Phase 1 (cleanup) | 0.849 | Should be flat; gate is ±0.5% of baseline |
-| Phase 2 (forced-JSON) | 0.849 | No retrieval impact; adds `citation_validity_rate ≥ 95%` |
-| Phase 3 (Gemma reranker) ⭐ | 0.87–0.89 | Ordering fix on matchup/counter/team (Recall@10 saturated; reranker closes rank-order gap) |
-| Phase 4 (rag.ts split) | 0.87–0.89 | Flat — behavior-preserving refactor |
-| Phase 5 (executor redesign) | 0.88–0.90 | Sub-queries finally compete for top-10 |
+| Phase 1 (cleanup) | **0.851** measured | Reindex variance (+90 chunks since baseline); per-intent within ±0.5% |
+| Phase 2 (forced-JSON) | **0.851** measured | No retrieval impact (faithfulness only); citation_validity_rate = 100% |
+| Phase 3 attempt 1 (Gemma) | **0.830** measured | ❌ Regressed matchup −15%; planner × reranker score-merge problem |
+| Phase 3 attempt 2 (cross-encoder) | **0.829** measured | ❌ Regressed matchup −18%, adversarial −4.8%; same structural issue |
+| Phase 4 (rag.ts split) | 0.851 expected | Flat — behavior-preserving refactor |
+| Phase 5 (executor redesign) | 0.86–0.88 expected | Sub-queries compete for top-10 via post-merge force-includes (Stage 4.6 invariant preserved) |
+| Phase 3-retry (post Phase 5) | 0.87–0.90 expected | With executor fix, cross-encoder no longer fights the boost layer |
 | Phase 6–9 | marginal / flat | Maintenance + housekeeping |
 
 ---
@@ -530,16 +562,17 @@ Phase 13 (webapp)         — separate track
 
 ### Eval baselines
 
-- Current reference: `memory-bank/eval-baselines/2026-04-21-retrieval-stage4.6-p3-jina-off.json` (0.849 overall).
-- Phase 1 target: `retrieval-post-stage6.3-clean.json` (should match current within ±0.5%).
-- Phase 3 target: `retrieval-post-phase3-gemma-rerank.json` (expect 0.87–0.89 overall).
-- Phase 5 target: `retrieval-post-phase5-executor.json` (expect 0.88–0.90 overall).
+- Current reference: `memory-bank/eval-baselines/retrieval-post-stage6.3-clean.json` (Phase 1 + 2, 0.851 overall, RRF + boosts only).
+- Phase 3 attempt 1 (Gemma): `memory-bank/eval-baselines/retrieval-phase3-gemma.json` (0.830 overall, BLOCKED — see Phase 3 section).
+- Phase 3 attempt 2 (cross-encoder): `memory-bank/eval-baselines/retrieval-phase3-crossencoder.json` (0.829 overall, BLOCKED — see Phase 3 section).
+- Phase 5 target: `retrieval-post-phase5-executor.json` (expect 0.86–0.88 overall, no rerank).
+- Phase 3-retry target (post Phase 5): `retrieval-post-phase3-retry-crossencoder.json` (expect 0.87–0.90 overall).
 
 ### Key code
 
 - [lib/rag.ts](../lib/rag.ts) — `query()` orchestrator. Split target in Phase 4.
 - [lib/query-planner.ts](../lib/query-planner.ts) / [lib/query-executor.ts](../lib/query-executor.ts) — Stage 6.3 planner + executor. Executor redesign in Phase 5.
-- [lib/rerank.ts](../lib/rerank.ts) — reranker client. Currently Jina (403). Add `rerankWithGemma()` in Phase 3.
+- [lib/rerank.ts](../lib/rerank.ts) — three reranker clients (Jina, Gemma, BGE cross-encoder), `RERANKER` env-var dispatch in [lib/rag.ts:584-625](../lib/rag.ts). All currently dormant (default falls through to RRF + boosts). Cross-encoder is the production candidate; flip `RERANKER=crossencoder` post-Phase 5.
 - [lib/embed.ts](../lib/embed.ts) — BGE-small-en-v1.5 (Stage 1.2).
 - [src/app/api/team/route.ts:160](../src/app/api/team/route.ts) — agent loop with `Promise.all` tool-call parallelization (Stage 6.3).
 - [evals/golden-set.jsonl](../evals/golden-set.jsonl) — 100-case graded-relevance set.

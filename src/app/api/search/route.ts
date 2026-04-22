@@ -3,6 +3,10 @@ import { query } from "@core/rag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Phase 3: Gemma rerank can take 10-15s per query (4 sub-queries × ~10s
+// reranks via Promise.all on vsPair planner). 30s is safe headroom over the
+// 5s default for a Vercel Lambda Node runtime.
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

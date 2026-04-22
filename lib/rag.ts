@@ -3,7 +3,11 @@ import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
 import { embed } from "./embed.js";
-import { rerankCandidates } from "./rerank.js";
+import {
+  rerankCandidates,
+  rerankWithCrossEncoder,
+  rerankWithGemma,
+} from "./rerank.js";
 import { extractTypes, extractStatConditions } from "./structured-query.js";
 import { supabaseServer } from "./supabase.js";
 import { planQuery } from "./query-planner.js";
@@ -581,25 +585,46 @@ export async function query(
   }
   const raw = (hybridRaw ?? []) as Record<string, unknown>[];
 
-  // Jina Reranker v2: score the top-40 RPC candidates. When active, Jina
-  // scores live in [0, 1] — boostMul=20 keeps existing additive boosts
-  // (calibrated to RRF's ~0.02-0.035 scale) meaningful on top of that.
-  const jinaT0 = Date.now();
-  const jinaScores = await rerankCandidates(
-    question,
-    raw.map((r) => ({ id: r.id as string, text: r.text as string })),
-  );
-  const jinaActive = jinaScores !== null && jinaScores.size > 0;
-  const boostMul = jinaActive ? 20 : 1;
-  if (jinaActive) {
+  // Reranker (cross-encoder / Gemma / Jina, configurable via RERANKER env).
+  // Score the top-40 RPC candidates. When active, scores live in [0, 1] —
+  // boostMul=20 keeps existing additive boosts (calibrated to RRF's
+  // ~0.02-0.035 scale) meaningful on top of that.
+  //
+  // RERANKER values:
+  //   crossencoder — BAAI/bge-reranker-base via HF Inference (default if HF_TOKEN set)
+  //   gemma        — Gemma 4 26B pointwise via OpenRouter (deprecated — see retrieval-2026-04-22T03-52-48-886Z)
+  //   jina         — Jina v2 (paid, currently no balance)
+  //   none         — RRF + boosts only (back-compat default)
+  // Legacy: GEMMA_RERANK_ENABLED=true still selects gemma.
+  const rerankT0 = Date.now();
+  const rerankerChoice =
+    (process.env.RERANKER ?? "").toLowerCase() ||
+    (process.env.GEMMA_RERANK_ENABLED === "true" ? "gemma" : "jina");
+  const candidatesForRerank = raw.map((r) => ({
+    id: r.id as string,
+    text: r.text as string,
+  }));
+  let rerankerScores: Map<string, number> | null = null;
+  if (rerankerChoice === "crossencoder") {
+    rerankerScores = await rerankWithCrossEncoder(question, candidatesForRerank);
+  } else if (rerankerChoice === "gemma") {
+    rerankerScores = await rerankWithGemma(question, candidatesForRerank);
+  } else if (rerankerChoice === "jina") {
+    rerankerScores = await rerankCandidates(question, candidatesForRerank);
+  }
+  const rerankerActive = rerankerScores !== null && rerankerScores.size > 0;
+  const boostMul = rerankerActive ? 20 : 1;
+  if (rerankerActive) {
     for (const r of raw) {
-      const s = jinaScores!.get(r.id as string);
+      const s = rerankerScores!.get(r.id as string);
       // Items outside the reranked pool keep a small baseline so the boost
       // layer can still promote them (exact-name, structured, rules).
       r.rrf_score = typeof s === "number" ? s : 0.05;
     }
     if (process.env.RAG_DEBUG) {
-      console.error(`[DEBUG] Jina reranked ${jinaScores!.size}/${raw.length} in ${Date.now() - jinaT0}ms`);
+      console.error(
+        `[DEBUG] ${rerankerChoice} reranked ${rerankerScores!.size}/${raw.length} in ${Date.now() - rerankT0}ms`,
+      );
     }
   }
 

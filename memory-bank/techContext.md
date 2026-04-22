@@ -125,7 +125,7 @@ Ollama remote (wired, server GPU TBD):
 - **Source filtering**: `data_category` array passed to the RPC (`ANY(p_categories)`)
 - **Structured queries**: `lib/structured-query.ts` + `runStructuredFilter()` in `lib/rag.ts` — NL→supabase-js query builder chain (`.or()` per type, `.gte()/.lte()` per stat, `.not('pokemon_name','is',null)`)
   - Runs as a second round-trip alongside the hybrid RPC; results merged and deduped in TS
-- **Multi-signal re-ranking**: 8 additive boosts calibrated to RRF scale:
+- **Multi-signal re-ranking**: 8 additive boosts calibrated to RRF scale (~0.02-0.035), multiplied by `boostMul` (1 when no reranker active, 20 when reranker scores in [0,1] replace RRF):
   - Structured results: +0.1
   - Usage intent + matching Pokemon: +0.1
   - General usage intent: +0.05
@@ -135,6 +135,12 @@ Ollama remote (wired, server GPU TBD):
   - Item chunk + item intent: +0.03
   - Team chunk penalty (non-team queries): -0.015
   - Project docs penalty: -0.08
+- **Reranker dispatch (Phase 3, BLOCKED-pending-Phase-5)**: [lib/rag.ts:584-625](../lib/rag.ts) reads `RERANKER` env (`crossencoder|gemma|jina|none`, default falls through to "jina"). [lib/rerank.ts](../lib/rerank.ts) holds three reranker clients:
+  - `rerankCandidates` (Jina v2, dormant — balance depleted, returns null without API key)
+  - `rerankWithGemma` (~140 LOC, Gemma 4 26B pointwise via OpenRouter, inline 10-slot worker pool, manual `AbortController` + `clearTimeout`, 800-char snippet, per-query SHA256 LRU cache)
+  - `rerankWithCrossEncoder` (~80 LOC, BAAI/bge-reranker-base via HF Inference `text-classification` pipeline, single batched HTTP call for all 40 candidates, 1500-char snippet)
+  - All return `Map<id, score>` in [0,1] or `null` on failure → caller falls through to RRF + boosts (boostMul=1). RERANK_POOL=40.
+  - Both Phase 3 attempts regressed matchup nDCG by 15-18% — Stage 6.3's per-sub-query rerank + max-merge breaks the boost-layer calibration. Phase 5 (executor redesign) re-applies force-includes/boosts post-merge against the original query, fixing the conflict. Re-eval after Phase 5 ships.
 - **Chunk overlap**: Trailing-paragraph overlap for markdown chunks split on paragraph breaks (last 3 lines of previous paragraph prepended)
 - **Staleness detection**: `checkStaleness()` in `rag.ts` reads `pc_index_meta` row `file_mtimes`, compares against current filesystem mtimes, warns on stderr if stale (runs once per process)
 - **Citation validation (Phase 2, 2026-04-22)**: [lib/validate-citations.ts](../lib/validate-citations.ts) — shared module. Agent responses must end with a `claims-json` fenced block; server-side validator checks every cited `chunk_id` against the set returned by `search` calls in the conversation. Hallucinated IDs trigger one auto-retry nudge. Used by both the prod agent loop ([src/app/api/team/route.ts](../src/app/api/team/route.ts)) and the eval harness ([scripts/eval-models.ts](../scripts/eval-models.ts)). Prod streams a `citation_result` SSE event; eval exposes `citation_validity_rate` in the summary + snapshot.

@@ -19,7 +19,8 @@
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap)
 │   ├── embed.ts                BGE-small-en-v1.5 (384-dim, fp32, CLS pool, BGE query prefix, batch 64)
-│   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking + staleness
+│   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking dispatch (RERANKER env: crossencoder|gemma|jina|none) + staleness
+│   ├── rerank.ts               Three reranker clients (Phase 3, BLOCKED-pending-Phase-5): rerankCandidates (Jina, dormant), rerankWithGemma (OpenRouter pointwise, 10-slot worker pool), rerankWithCrossEncoder (BAAI/bge-reranker-base via HF Inference, batched). All return null on failure → caller falls through to RRF + boosts (boostMul=1)
 │   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
 │   ├── eval-data.ts            25 eval test cases across 8 categories
