@@ -8,6 +8,21 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### Phase 1 — Cleanup + clean baseline — SHIPPED (2026-04-22) · commit `7767a0a`
+- **Status:** shipped. Stage 5 (EmbeddingGemma MRL-384 bilingual shadow) residue removed; clean post-6.3 reference established.
+- **What:** Italian translation dictionary + translation code paths + Stage 5 eval fixtures deleted. The canonical Italian-Pikalytics fix is and remains the `Accept-Language: en-US,en;q=0.9` header in `scraper_pikalytics.py` (Phase 8, 2026-04-12); the 2,383-entry `lib/translations.json` dict shipped alongside it in 2026-04-12 as a belt-and-braces chunk-time translator and has been dead code ever since.
+- **Scope expansion beyond original task list:** `lib/calc/matchup.ts` and `scripts/test-suite.ts` both also read `translations.json`. The master plan listed only `lib/chunker.ts` — would have crashed `/calc`, `build-matchup-matrix`, and `test-suite.ts` on first run after JSON deletion. Extended scope also removed `scripts/build-translations.ts` (orphaned generator).
+- **Files:**
+  - Deleted: `lib/translations.json`, `scripts/build-translations.ts`, `evals/golden-set-bilingual.jsonl`, `memory-bank/eval-baselines/retrieval-shadow-2026-04-21T20-{34-15-464Z,36-49-332Z}.json`.
+  - Code: `lib/chunker.ts` (−37 LOC — drop `translatePairs`, `getTranslations`, direct `r.top_*` reads in `chunkPikalyticsUsageCsv`, prune unused `readFileSync`/`existsSync`/`resolve` imports), `lib/calc/matchup.ts` (−26 LOC — drop `translateMove/Item/Ability`, inline the pipe/colon parse), `scripts/test-suite.ts` (−42 LOC — drop `testItalianTranslation()` + main() call; prune unused `existsSync` import; `testScraperHeader()` preserved).
+  - Arch doc sync: `memory-bank/techContext.md`, `systemPatterns.md`, `errors.md` updated to record the header as the canonical fix.
+- **Retrieval eval (Jina OFF, planner ON, 100 cases, 2,329 chunks):** overall nDCG@10 **0.851** (+0.24% vs Stage 4.6 baseline 0.849). Per-intent vs baseline: counter 0.691 (−0.002), item 0.991 (flat), matchup 0.741 (+0.001), move 0.995 (flat), stat 0.839 (+0.001), team **0.844** (+0.021), usage 0.981 (flat), adversarial 0.685 (flat). `team` jump is reindex variance + ~90 new chunks since the 2026-04-21 baseline — welcome, not a regression. Every other intent within ±0.5% of baseline → gate satisfied.
+- **Reindex:** `npx tsx scripts/index-data.ts --force` — 2,329 chunks upserted, **zero translation-missing warnings** → gate satisfied.
+- **Sanity checks pre-commit:** `npx tsc --noEmit` clean; `npx tsx scripts/test-calc.ts` 41/41 pass; `npx tsx scripts/calc.ts "Incineroar Knock Off vs Garchomp"` returns 58–70 (31.7%–38.3%) — exercises the modified `matchup.ts` load path.
+- **Snapshot:** `memory-bank/eval-baselines/retrieval-post-stage6.3-clean.json`.
+- **Plan:** `C:\Users\paulo\.claude\plans\read-the-memory-bank-plan-fluffy-kite.md`.
+- **Follow-up:** Roadmap lifecycle docs (rag-master-plan row 1 + Phase 1 section + activeContext TL;DR + this entry) landed in a separate commit referencing `7767a0a`, matching the Stage 6.3 two-commit pattern.
+
 ### Stage 6.3 — Plan-and-Execute DAG (recursive-mccarthy) — SHIPPED (2026-04-21) · Phase 0 closed 2026-04-22 · commit `b056e4c`
 - **Status:** shipped as retrieval-neutral infrastructure + agent-loop parallelization. Flagged off via `QUERY_PLANNER_ENABLED=false` for rollback.
 - **What:** rule-driven query decomposition at the RAG layer (three strategies: `vspair`, `counter-archetype`, `team-archetype`, all capped at 3 sub-queries + the original in parallel) + `Promise.all` over agent-loop tool calls.

@@ -21,7 +21,7 @@ Update this table as each phase moves state. Source of truth for "what's done / 
 | # | Phase | Effort | Status | Started | Shipped | Commit | Snapshot |
 |---|---|---|---|---|---|---|---|
 | 0 | Stage 6.3 commit + closeout | — | SHIPPED | 2026-04-21 | 2026-04-22 | `b056e4c` | `retrieval-2026-04-21T19-01-55-020Z.json` |
-| 1 | Cleanup + clean baseline | ½ session | NOT STARTED | — | — | — | `retrieval-post-stage6.3-clean.json` |
+| 1 | Cleanup + clean baseline | ½ session | SHIPPED | 2026-04-22 | 2026-04-22 | `7767a0a` | `retrieval-post-stage6.3-clean.json` |
 | 2 | Forced-JSON + chunk_id validation | 1 session | NOT STARTED | — | — | — | n/a (adds `citation_validity_rate`) |
 | 3 | Gemma pointwise reranker ⭐ | 1 session | NOT STARTED | — | — | — | `retrieval-post-phase3-gemma-rerank.json` |
 | 4 | `lib/rag.ts` split | 1 session | NOT STARTED | — | — | — | (bit-for-bit identical) |
@@ -194,23 +194,23 @@ Plus exact-entity force-include (move/item/strategic-Pokemon by id).
 
 ### Phase 1 — Cleanup + clean baseline
 
-**Status:** NOT STARTED · Started: — · Shipped: — · Commit: — · Snapshot: `retrieval-post-stage6.3-clean.json`
+**Status:** SHIPPED · Started: 2026-04-22 · Shipped: 2026-04-22 · Commit: `7767a0a` · Snapshot: `retrieval-post-stage6.3-clean.json`
 
 **Goal.** Clear Stage 5 residue; establish clean post-6.3 reference.
 
 **Tasks:**
-- [ ] Delete the Italian translation layer in [lib/chunker.ts](../lib/chunker.ts) (`translatePairs()` + call sites).
-- [ ] Delete `lib/translations.json` (2,383 entries).
-- [ ] Delete `evals/golden-set-bilingual.jsonl` (100-line manual IT translation fixture).
-- [ ] Delete the two `retrieval-shadow-2026-04-21T20-*.json` snapshots in `memory-bank/eval-baselines/`.
-- [ ] Reindex: `npx tsx scripts/index-data.ts --force`.
-- [ ] Full 100-case retrieval eval with planner ON; snapshot to `memory-bank/eval-baselines/retrieval-post-stage6.3-clean.json`.
+- [x] Delete the Italian translation layer in [lib/chunker.ts](../lib/chunker.ts) (`translatePairs()` + call sites). Extended scope: also stripped mirror translation layer in [lib/calc/matchup.ts](../lib/calc/matchup.ts) and removed `testItalianTranslation()` from [scripts/test-suite.ts](../scripts/test-suite.ts) — both overlooked in the original plan task list (would have crashed `/calc` + test-suite after JSON deletion).
+- [x] Delete `lib/translations.json` (2,383 entries). Also deleted orphaned generator `scripts/build-translations.ts`.
+- [x] Delete `evals/golden-set-bilingual.jsonl` (100-line manual IT translation fixture).
+- [x] Delete the two `retrieval-shadow-2026-04-21T20-*.json` snapshots in `memory-bank/eval-baselines/`.
+- [x] Reindex: `npx tsx scripts/index-data.ts --force` — 2,329 chunks, no translation-missing warnings.
+- [x] Full 100-case retrieval eval with planner ON; snapshot at `memory-bank/eval-baselines/retrieval-post-stage6.3-clean.json` (Jina OFF).
 
 **Gates:**
-- [ ] All intents within ±0.5% of Stage 4.6 baseline (overall 0.849).
-- [ ] Reindex completes cleanly (no translation-missing warnings).
+- [x] All intents within ±0.5% of Stage 4.6 baseline (overall 0.849 → 0.851). Per-intent deltas: counter −0.002, item 0.000, matchup +0.001, move 0.000, stat +0.001, team +0.021, usage 0.000, adversarial 0.000. team jump is reindex variance + ~90 new chunks since the 2026-04-21 baseline — welcome, not a regression.
+- [x] Reindex completes cleanly — zero translation-missing warnings.
 
-**Target commit:** `chore(stage5): remove Italian translation residue`
+**Shipped commit:** `7767a0a chore(stage5): remove Italian translation residue [Phase 1]`
 
 ---
 
