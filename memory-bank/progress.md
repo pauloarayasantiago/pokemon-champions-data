@@ -8,6 +8,38 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### Phase 2 — Forced-JSON + `chunk_id` validation — SHIPPED (2026-04-22) · commit `bc02d11`
+
+- **Status:** shipped. The faithfulness defense ("free part" of the original Stage 3 plan) that's been open on the master plan since 2026-04-14. Agent responses are now forced to cite `chunk_id`s from their own `search` tool results; a server-side validator rejects phantom IDs and triggers one corrective retry.
+- **Envelope decision — separate `claims-json` block, not `{answer, claims}` envelope.** The master plan spec was `{"answer": string, "claims": [...]}`, which would have replaced the existing `team-json` block. Since `team-json` is UI-load-bearing (used by `/team` responses), collapse would have broken prod. Explore-agent pass confirmed [src/app/team/page.tsx:905-908](../src/app/team/page.tsx) renders assistant content as whitespace-pre-wrap prose with no `team-json` regex, so appending a trailing `claims-json` block is safe. Result: both blocks coexist; `claims-json` is always the LAST fenced block.
+- **New module:** [lib/validate-citations.ts](../lib/validate-citations.ts) (~150 LOC, pure, no DB/LLM deps). Exports `extractClaimsBlock` (parser + Gemma JSON-repair: trailing commas, double braces, "thought" prefixes, fallback to `claims_json` / `claims` block names), `validateCitations` (chunk_id set membership check), `formatValidationNudge` (two variants — empty-claims vs invalid-IDs — tightened in v4.1 to forbid the `{"claims": []}` escape), `collectChunkIdsFromSearchResult`. Unit-tested 14/14 on extract/repair/validate/nudge edge cases.
+- **chunk_id propagation (three-site fix):** [src/lib/tools.ts:249](../src/lib/tools.ts) `executeSearch` now includes `id: r.id`; [scripts/eval-models.ts:~308](../scripts/eval-models.ts) `executeSearchRealRag` same; [scripts/eval-models.ts:~292](../scripts/eval-models.ts) `executeSearchStub` emits synthetic `id: stub:<slug>-<i>` so the validator can accept stub-mode IDs without special-casing.
+- **Agent-loop integration:**
+  - Production ([src/app/api/team/route.ts](../src/app/api/team/route.ts)): `seenChunkIds: Set<string>` accumulated across all iterations. Post-loop (when model finishes without tools), runs `extractClaimsBlock` + `validateCitations`. On invalid: pushes `formatValidationNudge(invalidIds)` as a user message, `continue`s the for-loop for one more iteration (counts against `MAX_TOOL_ITERATIONS=20`). On valid (or retry exhausted): emits SSE events `citation_retry` (if retried) / `citation_result` (outcome), then `done` + close. UI ignores the new events; operators see them in server logs for future dashboards.
+  - Eval harness ([scripts/eval-models.ts](../scripts/eval-models.ts)): same pattern in `runAgent`, except the retry is a single `callModel` with `tools: []` (forces pure text — keeps retry cost bounded and matches the existing force-completion fallback pattern).
+- **Metric:** `citation_validity_rate` = fraction of retrieval-tagged tests where (a) the claims-json parsed, (b) `claims.length >= 1`, and (c) every cited `chunk_id` was in `seenChunkIds`. With 5 retrieval tests, gate ≥95% effectively means 5/5. `TestResult` gained `citationValid / citationTotal / citationValidCount / citationInvalidIds / citationRetryFired / citationParseError`. A new CITATIONS section was added to the CLI report and to the snapshot JSON's per-model summary.
+- **System-prompt version bump** (both prod + eval): `2026-04-18.v3-self-revise` → `2026-04-22.v4.1-claims-json-tightened`.
+  - v4 (initial) added the `# Citations` section with examples + 4 rules.
+  - v4.1 (after run 1 revealed `creator_opinion` collapsing to `{"claims": []}`) tightens rule 2 to "EVERY search-backed factual statement needs a claim entry (usage %, win rates, teammates, roster names, tier-list rankings, mechanics quotes, creator opinions — not just the 'main answer' claim, every supporting/contextual fact too)" and adds rule 5 banning the empty-array escape.
+- **Infra fix:** `scripts/eval-models.ts` `loadEnv()` now respects explicit shell overrides. Previously it unconditionally clobbered `process.env[key]` with `.env` values, which prevented `JINA_API_KEY= npx tsx ...` from actually disabling Jina (the `.env` entry always won). With the fix, explicit shell env wins — critical for running evals cleanly without the Jina 403 + DOMException race.
+- **3-run agentic variance (gemma-4-26b @ OpenRouter, `--real-rag`, Jina OFF):**
+
+  | run | code | pass | behavior | retrieval | halluc. | tok/pass | nudges | retries | cit_rate | cited_valid/total |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | 1 | v4 | 12/13 | 4/5 | 5/5 | 3/3 | 34088 | 45 | 9 | 80% | 14/14 |
+  | 2 | v4.1 | 12/13 | 4/5 | 5/5 | 3/3 | 25480 | 13 | 6 | **100%** | 33/33 |
+  | 3 | v4.1 | 13/13 | 5/5 | 5/5 | 3/3 | 25638 | 10 | 6 | **100%** | 37/38 |
+
+  Snapshots: `snapshots/model-eval-2026-04-22T{02-47-26,03-00-11,03-06-42}.json`.
+- **Gate outcomes:**
+  - Agentic pass rate ≥ 12/13 on all 3 runs: **met** (12, 12, 13).
+  - `citation_validity_rate` ≥ 95%: **met on v4.1** (100% × 2 runs). Run 1 at 80% was on the pre-tightening prompt.
+  - `team_json` flake rate drops: **met** — passed cleanly on both v4.1 runs (previously ~1/3 flake). Forced-JSON output mode stabilized Gemma's completion.
+- **Retrieval no-regression:** overall nDCG 0.851 unchanged from post-Phase 1 baseline. Per-intent deltas all within ±0.5%. Snapshot: `memory-bank/eval-baselines/retrieval-2026-04-22T02-22-17-357Z.json`.
+- **Iteration lesson:** the initial v4 prompt said "If you made no search-backed factual claims, emit `{\"claims\": []}`" — and the model found this easier than re-grounding when the validator nudged it. Tightening to "empty array is ONLY valid when you genuinely made zero search-backed claims" + strengthening the retry nudge ("do not collapse to `{\"claims\": []}` just to avoid the validator") closed the escape. Recorded in activeContext + the two prompt blocks for future reference.
+- **Plan:** `C:\Users\paulo\.claude\plans\phase-2-plan-frosted-turing.md`.
+- **Follow-up:** Roadmap lifecycle docs (rag-master-plan row 2 + Phase 2 section + activeContext TL;DR + this entry) landed in a separate commit referencing `bc02d11`, matching the Phase 0 / Phase 1 two-commit pattern.
+
 ### Phase 1 — Cleanup + clean baseline — SHIPPED (2026-04-22) · commit `7767a0a`
 - **Status:** shipped. Stage 5 (EmbeddingGemma MRL-384 bilingual shadow) residue removed; clean post-6.3 reference established.
 - **What:** Italian translation dictionary + translation code paths + Stage 5 eval fixtures deleted. The canonical Italian-Pikalytics fix is and remains the `Accept-Language: en-US,en;q=0.9` header in `scraper_pikalytics.py` (Phase 8, 2026-04-12); the 2,383-entry `lib/translations.json` dict shipped alongside it in 2026-04-12 as a belt-and-braces chunk-time translator and has been dead code ever since.

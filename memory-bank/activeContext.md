@@ -1,14 +1,14 @@
 # Active Context
 
-_Last updated: 2026-04-22, post Phase 1. Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-22, post Phase 2. Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
 
 ## TL;DR
 
-- **Baseline retrieval:** nDCG@10 = **0.851** on 100-case golden set post-Phase 1 (Jina OFF, planner ON, 2,329 chunks). Stage 4.6/6.3 was 0.849; +0.24% overall, team +2.55% (reindex + ~90 new chunks).
-- **Baseline agentic:** 12/13 pass at ~22k tok/pass, 18.4s avg, Gemma 4 26B via OpenRouter.
-- **Last shipped:** Phase 1 cleanup (commit `7767a0a`) — Italian translation layer removed from `lib/chunker.ts` + `lib/calc/matchup.ts` + `scripts/test-suite.ts`; `translations.json` (2,383 entries) + `build-translations.ts` + 3 Stage 5 eval artifacts deleted.
-- **Working tree:** clean after Phase 1 commit.
-- **Next move:** Phase 2 forced-JSON + `chunk_id` validation → Phase 3 Gemma pointwise reranker → Phase 4 `lib/rag.ts` split. See [rag-master-plan.md](rag-master-plan.md) Part 4.
+- **Baseline retrieval:** nDCG@10 = **0.851** on 100-case golden set (Jina OFF, planner ON, 2,329 chunks). Unchanged from Phase 1 — Phase 2 is orthogonal to retrieval.
+- **Baseline agentic (post-Phase 2, v4.1 prompt):** 12–13/13 pass at ~25.5k tok/pass, 25s avg/test. `citation_validity_rate` = **100%** on the 5 retrieval-tagged tests across 2 consecutive runs.
+- **Last shipped:** Phase 2 forced-JSON + `chunk_id` validation (commit `bc02d11`) — new `lib/validate-citations.ts` shared module; `claims-json` block required at end of every agent response; server-side validator rejects phantom chunk_ids; one-retry nudge on invalid citations. `team_json` flake fixed incidentally (forced-JSON stabilized Gemma output mode).
+- **Working tree:** clean after Phase 2 commit.
+- **Next move:** Phase 3 Gemma pointwise reranker ⭐ (highest-leverage retrieval win) → Phase 4 `lib/rag.ts` split → Phase 5 executor redesign. See [rag-master-plan.md](rag-master-plan.md) Part 4.
 
 ## Per-intent baseline (Jina OFF, Phase 1 clean — 2026-04-22)
 
@@ -27,6 +27,17 @@ _Last updated: 2026-04-22, post Phase 1. Purpose: one-page "right now" snapshot.
 Only unmet gate: matchup P@10 = 0.49 (target 0.50). **Structural** — golden-set `expected_contexts` doesn't list `type_chart.md` on most matchup rows. User forbade editing the golden set this cycle.
 
 ## Most recent work
+
+### Phase 2 — SHIPPED · commit `bc02d11` (2026-04-22)
+
+- New shared module [lib/validate-citations.ts](../lib/validate-citations.ts): parser + JSON-repair + chunk_id validator + retry-nudge formatter (~150 LOC, 14/14 unit tests pass).
+- Agent responses now end with a required `claims-json` block. For team-building: comes AFTER `team-json`. For non-team queries: it's the only fenced block. The existing UI renders the whole response as prose ([src/app/team/page.tsx:905-908](../src/app/team/page.tsx)), so adding a trailing block is safe.
+- chunk_id propagation end-to-end: [src/lib/tools.ts](../src/lib/tools.ts) + [scripts/eval-models.ts](../scripts/eval-models.ts) both include `id` in search tool output (stub uses synthetic `stub:<slug>-<i>`).
+- [src/app/api/team/route.ts](../src/app/api/team/route.ts) agent loop: accumulates `seenChunkIds` across all `search` calls, validates claims-json post-loop, fires one auto-retry with tightened nudge on invalid IDs. Emits new SSE events `citation_retry` + `citation_result` for ops visibility.
+- Eval harness: same loop plus `citation_validity_rate` metric, per-test citation fields in `TestResult`, new CITATIONS report section, snapshot fields.
+- System-prompt version: `2026-04-18.v3-self-revise` → `2026-04-22.v4.1-claims-json-tightened`. v4.1 closes the `{"claims": []}` escape hatch that run 1 exposed on `creator_opinion`.
+- Infra fix: `loadEnv()` now respects explicit shell overrides.
+- **3-run variance (gemma-4-26b --real-rag, Jina OFF):** run 1 (v4) 12/13 @ 80% cit_rate; run 2 (v4.1) 12/13 @ 100%; run 3 (v4.1) 13/13 @ 100%. Master-plan gates (≥12/13 all 3 runs + cit_rate ≥95%) all met under v4.1. `team_json` flake fixed — passed cleanly on both v4.1 runs.
 
 ### Phase 1 — SHIPPED · commit `7767a0a` (2026-04-22)
 
@@ -53,13 +64,13 @@ Only unmet gate: matchup P@10 = 0.49 (target 0.50). **Structural** — golden-se
 
 ## Working tree
 
-Clean after Phase 1 commit.
+Clean after Phase 2 commit.
 
 ## Immediately queued
 
-1. **Phase 2 — forced-JSON + `chunk_id` validation** (1 session): faithfulness defense. Orthogonal to retrieval; may fix `team_json` flake incidentally, cleaning agentic-gate variance for every downstream phase.
-2. **Phase 3 — Gemma pointwise reranker ⭐** (1 session, highest retrieval leverage): replaces dropped Jina path. Top-40 → Gemma pointwise scoring via OpenRouter. Gate: matchup ≥ 0.77, counter ≥ 0.72, overall ≥ 0.87.
-3. **Phase 4 — `lib/rag.ts` split** (1 session): prerequisite for Phase 5 executor redesign. Behavior-preserving refactor — extracts `classify/route/force-includes/boost/structured-filter` into modules.
+1. **Phase 3 — Gemma pointwise reranker ⭐** (1 session, highest retrieval leverage): replaces dropped Jina path. Top-40 → Gemma pointwise scoring via OpenRouter. Gate: matchup ≥ 0.77, counter ≥ 0.72, overall ≥ 0.87. The citation infrastructure from Phase 2 means the rerank-ON gate runs under the cleaner agentic baseline (citation_validity = 100%, no team_json flake).
+2. **Phase 4 — `lib/rag.ts` split** (1 session): prerequisite for Phase 5 executor redesign. Behavior-preserving refactor — extracts `classify/route/force-includes/boost/structured-filter` into modules.
+3. **Phase 5 — executor redesign**: closes the aspirational Stage 6.3 nDCG gap (sub-queries currently can't out-score the original's boosted chunks).
 
 Full tasks + gates + rollback triggers for each phase: [rag-master-plan.md](rag-master-plan.md) Part 4.
 

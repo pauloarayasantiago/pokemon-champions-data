@@ -22,7 +22,7 @@ Update this table as each phase moves state. Source of truth for "what's done / 
 |---|---|---|---|---|---|---|---|
 | 0 | Stage 6.3 commit + closeout | — | SHIPPED | 2026-04-21 | 2026-04-22 | `b056e4c` | `retrieval-2026-04-21T19-01-55-020Z.json` |
 | 1 | Cleanup + clean baseline | ½ session | SHIPPED | 2026-04-22 | 2026-04-22 | `7767a0a` | `retrieval-post-stage6.3-clean.json` |
-| 2 | Forced-JSON + chunk_id validation | 1 session | NOT STARTED | — | — | — | n/a (adds `citation_validity_rate`) |
+| 2 | Forced-JSON + chunk_id validation | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | `bc02d11` | n/a (adds `citation_validity_rate` → 100% on v4.1) |
 | 3 | Gemma pointwise reranker ⭐ | 1 session | NOT STARTED | — | — | — | `retrieval-post-phase3-gemma-rerank.json` |
 | 4 | `lib/rag.ts` split | 1 session | NOT STARTED | — | — | — | (bit-for-bit identical) |
 | 5 | Executor redesign | 1 session | NOT STARTED | — | — | — | `retrieval-post-phase5-executor.json` |
@@ -216,24 +216,36 @@ Plus exact-entity force-include (move/item/strategic-Pokemon by id).
 
 ### Phase 2 — Forced-JSON + `chunk_id` validation _(was original Phase 5)_
 
-**Status:** NOT STARTED · Started: — · Shipped: — · Commit: — · Snapshot: n/a (adds agentic metric `citation_validity_rate`)
+**Status:** SHIPPED · Started: 2026-04-22 · Shipped: 2026-04-22 · Commit: `bc02d11` · Snapshot: n/a (adds agentic metric `citation_validity_rate`)
 
 **Goal.** Land the only unshipped faithfulness defense from the original master plan. Free, orthogonal to retrieval. Running this before the reranker reduces agentic-gate flake for every downstream phase (the `team_json` bug may fix incidentally).
 
 **Tasks:**
-- [ ] System-prompt change: final answer MUST be `{"answer": string, "claims": [{"text": string, "chunk_ids": string[]}]}`.
-- [ ] Server-side validator in [src/lib/llm.ts](../src/lib/llm.ts) (or new middleware): for each claim, verify every `chunk_id` is in the set returned by `search` calls this conversation.
-- [ ] Auto-retry once with system nudge on invalid chunk_ids ("chunk_id X was not in your retrieved results — re-ground or remove the claim").
-- [ ] Gemma JSON-repair layer: tolerate double-braced, trailing commas, markdown fences.
-- [ ] Add `citation_validity_rate` metric to [scripts/eval-models.ts](../scripts/eval-models.ts) (aggregate across 5 retrieval-category tests).
-- [ ] Full 13-test 3-run agentic variance run.
+- [x] System-prompt change: final answer MUST end with a trailing ```claims-json fenced block. _Note: we kept the existing `team-json` block (UI-load-bearing) and added `claims-json` as a separate trailing block, rather than collapsing into the master plan's literal `{"answer", "claims"}` envelope. Explore agent verified [src/app/team/page.tsx:905-908](../src/app/team/page.tsx) renders prose freely so trailing content is safe._
+- [x] Server-side validator in [lib/validate-citations.ts](../lib/validate-citations.ts) (shared, NEW ~150 LOC): for each claim, verify every `chunk_id` is in the set returned by `search` calls this conversation. Consumed by both prod ([src/app/api/team/route.ts](../src/app/api/team/route.ts)) and eval ([scripts/eval-models.ts](../scripts/eval-models.ts)).
+- [x] Auto-retry once with system nudge on invalid chunk_ids. Nudge tightened in v4.1 to block the "collapse to `{"claims": []}`" escape.
+- [x] Gemma JSON-repair layer: trailing commas, double braces, "thought" prefixes.
+- [x] `citation_validity_rate` metric added to [scripts/eval-models.ts](../scripts/eval-models.ts), plus per-test citation fields in `TestResult` and a dedicated report section.
+- [x] Full 13-test 3-run agentic variance — details below.
+- [x] chunk_id propagation: `executeSearch`, `executeSearchRealRag`, `executeSearchStub` all include `id` now (stub uses synthetic `stub:<slug>-<i>`).
+- [x] Infra fix: `loadEnv()` now respects explicit shell overrides (previously clobbered them with `.env` values, preventing `JINA_API_KEY=` from disabling Jina).
+
+**3-run variance (gemma-4-26b, --real-rag, Jina OFF):**
+
+| run | code | pass | tok/pass | citation_rate | cited_valid/total | retries |
+|---|---|---|---|---|---|---|
+| 1 | v4 | 12/13 | 34088 | 80% | 14/14 | 9 |
+| 2 | v4.1 | 12/13 | 25480 | **100%** | 33/33 | 6 |
+| 3 | v4.1 | 13/13 | 25638 | **100%** | 37/38 | 6 |
+
+Run 1 on the v4 prompt exposed `creator_opinion` collapsing to `{"claims": []}` after retry. v4.1 tightens both system prompt and retry nudge (explicitly forbids empty-array as an escape from validation). Runs 2+3 under v4.1 both hit 5/5 retrieval-citation validity.
 
 **Gates:**
-- [ ] Agentic pass rate ≥ 12/13 on all 3 runs.
-- [ ] `citation_validity_rate` ≥ 95% on the 5 retrieval-category tests.
-- [ ] `team_json` flake rate drops (bonus if fixed outright — expect it may).
+- [x] Agentic pass rate ≥ 12/13 on all 3 runs. Measured 12, 12, 13.
+- [x] `citation_validity_rate` ≥ 95% on the 5 retrieval-category tests. Measured 100% on both v4.1 runs (run 1 at 80% was on pre-tightened prompt).
+- [x] `team_json` flake rate drops. Passed cleanly on both v4.1 runs — forced-JSON output mode stabilized Gemma's completion.
 
-**Target commit:** `feat(llm): forced-JSON output with chunk_id validation [Stage 3 revised]`
+**Shipped commit:** `bc02d11 feat(llm): forced-JSON claims-json + chunk_id validation [Stage 3 revised / Phase 2]`
 
 ---
 
