@@ -135,12 +135,11 @@ Ollama remote (wired, server GPU TBD):
   - Item chunk + item intent: +0.03
   - Team chunk penalty (non-team queries): -0.015
   - Project docs penalty: -0.08
-- **Translation layer**: Italian→English translations applied at chunk time for Pikalytics data (`lib/translations.json`, 2,383 entries)
 - **Chunk overlap**: Trailing-paragraph overlap for markdown chunks split on paragraph breaks (last 3 lines of previous paragraph prepended)
 - **Staleness detection**: `checkStaleness()` in `rag.ts` reads `pc_index_meta` row `file_mtimes`, compares against current filesystem mtimes, warns on stderr if stale (runs once per process)
 - **Matchup intent**: `isMatchupQuery` detection + MATCHUP_KEYWORDS + category boosting (+0.06 matchup data, +0.06 Pokemon name match)
 - **Eval**: 25 test cases, `npx tsx scripts/eval.ts` — current: 100% pass, MRR 1.000
-- **Comprehensive test suite**: `npx tsx scripts/test-suite.ts` — 74 tests across embedding, translation, search quality, realistic queries (15 natural-language tests), overlap, lifecycle, scraper
+- **Comprehensive test suite**: `npx tsx scripts/test-suite.ts` — embedding, search quality, realistic queries (15 natural-language tests), overlap, lifecycle, scraper-header assertion
 - **Stress test suite**: `npx tsx scripts/stress-test.ts` — 111 tests across 7 tiers (simple lookups, Champions mechanics, negative/absence, calc edge cases, multi-entity, intent classification, strategic reasoning)
 - **Total test coverage**: 251 tests across 4 suites, all passing. Run all via `npm test`
 - **Intent classification enhancements**: Move/item queries with Pokemon name now also pull "usage" category; "vs" added to MATCHUP_KEYWORDS; "most popular" added to USAGE_KEYWORDS; `hasItemKeyword`/`hasTeamKeyword` added to QueryIntent for ranking signals

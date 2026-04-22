@@ -19,33 +19,6 @@ import { calcStat } from "./stats.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..", "..");
 
-// ── Load translations (Italian → English) ──
-
-interface Translations {
-  moves: Record<string, string>;
-  items: Record<string, string>;
-  abilities: Record<string, string>;
-}
-
-let _translations: Translations | null = null;
-function getTranslations(): Translations {
-  if (_translations) return _translations;
-  _translations = JSON.parse(readFileSync(join(ROOT, "lib", "translations.json"), "utf-8"));
-  return _translations!;
-}
-
-function translateMove(name: string): string {
-  return getTranslations().moves[name] ?? name;
-}
-
-function translateItem(name: string): string {
-  return getTranslations().items[name] ?? name;
-}
-
-function translateAbility(name: string): string {
-  return getTranslations().abilities[name] ?? name;
-}
-
 // ── Parse Pikalytics usage data into standard sets ──
 
 interface PikalyticsEntry {
@@ -71,17 +44,17 @@ function loadPikalytics(): Map<string, PikalyticsEntry> {
     // Parse top moves (format: "MoveName:percentage|...")
     const moveParts = (row.top_moves || "").split("|");
     const topMoves = moveParts
-      .map((p) => translateMove(p.split(":")[0].trim()))
+      .map((p) => p.split(":")[0].trim())
       .filter((m) => m.length > 0)
       .slice(0, 4);
 
     // Parse top item (first item)
     const itemParts = (row.top_items || "").split("|");
-    const topItem = translateItem(itemParts[0]?.split(":")[0]?.trim() || "");
+    const topItem = itemParts[0]?.split(":")[0]?.trim() || "";
 
     // Parse top ability
     const abilityParts = (row.top_abilities || "").split("|");
-    const topAbility = translateAbility(abilityParts[0]?.split(":")[0]?.trim() || "");
+    const topAbility = abilityParts[0]?.split(":")[0]?.trim() || "";
 
     map.set(name.toLowerCase(), {
       pokemon: name,

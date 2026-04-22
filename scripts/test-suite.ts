@@ -6,7 +6,7 @@
 import { embed } from "../lib/embed.js";
 import { query } from "../lib/rag.js";
 import { supabaseServer } from "../lib/supabase.js";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const PROJECT_ROOT = resolve(import.meta.dirname, "..");
@@ -58,49 +58,6 @@ async function testEmbedding() {
   const [docVec] = await embed(["test text"], "document");
   const defaultDiff = defaultVec.reduce((sum, v, i) => sum + Math.abs(v - docVec[i]), 0);
   check("Default mode = document", defaultDiff < 0.001, `L1 diff=${defaultDiff.toFixed(6)}`);
-}
-
-async function testItalianTranslation() {
-  console.log("\n=== ITALIAN TRANSLATION TESTS ===");
-
-  // Translation file exists
-  const tPath = resolve(PROJECT_ROOT, "lib", "translations.json");
-  check("translations.json exists", existsSync(tPath));
-
-  const t = JSON.parse(readFileSync(tPath, "utf-8"));
-  check("Has moves dict", Object.keys(t.moves).length > 800, `${Object.keys(t.moves).length} entries`);
-  check("Has items dict", Object.keys(t.items).length > 1000, `${Object.keys(t.items).length} entries`);
-  check("Has abilities dict", Object.keys(t.abilities).length > 250, `${Object.keys(t.abilities).length} entries`);
-
-  // Key translations
-  check("Sbigoattacco → Sucker Punch", t.moves["Sbigoattacco"] === "Sucker Punch");
-  check("Fangobomba → Sludge Bomb", t.moves["Fangobomba"] === "Sludge Bomb");
-  check("Protezione → Protect", t.moves["Protezione"] === "Protect");
-  check("Clorofilla → Chlorophyll", t.abilities["Clorofilla"] === "Chlorophyll");
-  check("Focalnastro → Focus Sash", t.items["Focalnastro"] === "Focus Sash");
-  check("Agonismo → Defiant", t.abilities["Agonismo"] === "Defiant");
-
-  // Check all 5 affected Pokemon in the index
-  const italianWords = [
-    "Sbigoattacco", "Protezione", "Fangobomba", "Sonnifero", "Verdebufera",
-    "Invertivolt", "Urlorabbia", "Metaltestata", "Danzaspada", "Focalnastro",
-    "Avanzi", "Baccacedro", "Occhialineri", "Clorofilla", "Erbaiuto",
-    "Agonismo", "Parafulmine", "Statico",
-  ];
-
-  const pokemon = ["Kingambit", "Venusaur", "Lucario", "Meowstic", "Manectric"];
-  for (const mon of pokemon) {
-    const results = await query(`${mon} usage stats`, 5);
-    const usageChunk = results.find(
-      (r) => r.source.includes("pikalytics") && r.text.includes(mon)
-    );
-    if (!usageChunk) {
-      check(`${mon} usage chunk found`, false, "no pikalytics chunk in results");
-      continue;
-    }
-    const found = italianWords.filter((w) => usageChunk.text.includes(w));
-    check(`${mon} clean (no Italian)`, found.length === 0, found.length > 0 ? `still has: ${found.join(", ")}` : undefined);
-  }
 }
 
 async function testSearchQuality() {
@@ -395,7 +352,6 @@ async function main() {
   console.log("=".repeat(60));
 
   await testEmbedding();
-  await testItalianTranslation();
   await testSearchQuality();
   await testRealisticQueries();
   await testChunkOverlap();

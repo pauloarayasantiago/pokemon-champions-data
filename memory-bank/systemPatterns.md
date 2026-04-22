@@ -17,13 +17,12 @@
 ├── supabase/
 │   └── migrations/             pc_chunks + pc_index_meta schema, pc_hybrid_search RPC
 ├── lib/
-│   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap, Pikalytics translation)
+│   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap)
 │   ├── embed.ts                BGE-small-en-v1.5 (384-dim, fp32, CLS pool, BGE query prefix, batch 64)
 │   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking + staleness
 │   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
 │   ├── eval-data.ts            25 eval test cases across 8 categories
-│   ├── translations.json       2,383 IT→EN translations (moves, items, abilities) — auto-generated
 │   └── calc/                   Custom damage calculator engine
 │       ├── types.ts            Core interfaces (CompetitiveSet, CalcResult, FieldConditions, MatchupEntry)
 │       ├── data.ts             CSV loader, 18×18 type chart, move flag sets, item/berry maps
@@ -37,8 +36,7 @@
 │   ├── search.ts               CLI: npx tsx scripts/search.ts "query" [topK]
 │   ├── eval.ts                 RAG eval harness: Recall@5, MRR, pass rate, per-category breakdown
 │   ├── eval-models.ts          LLM model eval harness: 13-test agentic loop (tool_workflow, team_json, validate_loop, pokedex_dedup, item_availability, phantom_pokemon, stat_accuracy, banned_comprehensive, usage_lookup, usage_teammates, tournament_retrieval, creator_opinion, meta_core_attribution). 10-entry search stub (incl. real Golurk tournament teams). Guardrails: hard pokedex dedup cap + post-loop force-completion. Anthropic call path for claude-sonnet model. --real-rag flag for production Supabase search
-│   ├── build-translations.ts   Fetches PokeAPI IT→EN name mappings → lib/translations.json
-│   ├── test-suite.ts           Comprehensive 74-test suite (embedding, translation, search, realistic queries, overlap, lifecycle)
+│   ├── test-suite.ts           Comprehensive test suite (embedding, search, realistic queries, overlap, lifecycle, scraper header)
 │   ├── debug-db.ts             DB inspection utility (temporary)
 │   ├── calc.ts                 CLI damage calculator ("Garchomp EQ vs Incineroar" → damage range)
 │   ├── build-matchup-matrix.ts 244×244 matchup matrix builder → matchup_matrix.csv
@@ -86,7 +84,7 @@
 - `mega_evolutions.csv` → links to base Pokémon in `pokemon_champions.csv` by base name
 - `items.csv` Mega Stones → correspond to Pokémon with Mega Evolutions
 - `updated_attacks.csv` → shows what changed from S/V for moves in `moves.csv`
-- `pikalytics_usage.csv` → Italian names translated via `lib/translations.json` at chunk time
+- `pikalytics_usage.csv` → scraped with `Accept-Language: en-US,en;q=0.9` header so names arrive English-only (no post-hoc translation layer)
 - `matchup_matrix.csv` → computed from pokemon_champions.csv + mega_evolutions.csv + moves.csv + pikalytics_usage.csv via `lib/calc/matchup.ts`
 - `efficiency_matrix.csv` → extends matchup_matrix with 6 sub-scores via `lib/calc/efficiency.ts`, also uses pikalytics_usage.csv for meta weights
 - `data/transcripts/*.md` → content creator opinions, indexed as markdown chunks
