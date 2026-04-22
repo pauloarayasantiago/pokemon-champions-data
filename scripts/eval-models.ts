@@ -25,6 +25,12 @@ import { join } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { lookupPokemon, validateSet, BANNED_ITEMS, type SetInput } from "../lib/team-validator.js";
 import { query as ragQuery } from "../lib/rag.js";
+import {
+  extractClaimsBlock,
+  validateCitations,
+  formatValidationNudge,
+  collectChunkIdsFromSearchResult,
+} from "../lib/validate-citations.js";
 
 // ── env loading ────────────────────────────────────────────────────────────────
 
@@ -33,7 +39,12 @@ function loadEnv() {
     const raw = readFileSync(join(process.cwd(), ".env"), "utf8");
     for (const line of raw.split("\n")) {
       const m = line.match(/^([^#=]+)=(.*)$/);
-      if (m) process.env[m[1].trim()] = m[2].trim().replace(/^["']|["']$/g, "");
+      if (m) {
+        const key = m[1].trim();
+        // Respect explicit shell overrides (even empty string) — don't clobber.
+        if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
+        process.env[key] = m[2].trim().replace(/^["']|["']$/g, "");
+      }
     }
   } catch { /* no .env — rely on environment */ }
 }
@@ -225,7 +236,31 @@ REQUIRED OUTPUT FORMAT — team-json block (MUST be the last thing in your respo
 }
 \`\`\`
 
-Every pokemon entry must have passed validate_set with overall: true before you include it.`;
+Every pokemon entry must have passed validate_set with overall: true before you include it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CITATIONS (required) — trailing claims-json block:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every search tool result includes a chunk_id per result (e.g. pokemon:pelipper, usage:incineroar, knowledge:meta_snapshot.md#top-cores, team:pc105). Every factual claim you make that came from a search result MUST cite its chunk_id(s).
+
+Your response MUST end with a fenced claims-json block. For team-building, it goes AFTER the team-json block. For non-team questions, it is the only fenced block. Format:
+
+\`\`\`claims-json
+{
+  "claims": [
+    {"text": "Incineroar usage sits at 51.8% in Reg M-A.", "chunk_ids": ["usage:incineroar"]},
+    {"text": "Archaludon + Pelipper Rain core has ~55.8% win rate.", "chunk_ids": ["knowledge:meta_snapshot.md#top-cores"]}
+  ]
+}
+\`\`\`
+
+Rules:
+1. Every chunk_id MUST be one you received from a search tool result earlier in this conversation. Do NOT invent IDs.
+2. EVERY search-backed factual statement in your prose needs a claim entry — usage %, win rates, teammates, roster names, tier-list rankings, mechanics quotes, creator opinions. Not just the "main answer" claim; every supporting/contextual fact too.
+3. If a claim is based ONLY on pokedex / validate_set / calc results (not search), you may omit it from the claims list.
+4. {"claims": []} is only valid when you made zero search-backed factual claims (e.g. a pure mechanics-recall answer with no search calls).
+5. If a server-side validator reports invalid chunk_ids, re-ground by replacing invalid IDs with valid ones from your search results. Do NOT collapse to an empty claims array to avoid the validator.`;
 
 // ── query-aware search stub ────────────────────────────────────────────────────
 // Returns context relevant to the query so models don't fall back to S/V training data.
@@ -300,7 +335,14 @@ function executeSearchStub(query: string): string {
   if (matched.length === 0) {
     matched.push("No specific Champions data found for this query. Refer to the system prompt rules.");
   }
-  return JSON.stringify({ results: matched.map((text, i) => ({ source: "knowledge_base", score: 1 - i * 0.01, text })) });
+  return JSON.stringify({
+    results: matched.map((text, i) => ({
+      id: `stub:${(query || "q").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) || "empty"}-${i}`,
+      source: "knowledge_base",
+      score: 1 - i * 0.01,
+      text,
+    })),
+  });
 }
 
 async function executeSearchRealRag(query: string, topK = 5): Promise<string> {
@@ -308,6 +350,7 @@ async function executeSearchRealRag(query: string, topK = 5): Promise<string> {
     const results = await ragQuery(query, topK);
     return JSON.stringify({
       results: results.map(r => ({
+        id: r.id,
         source: r.source,
         sourceType: r.sourceType,
         score: r.score,
@@ -442,6 +485,12 @@ interface AgentResult {
   totalTokens: number;
   nudgeCount: number;
   dedupCount: number;
+  citationValid: boolean;
+  citationTotal: number;
+  citationValidCount: number;
+  citationInvalidIds: string[];
+  citationRetryFired: boolean;
+  citationParseError?: string;
   error?: string;
 }
 
@@ -638,6 +687,15 @@ async function runAgent(
   const dupeCount: Record<string, number> = {};
   const isAnthropic = model.provider === "anthropic";
 
+  // Phase 2 — chunk_id citation state
+  const seenChunkIds = new Set<string>();
+  let citationValid = false;
+  let citationTotal = 0;
+  let citationValidCount = 0;
+  let citationInvalidIds: string[] = [];
+  let citationRetryFired = false;
+  let citationParseError: string | undefined;
+
   const callModel = (msgs: OAIMessage[], tools: typeof TOOL_DEFS) =>
     isAnthropic
       ? callAnthropic(model.remoteName, msgs, tools)
@@ -653,6 +711,12 @@ async function runAgent(
     totalTokens,
     nudgeCount,
     dedupCount,
+    citationValid,
+    citationTotal,
+    citationValidCount,
+    citationInvalidIds,
+    citationRetryFired,
+    citationParseError,
   });
 
   while (turns < maxTurns) {
@@ -722,7 +786,11 @@ async function runAgent(
           injectedNudge = true;
           dedupCount++;
           nudgeCount++;
-          messages.push({ role: "tool", tool_call_id: tc.id, content: await executeTool(tc.function.name, args) });
+          const dupResult = await executeTool(tc.function.name, args);
+          messages.push({ role: "tool", tool_call_id: tc.id, content: dupResult });
+          if (tc.function.name === "search") {
+            for (const id of collectChunkIdsFromSearchResult(dupResult)) seenChunkIds.add(id);
+          }
           messages.push({
             role: "user",
             content: `You have called ${tc.function.name}(${JSON.stringify(args)}) ${dupeCount[callKey]} times already. Stop repeating this call. Proceed to the next required step: call validate_set on every team member you have already researched.`,
@@ -732,6 +800,9 @@ async function runAgent(
 
         const toolResult = await executeTool(tc.function.name, args);
         messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
+        if (tc.function.name === "search") {
+          for (const id of collectChunkIdsFromSearchResult(toolResult)) seenChunkIds.add(id);
+        }
       }
 
       // Pokedex-cap nudge: if total pokedex calls > 12, model is stuck looping
@@ -823,6 +894,54 @@ async function runAgent(
       if (fcMsg?.content && fcMsg.content.trim().length > 0) {
         lastContent = fcMsg.content;
         messages.push(fcMsg);
+      }
+    }
+  }
+
+  // Phase 2 — chunk_id citation validation + one-shot retry nudge.
+  {
+    const extract = extractClaimsBlock(lastContent);
+    citationParseError = extract.parseError;
+    if (extract.parsed) {
+      const v = validateCitations(extract.parsed.claims, seenChunkIds);
+      citationValid = v.valid;
+      citationTotal = v.totalCited;
+      citationValidCount = v.validCited;
+      citationInvalidIds = v.invalidIds;
+    } else {
+      citationValid = false;
+      citationTotal = 0;
+      citationValidCount = 0;
+      citationInvalidIds = [];
+    }
+
+    if (!citationValid && !citationRetryFired) {
+      citationRetryFired = true;
+      nudgeCount++;
+      messages.push({ role: "user", content: formatValidationNudge(citationInvalidIds) });
+      // Retry with tools:[] — forces pure text output. The model can rewrite
+      // claims using chunk_ids already in seenChunkIds, or emit `{"claims":[]}`
+      // if no search-grounded claim survives. Matches the force-completion
+      // fallback pattern; keeps retry cost bounded to a single LLM call.
+      const retryResult = await callModel([{ role: "system", content: SYSTEM }, ...messages], []);
+      if (!("error" in retryResult)) {
+        const { message: rMsg, usage: rUsage } = retryResult;
+        inputTokens += rUsage.prompt_tokens ?? 0;
+        outputTokens += rUsage.completion_tokens ?? 0;
+        totalTokens += rUsage.total_tokens ?? ((rUsage.prompt_tokens ?? 0) + (rUsage.completion_tokens ?? 0));
+        messages.push(rMsg);
+        if (rMsg?.content && rMsg.content.trim().length > 20) {
+          lastContent = rMsg.content;
+          const extract2 = extractClaimsBlock(lastContent);
+          citationParseError = extract2.parseError;
+          if (extract2.parsed) {
+            const v2 = validateCitations(extract2.parsed.claims, seenChunkIds);
+            citationValid = v2.valid;
+            citationTotal = v2.totalCited;
+            citationValidCount = v2.validCited;
+            citationInvalidIds = v2.invalidIds;
+          }
+        }
       }
     }
   }
@@ -1144,6 +1263,12 @@ interface TestResult {
   totalTokens: number;
   nudgeCount: number;
   dedupCount: number;
+  citationValid: boolean;
+  citationTotal: number;
+  citationValidCount: number;
+  citationInvalidIds: string[];
+  citationRetryFired: boolean;
+  citationParseError?: string;
   toolCallLog: Array<{ name: string; args: Record<string, unknown> }>;
   error?: string;
   contentPreview: string;
@@ -1213,6 +1338,12 @@ async function main() {
         totalTokens: agentResult.totalTokens,
         nudgeCount: agentResult.nudgeCount,
         dedupCount: agentResult.dedupCount,
+        citationValid: agentResult.citationValid,
+        citationTotal: agentResult.citationTotal,
+        citationValidCount: agentResult.citationValidCount,
+        citationInvalidIds: agentResult.citationInvalidIds,
+        citationRetryFired: agentResult.citationRetryFired,
+        citationParseError: agentResult.citationParseError,
         toolCallLog: agentResult.toolCallLog,
         error: agentResult.error,
         contentPreview: agentResult.finalContent.slice(0, 600),
@@ -1290,7 +1421,7 @@ async function main() {
   const effHeader = ["Model".padEnd(22), "passes".padEnd(8), "tok_total".padEnd(12), "tok/pass".padEnd(11), "lat_avg".padEnd(9), "turns_avg".padEnd(10), "nudges".padEnd(8), "dedup".padEnd(7)].join(" ");
   console.log(effHeader);
   console.log("-".repeat(effHeader.length));
-  const summary: Record<string, { passes: number; total: number; tokens_total: number; tokens_per_pass: number; mean_latency_ms: number; mean_turns: number; nudge_count: number; dedup_count: number; by_tag: Record<TestTag, { passes: number; total: number }> }> = {};
+  const summary: Record<string, { passes: number; total: number; tokens_total: number; tokens_per_pass: number; mean_latency_ms: number; mean_turns: number; nudge_count: number; dedup_count: number; by_tag: Record<TestTag, { passes: number; total: number }>; citation_validity_rate: number; citation_retrieval_tests: number; citation_retrieval_valid: number; citation_total_cited: number; citation_total_valid: number; citation_retries: number }> = {};
   for (const modelKey of models) {
     const modelResults = allResults.filter(r => r.modelKey === modelKey);
     const passes = modelResults.filter(r => r.pass).length;
@@ -1306,7 +1437,15 @@ async function main() {
       const tagResults = modelResults.filter(r => r.tag === tag);
       by_tag[tag] = { passes: tagResults.filter(r => r.pass).length, total: tagResults.length };
     }
-    summary[modelKey] = { passes, total, tokens_total, tokens_per_pass, mean_latency_ms, mean_turns, nudge_count, dedup_count, by_tag };
+    // Phase 2 — citation_validity_rate: retrieval-tagged tests where every cited chunk_id was valid AND at least one claim was made.
+    const retrievalResults = modelResults.filter(r => r.tag === "retrieval");
+    const citation_retrieval_tests = retrievalResults.length;
+    const citation_retrieval_valid = retrievalResults.filter(r => r.citationValid).length;
+    const citation_validity_rate = citation_retrieval_tests > 0 ? citation_retrieval_valid / citation_retrieval_tests : 0;
+    const citation_total_cited = modelResults.reduce((s, r) => s + r.citationTotal, 0);
+    const citation_total_valid = modelResults.reduce((s, r) => s + r.citationValidCount, 0);
+    const citation_retries = modelResults.filter(r => r.citationRetryFired).length;
+    summary[modelKey] = { passes, total, tokens_total, tokens_per_pass, mean_latency_ms, mean_turns, nudge_count, dedup_count, by_tag, citation_validity_rate, citation_retrieval_tests, citation_retrieval_valid, citation_total_cited, citation_total_valid, citation_retries };
 
     console.log([
       (MODELS[modelKey]?.label ?? modelKey).slice(0, 20).padEnd(22),
@@ -1317,6 +1456,27 @@ async function main() {
       mean_turns.toFixed(1).padEnd(10),
       String(nudge_count).padEnd(8),
       String(dedup_count).padEnd(7),
+    ].join(" "));
+  }
+
+  // ── summary: citations (chunk_id validation, retrieval tests only) ──────────
+  console.log(`\n${"═".repeat(100)}`);
+  console.log(`CITATIONS — chunk_id validation (retrieval-tagged tests only; gate ≥ 95%)`);
+  console.log(`${"═".repeat(100)}`);
+  const citHeader = ["Model".padEnd(22), "retr_tests".padEnd(11), "valid".padEnd(7), "rate".padEnd(7), "cited_total".padEnd(13), "cited_valid".padEnd(13), "retries".padEnd(9)].join(" ");
+  console.log(citHeader);
+  console.log("-".repeat(citHeader.length));
+  for (const modelKey of models) {
+    const s = summary[modelKey];
+    if (!s) continue;
+    console.log([
+      (MODELS[modelKey]?.label ?? modelKey).slice(0, 20).padEnd(22),
+      String(s.citation_retrieval_tests).padEnd(11),
+      String(s.citation_retrieval_valid).padEnd(7),
+      `${(s.citation_validity_rate * 100).toFixed(0)}%`.padEnd(7),
+      String(s.citation_total_cited).padEnd(13),
+      String(s.citation_total_valid).padEnd(13),
+      String(s.citation_retries).padEnd(9),
     ].join(" "));
   }
 

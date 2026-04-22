@@ -9,6 +9,12 @@ import {
 } from "@/lib/llm";
 import { TOOL_DEFINITIONS, executeTool } from "@/lib/tools";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@/lib/system-prompt";
+import {
+  extractClaimsBlock,
+  validateCitations,
+  formatValidationNudge,
+  collectChunkIdsFromSearchResult,
+} from "@core/validate-citations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +74,10 @@ export async function POST(request: NextRequest) {
       const log = (...parts: unknown[]) => {
         console.log(`[team ${requestId}]`, ...parts);
       };
+
+      // Phase 2 — chunk_id citation state, shared across all iterations.
+      const seenChunkIds = new Set<string>();
+      let citationRetryFired = false;
 
       try {
         send({
@@ -151,6 +161,40 @@ export async function POST(request: NextRequest) {
           });
 
           if (pendingToolCalls.length === 0 || finishReason !== "tool_calls") {
+            // Phase 2 — validate chunk_id citations against accumulated search results.
+            const extract = extractClaimsBlock(assistantContent);
+            const claims = extract.parsed?.claims ?? [];
+            const v = validateCitations(claims, seenChunkIds);
+
+            if (!v.valid && !citationRetryFired) {
+              citationRetryFired = true;
+              const nudge = formatValidationNudge(v.invalidIds);
+              messages.push({ role: "user", content: nudge });
+              send({
+                type: "citation_retry",
+                iter,
+                invalidIds: v.invalidIds,
+                totalCited: v.totalCited,
+                parseError: extract.parseError ?? null,
+              });
+              log(
+                `citation_retry iter=${iter} invalid=${v.invalidIds.length} total=${v.totalCited} parseErr=${extract.parseError ?? "-"}`,
+              );
+              continue;
+            }
+
+            send({
+              type: "citation_result",
+              valid: v.valid,
+              totalCited: v.totalCited,
+              validCited: v.validCited,
+              invalidIds: v.invalidIds,
+              retryFired: citationRetryFired,
+              parseError: extract.parseError ?? null,
+            });
+            log(
+              `citation_result valid=${v.valid} cited=${v.validCited}/${v.totalCited} invalid=${v.invalidIds.length} retry=${citationRetryFired}`,
+            );
             send({ type: "done", finishReason, totalMs: Date.now() - tStart });
             log(`done in ${Date.now() - tStart}ms`);
             controller.close();
@@ -218,6 +262,9 @@ export async function POST(request: NextRequest) {
               content: result,
               toolCallId: call.id,
             });
+            if (call.name === "search") {
+              for (const id of collectChunkIdsFromSearchResult(result)) seenChunkIds.add(id);
+            }
           }
         }
 

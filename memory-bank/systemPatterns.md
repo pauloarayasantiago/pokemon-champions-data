@@ -23,6 +23,7 @@
 │   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
 │   ├── eval-data.ts            25 eval test cases across 8 categories
+│   ├── validate-citations.ts   Phase 2 — claims-json parser + chunk_id validator + retry nudge (shared by prod + eval)
 │   └── calc/                   Custom damage calculator engine
 │       ├── types.ts            Core interfaces (CompetitiveSet, CalcResult, FieldConditions, MatchupEntry)
 │       ├── data.ts             CSV loader, 18×18 type chart, move flag sets, item/berry maps
@@ -35,7 +36,7 @@
 │   ├── index-data.ts           Chunks all files → embeds → upserts to pc_chunks (glob discovery, incremental + --force modes)
 │   ├── search.ts               CLI: npx tsx scripts/search.ts "query" [topK]
 │   ├── eval.ts                 RAG eval harness: Recall@5, MRR, pass rate, per-category breakdown
-│   ├── eval-models.ts          LLM model eval harness: 13-test agentic loop (tool_workflow, team_json, validate_loop, pokedex_dedup, item_availability, phantom_pokemon, stat_accuracy, banned_comprehensive, usage_lookup, usage_teammates, tournament_retrieval, creator_opinion, meta_core_attribution). 10-entry search stub (incl. real Golurk tournament teams). Guardrails: hard pokedex dedup cap + post-loop force-completion. Anthropic call path for claude-sonnet model. --real-rag flag for production Supabase search
+│   ├── eval-models.ts          LLM model eval harness: 13-test agentic loop (tool_workflow, team_json, validate_loop, pokedex_dedup, item_availability, phantom_pokemon, stat_accuracy, banned_comprehensive, usage_lookup, usage_teammates, tournament_retrieval, creator_opinion, meta_core_attribution). 10-entry search stub (incl. real Golurk tournament teams). Guardrails: hard pokedex dedup cap + post-loop force-completion + Phase 2 citation-validity retry. `citation_validity_rate` metric aggregates chunk_id-validation pass rate across the 5 retrieval-tagged tests. Anthropic call path for claude-sonnet model. --real-rag flag for production Supabase search
 │   ├── test-suite.ts           Comprehensive test suite (embedding, search, realistic queries, overlap, lifecycle, scraper header)
 │   ├── debug-db.ts             DB inspection utility (temporary)
 │   ├── calc.ts                 CLI damage calculator ("Garchomp EQ vs Incineroar" → damage range)

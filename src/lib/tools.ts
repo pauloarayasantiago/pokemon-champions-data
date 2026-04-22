@@ -246,6 +246,7 @@ async function executeSearch(
     query: args.query,
     topK,
     results: results.map((r) => ({
+      id: r.id,
       source: r.source,
       sourceType: r.sourceType,
       score: r.score,

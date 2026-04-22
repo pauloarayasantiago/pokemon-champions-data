@@ -137,6 +137,7 @@ Ollama remote (wired, server GPU TBD):
   - Project docs penalty: -0.08
 - **Chunk overlap**: Trailing-paragraph overlap for markdown chunks split on paragraph breaks (last 3 lines of previous paragraph prepended)
 - **Staleness detection**: `checkStaleness()` in `rag.ts` reads `pc_index_meta` row `file_mtimes`, compares against current filesystem mtimes, warns on stderr if stale (runs once per process)
+- **Citation validation (Phase 2, 2026-04-22)**: [lib/validate-citations.ts](../lib/validate-citations.ts) — shared module. Agent responses must end with a `claims-json` fenced block; server-side validator checks every cited `chunk_id` against the set returned by `search` calls in the conversation. Hallucinated IDs trigger one auto-retry nudge. Used by both the prod agent loop ([src/app/api/team/route.ts](../src/app/api/team/route.ts)) and the eval harness ([scripts/eval-models.ts](../scripts/eval-models.ts)). Prod streams a `citation_result` SSE event; eval exposes `citation_validity_rate` in the summary + snapshot.
 - **Matchup intent**: `isMatchupQuery` detection + MATCHUP_KEYWORDS + category boosting (+0.06 matchup data, +0.06 Pokemon name match)
 - **Eval**: 25 test cases, `npx tsx scripts/eval.ts` — current: 100% pass, MRR 1.000
 - **Comprehensive test suite**: `npx tsx scripts/test-suite.ts` — embedding, search quality, realistic queries (15 natural-language tests), overlap, lifecycle, scraper-header assertion
