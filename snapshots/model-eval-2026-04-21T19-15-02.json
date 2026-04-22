@@ -1,0 +1,942 @@
+{
+  "timestamp": "2026-04-21T19:15:02.867Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "tool_workflow",
+      "tag": "behavior"
+    },
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "validate_loop",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "item_availability",
+      "tag": "behavior"
+    },
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "usage_teammates",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    },
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 11,
+      "total": 13,
+      "tokens_total": 286961,
+      "tokens_per_pass": 26087.363636363636,
+      "mean_latency_ms": 16458.076923076922,
+      "mean_turns": 4.230769230769231,
+      "nudge_count": 16,
+      "dedup_count": 21,
+      "by_tag": {
+        "behavior": {
+          "passes": 4,
+          "total": 5
+        },
+        "retrieval": {
+          "passes": 4,
+          "total": 5
+        },
+        "hallucination": {
+          "passes": 3,
+          "total": 3
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "pokedex called 1x (Dragonite ✓), validate 0x",
+      "latencyMs": 40038,
+      "turns": 3,
+      "inputTokens": 74164,
+      "outputTokens": 1198,
+      "totalTokens": 75362,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Champions VGC meta Mega Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "\n<channel|>To build a competitive team around **Mega Dragonite**, we need to address its specific needs in the Champions VGC Doubles meta. \n\nAccording to recent meta analysis, Mega Dragonite is a powerful Special Attacker that thrives in **Rain** teams. This is because its high Special Attack is complemented by moves like **Hurricane** and **Thunder**, which become much more reliable under rain. Additionally, Mega Dragonite benefits significantly from speed control and teammates that can mitigate its weaknesses (such as Rock and Ice).\n\nI have designed a **Rain-based Archetype** that maximizes "
+    },
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "team-json has only 4/6 Pokemon",
+      "latencyMs": 32511,
+      "turns": 9,
+      "inputTokens": 33671,
+      "outputTokens": 1209,
+      "totalTokens": 34880,
+      "nudgeCount": 2,
+      "dedupCount": 4,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ludicolo"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Pokemon Champions VGC Doubles legal list"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Basculegion"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Swampert"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Blastoise"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Swampert"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hurricane",
+              "Hydro Pump",
+              "Protect",
+              "Tailwind"
+            ],
+            "pokemon": "Pelipper"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Focus Sash",
+            "moves": [
+              "Aqua Jet",
+              "Liquidation",
+              "Protect",
+              "Wave Crash"
+            ],
+            "pokemon": "Basculegion"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Stamina",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Electro Shot",
+              "Flash Cannon",
+              "Protect",
+              "Steel Beam"
+            ],
+            "pokemon": "Archaludon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Mold Breaker",
+            "item": "Gyaradosite",
+            "moves": [
+              "Dragon Dance",
+              "Waterfall",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Gyarados"
+          }
+        }
+      ],
+      "contentPreview": "thought\nI attempted to build a Rain team using Swampert, but **Swampert is unavailable in Champions** because it is not recognized in the legal 186-Pokemon roster (note: while Swampert is a fully-evolved Pokemon, it is absent from the specific Champions legal list provided by the pokedex). Additionally, I could not find a valid Mega Swampert entry in the database.\n\nI have pivoted to a high-pressure Rain archetype utilizing **Mega Gyarados** as the primary physical sweeper and **Basculegion** as a Swift Swim cleaner. The team relies on Pelipper to set the weather and Tailwind, while Archaludon "
+    },
+    {
+      "testId": "validate_loop",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "validate_set called 13x, pokedex 10x",
+      "latencyMs": 52015,
+      "turns": 14,
+      "inputTokens": 70551,
+      "outputTokens": 2447,
+      "totalTokens": 72998,
+      "nudgeCount": 9,
+      "dedupCount": 14,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hippowdon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Tyranitarite",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Rush",
+            "item": "Focus Sash",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Rock Slide",
+              "Protect"
+            ],
+            "pokemon": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Stealth Rock",
+              "Slack Off",
+              "Earthquake",
+              "Body Slam"
+            ],
+            "pokemon": "Hippowdon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Rough Skin",
+            "item": "Life Orb",
+            "moves": [
+              "Dragon Claw",
+              "Earthquake",
+              "Stone Edge",
+              "Protect"
+            ],
+            "pokemon": "Garchomp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Rough Skin",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Dragon Claw",
+              "Earthquake",
+              "Stone Edge",
+              "Protect"
+            ],
+            "pokemon": "Garchomp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Moxie",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Waterfall",
+              "Dragon Dance",
+              "Ice Fang",
+              "Protect"
+            ],
+            "pokemon": "Gyarados"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Lum Berry",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Rush",
+            "item": "Focus Sash",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Rock Slide",
+              "Protect"
+            ],
+            "pokemon": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Tyranitarite",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Rush",
+            "item": "Focus Sash",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Rock Slide",
+              "Protect"
+            ],
+            "pokemon": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Stealth Rock",
+              "Slack Off",
+              "Earthquake",
+              "Body Slam"
+            ],
+            "pokemon": "Hippowdon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Rough Skin",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Dragon Claw",
+              "Earthquake",
+              "Stone Edge",
+              "Protect"
+            ],
+            "pokemon": "Garchomp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Moxie",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Waterfall",
+              "Dragon Dance",
+              "Ice Fang",
+              "Protect"
+            ],
+            "pokemon": "Gyarados"
+          }
+        }
+      ],
+      "contentPreview": "This Sand Rush team is designed to dominate the weather-based meta of Champions. The core strategy revolves around setting up Sandstorm with Tyranitar or Hippowdon, allowing Excadrill to exploit its **Sand Rush** ability for massive speed control.\n\n### Team Breakdown:\n\n*   **Tyranitar (Mega):** Your primary weather setter and heavy hitter. As a Mega Evolution, it provides immense bulk and offensive pressure. It serves as the cornerstone of the sand engine.\n*   **Excadrill:** The primary sweeper. Under Sandstorm, Excadrill's speed becomes unmatched, allowing it to clean up weakened teams with p"
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Efficient: 14 pokedex calls, 12 unique mons (all ≤2 calls each)",
+      "latencyMs": 30875,
+      "turns": 9,
+      "inputTokens": 37842,
+      "outputTokens": 1507,
+      "totalTokens": 39349,
+      "nudgeCount": 5,
+      "dedupCount": 3,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Indeedee"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Armarouge"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mega Camerupt"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Slowking"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Slowbro"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Guts"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Reuniclus"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Oranguru"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Magic Bounce",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Dazzling Gleam",
+              "Psychic",
+              "Protect"
+            ],
+            "pokemon": "Hatterene"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drought",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Sunny Day",
+              "Heat Wave",
+              "Earth Power",
+              "Protect"
+            ],
+            "pokemon": "Torkoal"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sheer Force",
+            "item": "Cameruptite",
+            "moves": [
+              "Heat Wave",
+              "Earth Power",
+              "Solar Beam",
+              "Protect"
+            ],
+            "pokemon": "Mega Camerupt"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Telepathy",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Expanding Force",
+              "Helping Hand",
+              "Protect"
+            ],
+            "pokemon": "Oranguru"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Regenerator",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Scald",
+              "Psychic",
+              "Protect"
+            ],
+            "pokemon": "Slowking"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Magic Guard",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Expanding Force",
+              "Calm Mind",
+              "Protect"
+            ],
+            "pokemon": "Reuniclus"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Telepathy",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Trick Room",
+              "Expanding Force",
+              "Psychic",
+              "Protect"
+            ],
+            "pokemon": "Oranguru"
+          }
+        }
+      ],
+      "contentPreview": "This Trick Room team is designed to exploit the slow speed tiers of Champions by utilizing heavy-hitting Psychic and Fire types under Trick Room support. The core strategy revolves around setting up Trick Room with Oranguru or Hatterene, then pivoting into massive offensive threats like Mega Camerupt and Reuniclus.\n\n### Team Breakdown\n\n*   **Oranguru**: The primary setter. Its **Telepathy** ability allows it to ignore Fake Out or other moves targeting its partner, making it a reliable Trick Room anchor. \n*   **Hatterene**: A secondary setter and powerful special attacker. **Magic Bounce** is c"
+    },
+    {
+      "testId": "item_availability",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Valid items listed: sitrus berry, focus sash, charcoal, lum berry, mega stone, mystic water",
+      "latencyMs": 10970,
+      "turns": 2,
+      "inputTokens": 3654,
+      "outputTokens": 597,
+      "totalTokens": 4251,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIn Pokémon Champions, your item options for Dragonite are significantly different from Scarlet/Violet. Because items like Life Orb, Choice Band, and Assault Vest are banned, you must rely on Berries, type-boosting items, or Mega Evolution.\n\nSince Dragonite has a Mega Evolution in this game (**Mega Dragonite**), your first decision is whether you want to use its Mega Stone or use a supporting item on its base form.\n\nHere are your primary options for Dragonite:\n\n### 1. The Mega Evolution Option\n*   **Dragoninite**: If you want to utilize Dragonite's Mega Evolution, you must hold this. Me"
+    },
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Flagged both Amoonguss + Porygon2 as unavailable",
+      "latencyMs": 2245,
+      "turns": 1,
+      "inputTokens": 1614,
+      "outputTokens": 124,
+      "totalTokens": 1738,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [],
+      "contentPreview": "I cannot build a team with Amoonguss and Porygon2 as the core because they are unavailable in the Champions format.\n\n*   **Amoonguss** is explicitly banned from the Champions roster.\n*   **Porygon2** is unavailable in Champions because it is a pre-evolution; Champions only allows fully-evolved forms. To use this line, you would need to use **Porygon-Z**.\n\nIf you would like to build a team around a different core, such as Porygon-Z combined with a different support Pokémon, please let me know!"
+    },
+    {
+      "testId": "stat_accuracy",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "All 6 stats match (91/124/115/145/125/100)",
+      "latencyMs": 2381,
+      "turns": 2,
+      "inputTokens": 3674,
+      "outputTokens": 87,
+      "totalTokens": 3761,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "In Champions, Mega Dragonite has the following base stats:\n\n* **HP:** 91\n* **Attack:** 124\n* **Defense:** 115\n* **Sp. Atk:** 145\n* **Sp. Def:** 125\n* **Speed:** 100"
+    },
+    {
+      "testId": "banned_comprehensive",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 14 banned items + all 3 missing gimmicks",
+      "latencyMs": 13488,
+      "turns": 2,
+      "inputTokens": 4126,
+      "outputTokens": 666,
+      "totalTokens": 4792,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Champions game mechanics vs Scarlet and Violet banned items and features"
+          }
+        }
+      ],
+      "contentPreview": "\nIn Pokemon Champions, the rules and available mechanics differ significantly from the Scarlet/Violet era. To ensure your team-building is accurate for this format, please note the following comprehensive list of unavailable features:\n\n### **1. Banned Battle Mechanics**\nThe following gimmicks from previous generations (and modern SV mechanics) do **not** exist in Champions.\n*   **NO Terastallization:** There are no Tera Types or Terastal phenomena.\n*   **NO Dynamax / Gigantamax:** These mechanics are unavailable.\n*   **NO Z-Moves:** Z-Moves are not part of the Champions engine.\n*   **Mega Evol"
+    },
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 51% vs truth 51% (Δ0.0pp)",
+      "latencyMs": 3450,
+      "turns": 2,
+      "inputTokens": 5294,
+      "outputTokens": 51,
+      "totalTokens": 5345,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar tournament usage percentage Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIncineroar's current tournament usage percentage in Pokemon Champions Regulation M-A is 51.0%."
+    },
+    {
+      "testId": "usage_teammates",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 3/3 top teammates: sneasler, incineroar, charizard",
+      "latencyMs": 5336,
+      "turns": 2,
+      "inputTokens": 19734,
+      "outputTokens": 106,
+      "totalTokens": 19840,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "top 3 Pokemon most commonly paired with Garchomp current Champions VGC"
+          }
+        }
+      ],
+      "contentPreview": "<channel|>Based on current Champions VGC usage statistics, the top 3 Pokemon most commonly paired with Garchomp are:\n\n1. **Sneasler** (51.080% usage)\n2. **Incineroar** (48.875% usage)\n3. **Charizard** (32.628% usage)"
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Only 1 recognizable teammates (need ≥3): torkoal",
+      "latencyMs": 3554,
+      "turns": 5,
+      "inputTokens": 14864,
+      "outputTokens": 100,
+      "totalTokens": 14964,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Farigiraf"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        }
+      ],
+      "contentPreview": "call:pokedex{name:<|\"|>Torkoal<|\"|>}<tool_call|>"
+    },
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+      "latencyMs": 6151,
+      "turns": 2,
+      "inputTokens": 4473,
+      "outputTokens": 244,
+      "totalTokens": 4717,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Garchomp Regulation A Doubles tier list Pokemon Champions"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIn their \"Definitive Pokemon Champions (Regulation A Doubles) Tier List\" video, content creator **AngrySlowbroPlus** discusses Garchomp within the context of the Regulation A meta.\n\nWhile the search results do not provide a verbatim quote of their specific tier placement (e.g., \"S-Tier\" or \"A-Tier\"), the tournament data for Champions confirms that Garchomp is a dominant force in the current environment, currently ranked **#3 in usage** with a **38.0% usage rate**.\n\nCommonly observed competitive details for Garchomp in this format include:\n* **Primary Role:** A high-usage offensive thre"
+    },
+    {
+      "testId": "meta_core_attribution",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 55.8% (truth ~55.8%)",
+      "latencyMs": 10941,
+      "turns": 2,
+      "inputTokens": 4605,
+      "outputTokens": 359,
+      "totalTokens": 4964,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Archaludon Pelipper rain core win rate meta"
+          }
+        }
+      ],
+      "contentPreview": "thought\nIn the current Pokemon Champions meta, the **Archaludon + Pelipper** rain core is a highly successful archetype with a **55.8% win rate** and a **20.8% usage rate**.\n\n### Core Synergy Breakdown\nThis core is one of the most potent offensive pairings in the game due to how Rain specifically enables Archaludon's unique mechanics:\n*   **Electro Shot Acceleration:** In Rain, Archaludon's *Electro Shot* does not require a charging turn. This allows it to fire off immediately, providing a guaranteed +1 Special Attack boost every time the move is used, enabling rapid snowballing.\n*   **Accurac"
+    }
+  ]
+}

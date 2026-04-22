@@ -59,7 +59,10 @@
       "Bash(awk -F',' 'NR>1 {print $1}' matchup_matrix.csv)",
       "Bash(curl -s -o /dev/null -w '%{http_code}' -A Mozilla/5.0 -H 'Accept-Language: en-US,en;q=0.9' https://www.pikalytics.com/pokedex/championstournaments/__TRACKED_VAR__)",
       "Bash(curl -s -A \"Mozilla/5.0\" -H \"Accept-Language: en-US,en;q=0.9\" \"https://www.pikalytics.com/pokedex/championstournaments/Rotom-Wash\")",
-      "Bash(awk *)"
+      "Bash(awk *)",
+      "Bash(tee /tmp/retrieval-n30-jina-on.log)",
+      "Bash(curl -sI \"https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX/resolve/main/onnx/model.onnx\")",
+      "Bash(git -C \"C:\\\\Users\\\\paulo\\\\Documents\\\\LOCAL_WORKSPACE\\\\1-pokemon-skill\" log --oneline -15)"
     ]
   }
 }

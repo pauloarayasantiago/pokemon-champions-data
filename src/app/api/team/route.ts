@@ -157,53 +157,62 @@ export async function POST(request: NextRequest) {
             return;
           }
 
-          for (const call of pendingToolCalls) {
-            const toolT0 = Date.now();
-            send({
-              type: "tool_start",
-              id: call.id,
-              name: call.name,
-              iter,
-              arguments: call.arguments,
-            });
-            log(`tool_start ${call.name} id=${call.id}`);
-
-            const result = await executeTool(call, (stage, detail) => {
+          // Stage 6.3 — parallelize tool execution within a single iteration.
+          // Tool-start events fire immediately (before awaiting) so the UI
+          // reflects concurrent runs; tool-end / result events fire inside
+          // each promise. Message append order is preserved by walking the
+          // resolved outcomes in original pendingToolCalls order.
+          const toolOutcomes = await Promise.all(
+            pendingToolCalls.map(async (call) => {
+              const toolT0 = Date.now();
               send({
-                type: "tool_progress",
+                type: "tool_start",
                 id: call.id,
                 name: call.name,
-                stage,
-                detail: detail ?? null,
+                iter,
+                arguments: call.arguments,
               });
-            });
+              log(`tool_start ${call.name} id=${call.id}`);
 
-            const parsed = tryParseJson(result);
-            const parsedRec =
-              parsed && typeof parsed === "object" && !Array.isArray(parsed)
-                ? (parsed as Record<string, unknown>)
-                : null;
-            const ok = !(parsedRec && typeof parsedRec.error === "string");
-            const errorText =
-              parsedRec && typeof parsedRec.error === "string" ? parsedRec.error : null;
-            const durationMs = Date.now() - toolT0;
+              const result = await executeTool(call, (stage, detail) => {
+                send({
+                  type: "tool_progress",
+                  id: call.id,
+                  name: call.name,
+                  stage,
+                  detail: detail ?? null,
+                });
+              });
 
-            // Legacy event (full payload — kept for any existing consumer)
-            send({ type: "tool_result", id: call.id, name: call.name, result: parsed });
-            // New summarized event
-            send({
-              type: "tool_end",
-              id: call.id,
-              name: call.name,
-              ok,
-              durationMs,
-              error: errorText,
-              summary: summarizeToolResult(call.name, parsedRec),
-            });
-            log(
-              `tool_end ${call.name} id=${call.id} ${durationMs}ms ok=${ok}${errorText ? ` err=${errorText.slice(0, 120)}` : ""}`,
-            );
+              const parsed = tryParseJson(result);
+              const parsedRec =
+                parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                  ? (parsed as Record<string, unknown>)
+                  : null;
+              const ok = !(parsedRec && typeof parsedRec.error === "string");
+              const errorText =
+                parsedRec && typeof parsedRec.error === "string" ? parsedRec.error : null;
+              const durationMs = Date.now() - toolT0;
 
+              send({ type: "tool_result", id: call.id, name: call.name, result: parsed });
+              send({
+                type: "tool_end",
+                id: call.id,
+                name: call.name,
+                ok,
+                durationMs,
+                error: errorText,
+                summary: summarizeToolResult(call.name, parsedRec),
+              });
+              log(
+                `tool_end ${call.name} id=${call.id} ${durationMs}ms ok=${ok}${errorText ? ` err=${errorText.slice(0, 120)}` : ""}`,
+              );
+
+              return { call, result };
+            }),
+          );
+
+          for (const { call, result } of toolOutcomes) {
             messages.push({
               role: "tool",
               content: result,

@@ -105,15 +105,13 @@ Ollama remote (wired, server GPU TBD):
 - `test:stress` — `npx tsx scripts/stress-test.ts` (111 tests: 7 tiers from simple lookups to strategic reasoning)
 
 ## Embedding Model
-- **Current**: `Xenova/all-MiniLM-L6-v2` (22M params, 384-dim, fp32)
-  - No task prefixes needed — raw text embedded directly
-  - Apache 2.0 license, Transformers.js support
-  - `embed(texts, mode)` — mode parameter retained for API compatibility but MiniLM treats both identically
-  - Batch size: 64
-  - ~4× faster indexing than EmbeddingGemma, ~4× smaller download
-- Download: ~80MB (first run, cached locally in `~/.cache/huggingface/hub/`)
-- Normalization: L2 for cosine distance (pooling: mean, normalize: true)
-- **Previous**: `onnx-community/embeddinggemma-300m-ONNX` (308M params, 768-dim, q8) — replaced for performance reasons (too resource-heavy)
+- **Current**: `Xenova/bge-small-en-v1.5` (33M params, 384-dim, fp32) — Stage 1.2 swap.
+  - CLS pooling + L2 normalize; BGE query prefix (`Represent this sentence for searching relevant passages:`) on query-side `mode='query'`, raw text for `mode='doc'`.
+  - MIT license, Transformers.js support.
+  - Batch size: 64.
+- Download: ~130MB (first run, cached locally in `~/.cache/huggingface/hub/`).
+- **Production query path**: Hugging Face Inference API (`feature-extraction` endpoint) — `onnxruntime-node` does not bundle under Vercel's 250MB Lambda budget. See [memory/project_vercel_embedding_constraint.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_vercel_embedding_constraint.md).
+- **Previous**: `Xenova/all-MiniLM-L6-v2` (22M, 384-dim) — replaced in Stage 1.2 for ~+10 nDCG baseline shift. Earlier: `onnx-community/embeddinggemma-300m-ONNX` (too resource-heavy) and Stage 5 shadow attempt with `google/embeddinggemma-300m` MRL-384 (abandoned — Italian not a requirement).
 
 ## RAG Architecture (Post-Supabase Migration)
 - **Storage**: Supabase `pc_chunks` (pgvector HNSW, `vector_cosine_ops`, 384-dim) + `pc_index_meta`

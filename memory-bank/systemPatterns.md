@@ -18,7 +18,7 @@
 │   └── migrations/             pc_chunks + pc_index_meta schema, pc_hybrid_search RPC
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap, Pikalytics translation)
-│   ├── embed.ts                MiniLM-L6-v2 (384-dim, fp32, no prefixes, batch 64)
+│   ├── embed.ts                BGE-small-en-v1.5 (384-dim, fp32, CLS pool, BGE query prefix, batch 64)
 │   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking + staleness
 │   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
@@ -106,7 +106,7 @@
 ## RAG Pipeline (Post-Supabase Migration)
 1. **Discover** — `scripts/index-data.ts` uses glob patterns to auto-discover markdown files in `data/knowledge/`, `research/`, `data/transcripts/`, `memory-bank/`. CSVs/text files remain hardcoded (have specific chunker functions)
 2. **Chunk** — `lib/chunker.ts` converts each data type to NL text chunks with `data_category` tags. Pikalytics chunks translated IT→EN. Markdown chunks get trailing-paragraph overlap
-3. **Embed** — `lib/embed.ts` uses MiniLM-L6-v2 (384-dim, fp32, batch size 64). No prefixes — raw text embedded directly
+3. **Embed** — `lib/embed.ts` uses BGE-small-en-v1.5 (384-dim, fp32, batch size 64). CLS pooling + L2 normalize; BGE query prefix applied on `mode='query'`, raw text on `mode='doc'`
 4. **Store** — Supabase `pc_chunks`: id (PK), text, embedding VECTOR(384), source, source_type, data_category, metadata JSONB, pokemon_name, col_type1/2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst (null for non-Pokemon), text_tsv TSVECTOR GENERATED
 5. **Index** — HNSW on embedding (`vector_cosine_ops`), GIN on text_tsv, btree on data_category + pokemon_name
 6. **Meta** — `pc_index_meta` upserted after reindex (keys: indexed_at, embedding_model, chunk_count, file_count, file_mtimes)

@@ -1,0 +1,112 @@
+{
+  "timestamp": "2026-04-22T00:33:13.436Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 2,
+      "total": 2,
+      "tokens_total": 24595,
+      "tokens_per_pass": 12297.5,
+      "mean_latency_ms": 10100,
+      "mean_turns": 4,
+      "nudge_count": 1,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 2,
+          "total": 2
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 51% vs truth 51% (Δ0.0pp)",
+      "latencyMs": 5064,
+      "turns": 2,
+      "inputTokens": 5301,
+      "outputTokens": 46,
+      "totalTokens": 5347,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar tournament usage percentage Pokemon Champions Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "Incineroar's current tournament usage in Pokemon Champions is 51.0%."
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf",
+      "latencyMs": 15136,
+      "turns": 6,
+      "inputTokens": 18743,
+      "outputTokens": 505,
+      "totalTokens": 19248,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Golurk"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Farigiraf"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        }
+      ],
+      "contentPreview": "In Champions Regulation M-A, a high-performing archetype centered around **Mega Golurk** utilizes its unique Mega ability, **Unseen Fist**, to bypass the opponent's protection. This ability allows Mega Golurk to hit through moves like *Protect*, making it an incredibly disruptive offensive force that forces opponents to play much more cautiously.\n\nBased on competitive usage and synergy data, a successful tournament-winning team built around this core typically utilizes a \"Trick Room\" or \"Bulky Offense\" structure to compensate for Mega Golurk's low Speed tier. The team focuses on providing supp"
+    }
+  ]
+}

@@ -6,6 +6,8 @@ import { embed } from "./embed.js";
 import { rerankCandidates } from "./rerank.js";
 import { extractTypes, extractStatConditions } from "./structured-query.js";
 import { supabaseServer } from "./supabase.js";
+import { planQuery } from "./query-planner.js";
+import { executePlan } from "./query-executor.js";
 
 const PROJECT_ROOT = process.env.POKEMON_DATA_ROOT
   ? resolve(process.env.POKEMON_DATA_ROOT)
@@ -59,6 +61,7 @@ async function checkStaleness(): Promise<void> {
 }
 
 export interface Result {
+  id: string;
   text: string;
   source: string;
   score: number;
@@ -501,16 +504,43 @@ export type ProgressStage =
   | "rpc_end"
   | "structured_end"
   | "rules_end"
-  | "rerank_end";
+  | "rerank_end"
+  | "plan_start"
+  | "plan_end";
 
 export type ProgressCallback = (stage: ProgressStage, detail?: Record<string, unknown>) => void;
+
+export interface QueryOptions {
+  /** Skip the Stage 6.3 planner. Set internally by executePlan when it
+   *  fans out sub-queries, to avoid infinite recursion. External callers
+   *  should not set this. */
+  skipPlanner?: boolean;
+}
 
 export async function query(
   question: string,
   topK = 5,
   onProgress?: ProgressCallback,
+  options?: QueryOptions,
 ): Promise<Result[]> {
   await checkStaleness();
+
+  // Stage 6.3 — Plan-and-Execute DAG. Rule-driven decomposition based on
+  // routeQuery() signals. Fires BEFORE embedding so the multi-step branch
+  // doesn't waste work on a single embed we're about to discard.
+  if (!options?.skipPlanner && process.env.QUERY_PLANNER_ENABLED !== "false") {
+    const intent0 = classifyQuery(question);
+    const route0 = routeQuery(question, intent0);
+    const plan = planQuery(question, intent0, route0);
+    if (plan.steps.length > 1) {
+      return executePlan(
+        plan,
+        topK,
+        (q, k) => query(q, k, undefined, { skipPlanner: true }),
+        onProgress,
+      );
+    }
+  }
 
   const embedT0 = Date.now();
   onProgress?.("embed_start", { chars: question.length });
@@ -787,6 +817,7 @@ export async function query(
         : (rawMeta as Record<string, unknown>) ?? {};
     const id = r.id as string;
     return {
+      id,
       text: r.text as string,
       source: r.source as string,
       score: typeof r.rrf_score === "number" ? r.rrf_score : Number(r.rrf_score ?? 0),

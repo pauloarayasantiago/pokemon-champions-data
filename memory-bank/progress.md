@@ -2,12 +2,21 @@
 
 ## Completed
 
+### Stage 6.3 — Plan-and-Execute DAG (recursive-mccarthy) — SHIPPED (2026-04-21)
+- **Status:** shipped as retrieval-neutral infrastructure + agent-loop parallelization. Flagged off via `QUERY_PLANNER_ENABLED=false` for rollback.
+- **What:** rule-driven query decomposition at the RAG layer (three strategies: `vspair`, `counter-archetype`, `team-archetype`, all capped at 3 sub-queries + the original in parallel) + `Promise.all` over agent-loop tool calls.
+- **Files:** `lib/query-planner.ts` (NEW, ~90 LOC, pure), `lib/query-executor.ts` (NEW, ~70 LOC), `lib/rag.ts` (added `id` to `Result`, `QueryOptions.skipPlanner`, planner branch, `plan_start`/`plan_end` progress stages), `src/app/api/team/route.ts:160` (serial `for` → `Promise.all`).
+- **Retrieval eval (Jina OFF):** matchup 0.741 (+0.001), counter 0.691 (−0.002), team 0.823 (flat), adversarial 0.685 (flat), projected overall ≈0.848 vs 0.849 baseline. All intents pass no-regression gate (≥baseline−3%). No aspirational gain — Stage 4.6 force-includes already saturate top-10; only a reranker closes the remaining ordering gap.
+- **Agentic (4 team-build tests, Gemma 4 26B, --real-rag):** 4/4 pass including `team_json` which normally flakes 1/3. Lat 24–43s/test, tok 30–63k/pass (normal range for team-building).
+- **Why the executor runs the original query in parallel with sub-queries:** sub-queries re-classify intent independently and lose the Stage 4.6 vsPair/phantom/banned-item force-include + boost signals. Running the original in parallel preserves those, at the cost of 4× Supabase RPCs per decomposed query (wall-time unchanged via `Promise.all`).
+- **Rollback:** `QUERY_PLANNER_ENABLED=false` reverts to identical Stage 4.6 behavior.
+- Plan file: `C:\Users\paulo\.claude\plans\rag-upgrade-initiative-recursive-mccarthy.md`.
+
 ### Stage 5 — EmbeddingGemma shadow migration — ABANDONED (2026-04-21)
 - **Status:** abandoned. Italian support not a product requirement; Gemma MRL-384 is strictly worse than BGE on English (−1.3% overall, −6.6% `team` intent).
 - Built end-to-end shadow dual-write (`bge-small-en-v1.5` → `google/embeddinggemma-300m` MRL-truncated to 384) and fully evaluated before rollback.
 - Code reverted (never committed); Supabase `embedding_v2` column/index/RPC dropped via migration `stage5_rollback_drop_embedding_v2`.
-- Preserved dormant (untracked): `evals/golden-set-bilingual.jsonl` + two shadow snapshots in `memory-bank/eval-baselines/`.
-- Full handover: [`memory-bank/handover-2026-04-21-stage5-rollback.md`](handover-2026-04-21-stage5-rollback.md).
+- Preserved dormant (untracked): `evals/golden-set-bilingual.jsonl` + two `retrieval-shadow-*.json` snapshots in `memory-bank/eval-baselines/`.
 
 ### Direct RAG vs Gemma Agentic Comparison (2026-04-20)
 - **Full 13-test suite with --real-rag** on Gemma 4 26B A4B: **11/13 passed, 18,570 tok/pass, 18.4s avg** (snapshot: `model-eval-2026-04-20T22-40-13.json`)
@@ -516,6 +525,38 @@ Two-part structural fix that promoted `tournament_retrieval` from 0/13 to consis
 **Remaining 1/13 — `creator_opinion`:** Flaky ~50% pass rate. Scoring: `mentionsCreator` + `mentionsGarchomp` + `mentionsTierList (/tier list|tier-list|ranking/)`. Model finds creator + Garchomp but sometimes omits "tier list" exact phrasing. Fix: add dedicated stub entry with AngrySlowbroPlus + tier-list keywords. Deferred to next session.
 
 ## Pending
+
+### Large-file refactors (flagged 2026-04-21 after Stage 6.3)
+
+Three files now sit well above a reasonable module size. Refactoring unblocks (a) executor alternative design for Stage 6.3 P2 — `collectForceIncludes()` becomes trivial to extract and reuse once `lib/rag.ts` is split — and (b) easier onboarding / review of future changes.
+
+- **[`lib/rag.ts`](../lib/rag.ts) — 1083 LOC (HIGHEST PRIORITY)**
+  - Extract `rag/classify.ts`: `classifyQuery()` + `QueryIntent` + all keyword lists (USAGE_KEYWORDS, COUNTER_KEYWORDS, STAT_KEYWORDS, etc.) + the three `getPokemonNames()` / `getMoveNames()` / `getItemNames()` / `getPokemonTypes()` dictionaries.
+  - Extract `rag/route.ts`: `routeQuery()` + `QueryRoute` + ARCHETYPE_PATTERNS + PHANTOM_TO_EVOLVED + PHANTOM_PRE_EVOS.
+  - Extract `rag/force-includes.ts`: the 6 force-include blocks (rules doc, banned-item, phantom section, phantom-evolved, vsPair Pokemon rows, type_chart on vsPair, exact entity) as `collectForceIncludes(question, intent, route, supabase): Promise<ForceIncludeBatch[]>`. Unlocks Stage 6.3 P2 executor redesign (drop original from parallel batch, reapply force-includes post-merge).
+  - Extract `rag/boost.ts`: the ~200-line boost layer as `applyBoosts(candidates, intent, route, question, boostMul): Result[]`.
+  - Extract `rag/structured-filter.ts`: `runStructuredFilter()` (thin already, ~30 LOC, just lifts it out).
+  - Leave `query()` as the thin orchestrator (~80 LOC: embed → classify → route → plan → executor|passthrough → RPC → Jina → merge → boost → slice).
+  - After refactor: run full 100-case retrieval eval + 13-test agentic eval. Expect bit-for-bit identical results.
+- **[`scripts/eval-models.ts`](../scripts/eval-models.ts) — 1341 LOC**
+  - Extract `eval-harness/tests.ts`: the 13 test definitions + scorers.
+  - Extract `eval-harness/adapters.ts`: per-provider call paths — OpenRouter, Ollama (local/remote), Anthropic direct, Gemini. Includes `toAnthropicFormat()` / `toAnthropicTools()`.
+  - Extract `eval-harness/scoring.ts`: loop-detection nudge, pokedex-cap, force-completion fallback, guardrail counters.
+  - Extract `eval-harness/cli.ts`: argv parsing, snapshot writer, report printer.
+  - Keep `scripts/eval-models.ts` as a thin entry point (~50 LOC).
+- **[`lib/chunker.ts`](../lib/chunker.ts) — 794 LOC** (lower priority — less frequently touched)
+  - Extract per-source chunkers: `chunker/pokemon.ts`, `chunker/mega.ts`, `chunker/move.ts`, `chunker/item.ts`, `chunker/team.ts`, `chunker/usage.ts`, `chunker/matchup.ts`, `chunker/markdown.ts` (incl. `chunkMarkdownFile` + `RULES_LIST_SECTIONS` split logic), `chunker/translation.ts` (the 2,383-entry IT dict — also a candidate for deletion per Stage 5 rollback doc).
+  - Keep `lib/chunker.ts` as a barrel export (~20 LOC).
+
+**Sequencing rule:** one file per session, run full regression after each split, commit separately. Don't bundle.
+
+### Stage 6.3 follow-ups (from handover)
+
+- **Free reranker replacement** — Jina is permanently OFF (no project budget for paid APIs). Options: `BAAI/bge-reranker-base` via HF Inference API (same router as embedder), `cross-encoder/ms-marco-MiniLM-L-12-v2` via Xenova local ONNX (~135MB Q8, fits Lambda), or pointwise rerank via existing Gemma on OpenRouter free tier. Any of these closes the matchup/counter ordering gap that Stage 6.3 couldn't.
+- **Full 100-case retrieval snapshot with planner ON.** First attempt killed after stdout-buffer hang; projected overall 0.848 from slice numbers. Rerun: `npx tsx scripts/eval-retrieval.ts --snapshot`. Does not require Jina.
+
+### Prior pending items (unchanged)
+
 - **`creator_opinion` fix** — add 11th stub entry covering AngrySlowbroPlus tier-list content; verify to consistent 13/13
 - **Direct RAG vs Gemma comparison** — run `--real-rag` full 13-test suite; compare retrieval category vs Claude 13/13 self-eval baseline
 - **Multi-pass tournament_retrieval validation** — run 3–5× to confirm consistency; also test with `--real-rag`
