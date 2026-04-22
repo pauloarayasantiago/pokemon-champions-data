@@ -21,6 +21,7 @@ The agent should be a knowledgeable but approachable Pokémon Champions VGC spec
 - Understands Mega Evolution timing and team-wide one-per-battle restriction
 - Can reference content creator opinions from YouTube transcripts
 - Adapts recommendations to different skill levels
+- **Cites its sources (Phase 2, 2026-04-22):** every factual claim sourced from the RAG database is cited with a `chunk_id` in a trailing `claims-json` block; a server-side validator in [lib/validate-citations.ts](../lib/validate-citations.ts) rejects phantom IDs and triggers a corrective retry. Hallucinated sources cannot reach the user.
 
 ## Data Pipeline
 1. **Scrape** — `scraper.py` (Serebii game data) + `scraper_youtube.py` (creator transcripts)
@@ -28,8 +29,9 @@ The agent should be a knowledgeable but approachable Pokémon Champions VGC spec
 3. **Structure** — CSVs, markdown, and text files
 4. **Calculate** — `lib/calc/` damage engine + `matchup_matrix.csv` (59,292 pairs)
 5. **Index** — Supabase pgvector (`pc_chunks`) via `scripts/index-data.ts`
-6. **Query** — RAG retrieval via `/lookup` skill
+6. **Query** — RAG retrieval via `/lookup` skill; each search result carries a `chunk_id` back to the agent
 7. **Advise** — AI reasoning layer via `/team` skill + CLAUDE.md expert persona + `/calc` for damage verification
+8. **Validate citations** — server-side chunk_id validator rejects phantom sources, one auto-retry nudge on invalid IDs (Phase 2)
 
 ## IMPLEMENTED: Pokemon Matchup Matrix (2026-04-13)
 
