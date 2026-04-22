@@ -1,14 +1,14 @@
 # Active Context
 
-_Last updated: 2026-04-21, post Stage 6.3. Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-22, post Phase 0 closeout. Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
 
 ## TL;DR
 
-- **Baseline retrieval:** nDCG@10 = **0.849** on 100-case golden set (Jina OFF, Stage 4.6).
+- **Baseline retrieval:** nDCG@10 = **0.849** on 100-case golden set (Jina OFF, Stage 4.6); Stage 6.3 runs 0.846–0.849 (within ±0.5%).
 - **Baseline agentic:** 12/13 pass at ~22k tok/pass, 18.4s avg, Gemma 4 26B via OpenRouter.
-- **Last shipped:** Stage 6.3 (Plan-and-Execute DAG + `Promise.all` agent loop) — retrieval-neutral; framework in place.
-- **Working-tree state:** Stage 6.3 code written, **not yet committed**. Recent commits end at `9e67bd3` (Stage 5 rollback doc). See "Pending verification + commit" below.
-- **Next move:** Phase 1 cleanup (Stage 5 residue delete) → Phase 2 Gemma pointwise reranker. See [rag-master-plan.md](rag-master-plan.md) Part 4.
+- **Last shipped:** Phase 0 closeout — Stage 6.3 (commit `b056e4c`), agentic 3-run variance verified 2026-04-22.
+- **Working tree:** clean after Phase 0 closeout commit.
+- **Next move:** Phase 1 cleanup (delete Italian translation residue) → Phase 2 forced-JSON + `chunk_id` validation → Phase 3 Gemma pointwise reranker. See [rag-master-plan.md](rag-master-plan.md) Part 4.
 
 ## Per-intent baseline (Jina OFF, Stage 4.6/6.3)
 
@@ -28,12 +28,13 @@ Only unmet gate: matchup P@10 = 0.48 (target 0.50). **Structural** — golden-se
 
 ## Most recent work
 
-### Stage 6.3 — SHIPPED (code) / uncommitted (git) · 2026-04-21
+### Stage 6.3 — SHIPPED · commit `b056e4c` (2026-04-21) · Phase 0 closed 2026-04-22
 
 - Rule-driven query decomposition at the RAG layer: [lib/query-planner.ts](../lib/query-planner.ts) (~90 LOC) + [lib/query-executor.ts](../lib/query-executor.ts) (~70 LOC).
 - `Promise.all` over agent-loop tool calls: [src/app/api/team/route.ts:160](../src/app/api/team/route.ts).
 - Flag `QUERY_PLANNER_ENABLED=false` = full rollback to Stage 4.6.
-- Retrieval neutral (Stage 4.6 force-includes saturate top-10); framework in place for Phase 4 executor redesign.
+- Retrieval neutral (Stage 4.6 force-includes saturate top-10); framework in place for Phase 5 executor redesign.
+- Phase 0 closeout 3-run agentic variance (gemma-4-26b --real-rag, 2026-04-22): recorded in [progress.md](progress.md) Stage 6.3 entry.
 
 ### Stage 5 — ABANDONED · 2026-04-21
 
@@ -41,27 +42,17 @@ Only unmet gate: matchup P@10 = 0.48 (target 0.50). **Structural** — golden-se
 - Code reverted (never committed); Supabase `embedding_v2` column/index/RPC dropped.
 - Dormant evidence (untracked): `evals/golden-set-bilingual.jsonl` + two `retrieval-shadow-*.json` in `memory-bank/eval-baselines/`.
 
-## Working-tree state (uncommitted)
+## Working tree
 
-- `M lib/rag.ts` — planner branch (Stage 6.3).
-- `M src/app/api/team/route.ts` — `Promise.all` (Stage 6.3).
-- `M memory-bank/activeContext.md`, `progress.md` — session docs.
-- `M .claude/settings.local.json`.
-- **Untracked new code:** `lib/query-planner.ts`, `lib/query-executor.ts`.
-- **Untracked data:** retrieval-eval snapshots (9), Gemma model-eval snapshots (7) + logs.
+Clean after Phase 0 closeout commit.
 
 ## Immediately queued
 
-1. **Commit Stage 6.3** after the two verifications below.
-2. **Phase 1 cleanup** (lowest-risk on-ramp): delete Italian translation residue (`translatePairs()` in `lib/rag.ts`, `lib/translations.json` 2,383 entries, `evals/golden-set-bilingual.jsonl`, 2 shadow snapshots); reindex; snapshot new clean baseline.
-3. **Phase 2 Gemma pointwise reranker** (highest retrieval leverage): replaces dropped Jina path. Top-40 → Gemma pointwise scoring via OpenRouter. Gate: matchup ≥ 0.77, counter ≥ 0.72, overall ≥ 0.87.
+1. **Phase 1 — cleanup** (½ session, lowest-risk on-ramp): delete Italian translation residue (`translatePairs()` in `lib/chunker.ts`, `lib/translations.json` 2,383 entries, `evals/golden-set-bilingual.jsonl`, 2 shadow snapshots); reindex; snapshot new clean baseline.
+2. **Phase 2 — forced-JSON + `chunk_id` validation** (1 session): faithfulness defense. Orthogonal to retrieval; may fix `team_json` flake incidentally, cleaning agentic-gate variance for every downstream phase.
+3. **Phase 3 — Gemma pointwise reranker ⭐** (1 session, highest retrieval leverage): replaces dropped Jina path. Top-40 → Gemma pointwise scoring via OpenRouter. Gate: matchup ≥ 0.77, counter ≥ 0.72, overall ≥ 0.87.
 
-Details + rollback triggers for each phase: [rag-master-plan.md](rag-master-plan.md).
-
-## Pending verification before committing Stage 6.3
-
-- **Full 100-case retrieval snapshot** (prior attempt killed by stdout buffer hang; only per-intent subsets verified).
-- **Full 13-test 3-run agentic variance** (prior Stage 6.3 eval was a 4-test team-build subset — 4/4 pass including `team_json` may have been lucky variance).
+Full tasks + gates + rollback triggers for each phase: [rag-master-plan.md](rag-master-plan.md) Part 4.
 
 ## Hard constraints
 

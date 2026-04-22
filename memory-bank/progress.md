@@ -1,8 +1,14 @@
 # Progress
 
+## Process Notes
+
+### Phase 0 doc drift (2026-04-21 → 2026-04-22)
+
+Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case retrieval snapshot was still hanging on stdout buffer. The commit landed but the Roadmap status table, activeContext TL;DR, and Phase 0 task boxes were not updated in the same commit, so when the next session opened the docs still read "code written, not yet committed". **Rule going forward:** when shipping a phase, the same commit that lands the code must (1) flip the Roadmap row to SHIPPED with the commit SHA, (2) tick the phase's task + gate boxes, (3) update the activeContext TL;DR. Status and code move together.
+
 ## Completed
 
-### Stage 6.3 — Plan-and-Execute DAG (recursive-mccarthy) — SHIPPED (2026-04-21)
+### Stage 6.3 — Plan-and-Execute DAG (recursive-mccarthy) — SHIPPED (2026-04-21) · Phase 0 closed 2026-04-22 · commit `b056e4c`
 - **Status:** shipped as retrieval-neutral infrastructure + agent-loop parallelization. Flagged off via `QUERY_PLANNER_ENABLED=false` for rollback.
 - **What:** rule-driven query decomposition at the RAG layer (three strategies: `vspair`, `counter-archetype`, `team-archetype`, all capped at 3 sub-queries + the original in parallel) + `Promise.all` over agent-loop tool calls.
 - **Files:** `lib/query-planner.ts` (NEW, ~90 LOC, pure), `lib/query-executor.ts` (NEW, ~70 LOC), `lib/rag.ts` (added `id` to `Result`, `QueryOptions.skipPlanner`, planner branch, `plan_start`/`plan_end` progress stages), `src/app/api/team/route.ts:160` (serial `for` → `Promise.all`).
@@ -11,6 +17,7 @@
 - **Why the executor runs the original query in parallel with sub-queries:** sub-queries re-classify intent independently and lose the Stage 4.6 vsPair/phantom/banned-item force-include + boost signals. Running the original in parallel preserves those, at the cost of 4× Supabase RPCs per decomposed query (wall-time unchanged via `Promise.all`).
 - **Rollback:** `QUERY_PLANNER_ENABLED=false` reverts to identical Stage 4.6 behavior.
 - Plan file: `C:\Users\paulo\.claude\plans\rag-upgrade-initiative-recursive-mccarthy.md`.
+- **Phase 0 closeout (2026-04-22):** retrieval gate met by seven pre-commit planner-ON snapshots (overall nDCG 0.846–0.849 vs Stage 4.6 baseline 0.849, within ±0.5%). Agentic 3-run variance on gemma-4-26b `--real-rag`: **run A 11/13, run B 12/13, run C 13/13** (mean 12/13 matches Stage 1 baseline). Run A fails: `team_json` (known ~1/3 flake) + `validate_loop` (pokedex-looping quirk #2 per `project_gemma_agentic_quirks.md` — model called pokedex 11× and never reached validate_set). Run B fails: `team_json` only. Run C clean. All fails are pre-existing Gemma behaviors, not Stage 6.3 regressions — Phase 2 (forced-JSON + `chunk_id` validation) is scheduled to close these. Closeout plan: `C:\Users\paulo\.claude\plans\read-the-memory-bank-plan-polished-dijkstra.md`. Snapshots: `snapshots/model-eval-2026-04-22T01-{38-14,42-06,46-51}.json`.
 
 ### Stage 5 — EmbeddingGemma shadow migration — ABANDONED (2026-04-21)
 - **Status:** abandoned. Italian support not a product requirement; Gemma MRL-384 is strictly worse than BGE on English (−1.3% overall, −6.6% `team` intent).

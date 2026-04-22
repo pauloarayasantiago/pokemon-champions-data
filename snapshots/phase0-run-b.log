@@ -1,0 +1,98 @@
+
+=== eval-models ===
+Models: gemma-4-26b
+Tests:  tool_workflow, team_json, validate_loop, pokedex_dedup, item_availability, phantom_pokemon, stat_accuracy, banned_comprehensive, usage_lookup, usage_teammates, tournament_retrieval, creator_opinion, meta_core_attribution
+Search: REAL-RAG (lib/rag.ts → Supabase pc_chunks)
+Tip:    run with --verbose to see response content
+
+
+── Gemma 4 26B A4B (OpenRouter) (google/gemma-4-26b-a4b-it) ──
+  tool_workflow          ... [WARN] Index is stale: 8 file(s) modified since last reindex (memory-bank/progress.md, memory-bank/techContext.md, memory-bank/activeContext.md...). Run /reindex to update.
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+Loading embedding model Xenova/bge-small-en-v1.5 (first run downloads ~130MB)...
+Embedding model loaded.
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"e4231d1ae6861bc00c54b89750894735","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ pokedex called 3x (Dragonite ✓), validate 0x (25.3s, 6t, 19844tok [pokedex→search→pokedex→pokedex])
+  team_json              ... ✗ team-json has only 3/6 Pokemon (38.7s, 11t, 43354tok [pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set])
+  validate_loop          ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[embed] local OK, got 1 vectors
+[embed] local OK, got 1 vectors
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"fa0376507c86a6f502cee30411f3168a","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"bf8b773a586bf353303af355559c3404","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"ca9bb0f6998e61ab29ded827c3bb3017","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"d022a1dfd820dab8bc87710ab4494a39","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ validate_set called 9x, pokedex 6x (45.5s, 6t, 30601tok [pokedex→pokedex→search→pokedex→pokedex→pokedex→pokedex→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set])
+  pokedex_dedup          ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"6e32265fac03e61f4892da0acf410d9c","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Efficient: 16 pokedex calls, 13 unique mons (all ≤2 calls each) (34.1s, 9t, 41829tok [pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→search→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→pokedex→validate_set→validate_set→validate_set→validate_set→validate_set→validate_set])
+  item_availability      ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"190a8a45bff028a9c55b34fe6541d824","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Valid items listed: sitrus berry, focus sash, lum berry, mega stone (10.4s, 3t, 7281tok [pokedex→search])
+  phantom_pokemon        ... ✓ Flagged both Amoonguss + Porygon2 as unavailable (3.1s, 1t, 1754tok [no tools])
+  stat_accuracy          ... ✓ All 6 stats match (91/124/115/145/125/100) (2.2s, 2t, 3764tok [pokedex])
+  banned_comprehensive   ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"aab516a3de8ec7ec61975ce61dd4b0af","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Named 14 banned items + all 3 missing gimmicks (9.7s, 2t, 4478tok [search])
+  usage_lookup           ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"9ea84c41012076edd389f04b2aa7924e","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Reported 51% vs truth 51% (Δ0.0pp) (10.1s, 2t, 5430tok [search])
+  usage_teammates        ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"e9e61b25e146c1cdbfa58f6e2fa9b0ad","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Named 3/3 top teammates: sneasler, incineroar, charizard (5.0s, 2t, 19845tok [search])
+  tournament_retrieval   ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"ac7fe99ad216adfa44dfb435e2e47fb8","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf (19.4s, 5t, 15926tok [search→pokedex→pokedex→pokedex])
+  creator_opinion        ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"6019468c350a313de10d7cbebd496cd1","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Attributed Garchomp view to AngrySlowbroPlus's tier list (5.9s, 2t, 4673tok [search])
+  meta_core_attribution  ... [embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] texts=1 mode=query HF_TOKEN=UNSET
+[embed] local OK, got 1 vectors
+[embed] local OK, got 1 vectors
+[embed] local OK, got 1 vectors
+[embed] local OK, got 1 vectors
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"248355e49fad48142633cf6376db1be6","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"0b216fcfb82261393ce68767827e364a","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"4341115107b1e20472dfd53d0e0a8c7d","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+[rerank] Jina 403: {"detail":"Insufficient account balance. Top up your account at https://jina.ai/api-dashboard/key-manager.","request_id":"c620cd210d9f3101ac879923cbd9dd56","code":"AUTHZ_INSUFFICIENT_BALANCE"}
+✓ Reported 55.8% (truth ~55.8%) (20.0s, 2t, 4700tok [search])
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+SUMMARY — pass/fail by test
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Model                  tool_workflow    team_json        validate_loop    pokedex_dedup    item_availabili  phantom_pokemon  stat_accuracy    banned_comprehe  usage_lookup     usage_teammates  tournament_retr  creator_opinion  meta_core_attri 
+----------------------------------------------------------------------------------------------------
+Gemma 4 26B A4B (O (12/13) ✓ 25.3s          ✗ 38.7s          ✓ 45.5s          ✓ 34.1s          ✓ 10.4s          ✓ 3.1s           ✓ 2.2s           ✓ 9.7s           ✓ 10.1s          ✓ 5.0s           ✓ 19.4s          ✓ 5.9s           ✓ 20.0s         
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+SUMMARY — score by category
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Model                  behavior       retrieval      hallucination  overall   
+------------------------------------------------------------------------------
+Gemma 4 26B A4B (Ope   4/5            5/5            3/3            12/13     
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+EFFICIENCY — primary metric: tokens_per_pass (lower is better)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Model                  passes   tok_total    tok/pass    lat_avg   turns_avg  nudges   dedup  
+----------------------------------------------------------------------------------------------
+Gemma 4 26B A4B (Ope   12/13    203479       16957       17.7s     4.1        16       15     
+
+Total: 12/13 passed
+
+Snapshot → C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\snapshots\model-eval-2026-04-22T01-42-06.json
