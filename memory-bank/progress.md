@@ -8,6 +8,54 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### Phase 5 — Stage 6.3 executor redesign — SHIPPED (2026-04-23) · commits `409ec84` + `1cd971d` · snapshot `retrieval-post-phase5-executor.json`
+
+- **Status:** SHIPPED. Two-step ship (mirrors Phase 4's refactor-first pattern): Step 1 `409ec84 refactor(rag): extract rawCandidates helper; single-query path unchanged` (behavior-preserving refactor, 99/100 cases bit-identical); Step 2 `1cd971d feat(rag): Stage 6.3 executor redesign — sub-queries compete with post-merge force-includes [Phase 5]` (the actual behavior change).
+- **Goal:** structurally fix the planner × reranker score-merge problem that blocked Phase 3. Pre-Phase-5 executor ran each sub-query through the FULL single-query pipeline (embed + RPC + rerank + force-includes + boosts), then max-merged by id. Each sub-query's force-include/boost/rerank pass keyed off its OWN text, drifting Stage 4.6 invariants. Phase 5 reverses that: sub-queries contribute RAW candidates only, force-includes + boosts re-apply once post-merge against the ORIGINAL query/intent/route. Stage 4.6 invariant holds by construction.
+- **Step 1 — rawCandidates helper (commit `409ec84`):**
+  - Added private `async function rawCandidates(question, fetchK, onProgress?) → {raw, intent, route}` in [lib/rag.ts](../lib/rag.ts). Does embed + classify + route + supabase RPC only. Emits the same `embed_*/rpc_*` progress events the single-query pipeline used to emit inline, preserving SSE stream visibility per-sub-query under the planner.
+  - Refactored `query()` single-query path: preliminary `classifyQuery + routeQuery` for the `fetchK = max(topK*8, baseFloor)` heuristic, then call `rawCandidates(question, fetchK, onProgress)`. Double-classify accepted (cheap, deterministic) to keep the helper self-contained and the executor callback thin.
+  - Verification: `npx tsc --noEmit` exits 0. Smoke on "Protect PP in Champions" returned identical top-3 ranks. Full 100-case retrieval eval: 99/100 cases bit-identical to [retrieval-phase4-refactor.json](eval-baselines/retrieval-phase4-refactor.json). Only drift is `char-y-teammates` case 21 (pre-existing Supabase tie-break flake documented during Phase 4 closeout, oscillates 0.9196↔1.0 across runs — orthogonal to code changes).
+- **Step 2 — executePlan rewrite (commit `1cd971d`):**
+  - New signature: `executePlan(plan, topK, originalIntent, originalRoute, supabase, rawFn, onProgress?, boostMul=1)`. Imports `SupabaseClient`, `QueryIntent`, `QueryRoute`, `collectForceIncludes`, `applyBoosts`, `runStructuredFilter`, `BoostCandidate`.
+  - Drops `plan.originalQuery` from the Promise.all batch — fans out `plan.steps` only via `rawFn`.
+  - `perStep = max(topK*3, originalRoute.route === "theory" || originalIntent.isCounterQuery || originalIntent.isMatchupQuery ? 160 : 80)` — mirrors the single-pipeline baseFloor heuristic on strategic routes to compensate for removing the original query from the fan-out.
+  - Merges raw rows by id with max rrf_score. Force-include rows augment with `max(rpcScore, baseScore)` (matches old single-pipeline concat-dedup semantics: force-include row's fields win, only rrf_score gets the max). Optional structured filter branch gated on `originalIntent.isStructured` (future-proofing — never fires under current planner rules but mirrors single-pipeline behavior).
+  - Parse merged rows → `BoostCandidate[]` (mirrors lib/rag.ts parse block). `applyBoosts(parsed, originalIntent, originalRoute, plan.originalQuery, boostMul)` → sort → slice.
+  - `boostMul` parameterized (default 1) so Phase 3 retry can plumb a reranker-aware value through without another signature change.
+  - [lib/rag.ts](../lib/rag.ts) planner-branch call site updated to pass `intent0, route0, supabase, rawCandidates callback, boostMul=1`.
+- **Behavior change documented:** when `RERANKER` is set to non-default on a planner-decomposed path, sub-query-level reranking is silently skipped (rawCandidates doesn't call the reranker). Passthrough queries still rerank. Nobody is on non-default RERANKER paths today; Phase 3 retry will re-add a post-merge reranker at the executor level.
+- **Retrieval gate** ([retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json) vs [retrieval-phase4-refactor.json](eval-baselines/retrieval-phase4-refactor.json) baseline):
+  - Overall nDCG 0.8514 → **0.8529** (+0.0015)
+  - matchup 0.7414 → **0.7552** (+0.0138 — structural improvement target, +1.9% relative)
+  - counter 0.6915 → 0.6924 (+0.0009)
+  - adversarial 0.6853 unchanged (Stage 4.6 invariant check ✓)
+  - team 0.8436 unchanged, item 0.9912 unchanged, move 0.9947 unchanged, stat 0.8387 unchanged, usage 0.9814 unchanged
+  - hard difficulty 0.7656 → 0.7716 (+0.0060)
+  - Forbidden rate 0 (strict gate ✓)
+  - MRR 0.8306 → 0.8356 (+0.0050)
+- **Gates hit vs missed:**
+  - ✅ adversarial ≥0.68 invariant check (measured 0.6853)
+  - ✅ agentic ≥12/13 on each of 3 runs (measured 13/13, 13/13, 12/13)
+  - ✅ no intent >3% regression (biggest delta is +0.0138, all ≥0)
+  - ✅ forbidden rate ≤0 (measured 0)
+  - ❌ matchup ≥0.79 (measured 0.7552, miss by 0.035)
+  - ❌ counter ≥0.73 (measured 0.6924, miss by 0.038)
+  - **Interpretation:** aspirational gates (matchup/counter) were based on the master plan's trajectory expectation of 0.86-0.88 overall from Phase 5 alone — the structural fix delivered a uniform but smaller gain than hoped. The big lift was always expected from the reranker re-enabled on top (Phase 3 retry, target 0.87-0.90). Phase 5 is the prerequisite that makes that retry possible. Ship as structural fix with documented gate misses; revisit in Phase 3 retry.
+- **Agentic 3-run variance** (gemma-4-26b --real-rag):
+
+| run | pass | tok/pass (avg) | lat/test | citation_rate | cited_valid/total | retries |
+|---|---|---|---|---|---|---|
+| 1 | 13/13 | ~25k | ~48s | 100% | 29/33 (some retries fixed) | 8 |
+| 2 | 13/13 | ~25k | ~48s | 100% | 41/41 | 6 |
+| 3 | 12/13 | 25139 | 44s | 80% | 34/37 | 8 |
+
+  - Run-3 pass miss: `phantom_pokemon` (hallucination category). Model ran with no tools, 4330 tokens, failed to flag either Amoonguss or Porygon2 as unavailable. This is the pre-existing Gemma flake documented in `memory/project_gemma_agentic_quirks.md`, not Phase-5-induced.
+  - Run-3 citation dip: 4/5 retrieval-tagged tests had valid citations; 1 test had 3/37 invalid chunk_ids even after auto-retry nudge. Gemma-side hallucination (model emitted chunk_ids not in the search result set). Retrieval itself returned valid chunks — this is agent-side behavior not retrieval-side.
+  - All 5/5 retrieval-category tests passed their semantic content check in every run.
+- **Snapshots archived** (in `snapshots/`): `model-eval-2026-04-23T07-11-57.json` (run 1), `model-eval-2026-04-23T07-24-10.json` (run 2), `model-eval-2026-04-23T07-33-44.json` (run 3).
+- **vsPair smoke verification** pre-eval: `"Garchomp vs Rotom-Wash who wins?"` returned top-5 = [matchup_matrix rotom-wash, rotom-wash pokemon chunk, rotom-wash pikalytics usage, garchomp pokemon chunk, type_chart Ground offensive]. Both sides of the vsPair + type_chart in top-5 — force-includes post-merge against original query working as designed.
+
 ### Phase 4 — `lib/rag.ts` split — SHIPPED (2026-04-22 evening) · snapshot `retrieval-phase4-refactor.json`
 
 - **Status:** SHIPPED. Gate passed: JSON deep-diff between [retrieval-phase4-refactor.json](eval-baselines/retrieval-phase4-refactor.json) and `retrieval-post-stage6.3-clean.json` shows **zero deltas** (ignoring timestamp). Overall 0.851386760816444 = baseline. Every intent and every per-case metric is identical.
