@@ -34,47 +34,62 @@
 
 All providers route through `openai-compat.ts` (OpenAI chat completions format). The dispatcher in `src/lib/llm.ts` picks the right adapter from `MODEL_REGISTRY`.
 
-**Current DEFAULT_MODEL**: `gemma-4-26b` (Gemma 4 26B A4B via OpenRouter)
+**Current DEFAULT_MODEL**: `gemma-4-26b` (Gemma 4 26B A4B via OpenRouter). **Paid tier** — $0.06/M input, $0.33/M output (~$0.008 per 13-test run at the ~25k tok/pass baseline). The `:free` suffix in our registry applies to the 31B variant, NOT the default 26B A4B. Retained as default after 2026-04-23 7-model bake-off — no challenger beat it on cost+quality.
 
 ### Adapters
 | File | Provider | Notes |
 |------|----------|-------|
 | `anthropic.ts` | Anthropic SDK | Claude Sonnet/Opus — paid |
-| `gemini.ts` | Google AI Studio | `gemini-2.5-flash` — free, available as fallback |
-| `groq.ts` | Groq | `llama-3.3-70b-versatile` — free |
-| `openrouter.ts` | OpenRouter | `gemma-4-26b` (default), `gpt-oss-120b`, `gemma-4-31b` |
-| `ollama.ts` | Ollama (local + remote) | Wired but untested — server GPU unknown |
+| `gemini.ts` | Google AI Studio | `gemini-2.5-flash` — free (not currently registered in eval harness) |
+| `groq.ts` | Groq | `llama-3.3-70b-versatile` — free. Tested 2026-04-23: 0/13 (Groq parser rejects Llama native tool format + 12k TPM cap). NO-GO |
+| `openrouter.ts` | OpenRouter | Default `gemma-4-26b`; paid opt-ins `deepseek-v3`, `gpt-oss-20b`, `gemini-2.5-flash-lite`, `glm-4.5-air`; free `nemotron-super` (gpt-oss-120b), `gemma-4-31b` |
+| `ollama.ts` | Ollama (local + remote) | Installed 2026-04-23; `qwen2.5-7b` + `llama3.1-8b` pulled. Both below 10/13 viable bar at Q4. Registry retained for future stronger local models |
 
-### Ollama (wired, not yet validated)
+### Ollama (installed 2026-04-23; 7-8B Q4 below viable bar)
 - Local: `OLLAMA_BASE_URL` (default `http://localhost:11434`) — for 7-9B models on RTX 2070 SUPER 8GB
 - Remote: `OLLAMA_REMOTE_URL` + `OLLAMA_REMOTE_KEY` — for larger models on a managed server
 - Routes by model ID prefix: `remote-*` → remote config, others → local config
+- **2026-04-23 eval:** qwen2.5-7b 8/13 @ 17k tok/pass, 60% citation validity, ~100s/test. llama3.1-8b 4/13 @ 17k tok, 20% citation validity. Both below the 10/13 gate. qwen3:8b + qwen2.5-coder:7b registry entries added but not yet pulled — future session could test.
 
-### Model Registry
+### Model Registry (post 2026-04-23 bake-off)
 ```
 DEFAULT → gemma-4-26b
 
+Paid hosted (OpenRouter):
+  gemma-4-26b     → google/gemma-4-26b-a4b-it     ← CURRENT DEFAULT ($0.06/$0.33 per M)
+  deepseek-v3     → deepseek/deepseek-v3.2        (12/13, 100% cit, ~$0.022/run — 3× default)
+  gpt-oss-20b     → openai/gpt-oss-20b            (NO-GO — reasoning bloat + socket timeout)
+  gemini-2.5-flash-lite → google/gemini-2.5-flash-lite (10/13, 20% cit — chaotic)
+  glm-4.5-air     → z-ai/glm-4.5-air              (3-run 13/12/12, 100% cit but 3.4× tok variance, ~$0.038/run)
+
 Free hosted (OpenRouter):
-  gemma-4-26b     → google/gemma-4-26b-a4b-it   ← CURRENT DEFAULT (6-7/7 eval score)
-  nemotron-super  → openai/gpt-oss-120b:free      (3/7)
-  gemma-4-31b     → google/gemma-4-31b-it:free   (auth error — Google key needed in OpenRouter)
+  nemotron-super  → openai/gpt-oss-120b:free      (not run this session)
+  gemma-4-31b     → google/gemma-4-31b-it:free    (auth issues historically)
 
-Free hosted (direct):
-  gemini-2.5-flash → gemini-2.5-flash (Gemini API — former default, available as fallback)
-  llama-3.3-70b    → llama-3.3-70b-versatile (Groq)
-
-Paid:
+Paid hosted (direct):
   sonnet-4-6      → claude-sonnet-4-6 (Anthropic)
   opus-4-7        → claude-opus-4-7 (Anthropic)
+  claude-sonnet-or → anthropic/claude-sonnet-4-5 (via OpenRouter — uses OR key)
 
-Ollama local (wired, needs install + model pull):
-  qwen2.5-7b      → qwen2.5:7b-instruct-q4_K_M
-  llama3.1-8b     → llama3.1:8b-instruct-q4_K_M
+Free hosted (Groq):
+  llama-3.3-70b   → llama-3.3-70b-versatile        (NO-GO — tool_use_failed + 12k TPM cap)
 
-Ollama remote (wired, server GPU TBD):
-  remote-gemma4   → gemma4:27b-it-q4_K_M    (corrected from gemma3 placeholder)
-  remote-qwen32b  → qwen2.5:32b-instruct-q4_K_M
+Ollama local (RTX 2070 SUPER — 8GB → 7-9B Q4 only):
+  qwen2.5-7b         → qwen2.5:7b-instruct-q4_K_M     (8/13 — below viable bar)
+  llama3.1-8b        → llama3.1:8b-instruct-q4_K_M    (4/13 — below viable bar)
+  qwen3-8b           → qwen3:8b                       (registered 2026-04-23, not pulled)
+  qwen2.5-coder-7b   → qwen2.5-coder:7b               (registered 2026-04-23, not pulled)
+
+Ollama remote (server GPU TBD):
+  remote-gemma4      → gemma4:27b-it-q4_K_M
+  remote-qwen32b     → qwen2.5:32b-instruct-q4_K_M
 ```
+
+### Agent-layer interceptor (Phase A4 — 2026-04-23)
+- **`lib/phantom-guard.ts`** — pre-flight scan of last user message for pre-evolution names (from `PRE_EVO_MAP` in `lib/team-validator.ts`, 23 entries) + explicit roster-excluded fully-evolved Pokemon (`EXPLICIT_PHANTOMS` — Amoonguss; extensible). If any match, short-circuits the agent loop with a hard refusal directing to the legal form. Hyphen-aware word-boundary regex `(?<![a-z0-9-])name(?![a-z0-9-])` so "porygon" inside "porygon-z" doesn't match.
+- **Wired into:** [src/app/api/team/route.ts](../src/app/api/team/route.ts) POST handler (post-meta / pre-loop; emits `phantom_pokemon_refused` SSE event + content delta + done) and [scripts/eval-models.ts](../scripts/eval-models.ts) `runAgent()` (same short-circuit; returns synthetic result with `finalContent = formatPhantomRefusal(phantoms)`).
+- **Why it exists:** 7-model bake-off (2026-04-23) confirmed `phantom_pokemon` fails on every LLM tested at 1/3-3/3 rate. Systemic LLM-behavior issue, not a Gemma quirk. Prompt hardening alone relies on LLM compliance — the interceptor is the structural fix.
+- **Impact:** phantom_pokemon now passes 3/3 on Gemma `--real-rag` 3-run (was 2/3 pre-interceptor). LLM never called for phantom queries — 0 tokens, <100ms. No regressions on other 12 tests.
 
 ### Eval Harness (`scripts/eval-models.ts`) — v4
 - **13 tests** (5 behavior + 5 retrieval + 3 hallucination):
@@ -89,7 +104,7 @@ Ollama remote (wired, server GPU TBD):
 - Per-call timeout: 120s; loop detection: dedup nudge after 2 identical tool calls; pokedex-cap nudge after >12 total pokedex calls
 - `requireTeamJson` per-test flag; `lastContent` filters thinking-only responses ("thought\n\n")
 - `--real-rag` flag: replaces stub with production Supabase search
-- **Current baseline**: Gemma 4 26B **12/13** (creator_opinion flaky ~50%; all others consistent). DeepSeek V3.2 evaluated 9/13 — rejected due to hallucination failures
+- **Current baseline**: Gemma 4 26B `--real-rag` 3-run post-interceptor (2026-04-23): **13/13, 13/13, 12/13** @ 30k avg tok/pass, ~36s/test avg. Run-3 miss is `team_json` (pre-existing "forgot JSON block" flake). `phantom_pokemon` passes 3/3 runs (interceptor handles it pre-LLM). Citation validity 80/100/80 on retrieval tests — separate Gemma-side hallucination issue. 2026-04-23 bake-off verdicts summarized above in Model Registry
 - `npm run eval:models` — supports `--models`, `--tests`, `--verbose`, `--real-rag`
 - Results snapshot to `snapshots/model-eval-[timestamp].json`
 
@@ -130,7 +145,7 @@ Ollama remote (wired, server GPU TBD):
 - **Planner-decomposed path (post-Phase 5)**: when `planQuery()` emits a multi-step plan (vspair / counter-archetype / team-archetype strategies), [lib/query-executor.ts](../lib/query-executor.ts) `executePlan()` runs a separate post-merge pipeline: fan out sub-queries via `rawCandidates` (embed + RPC only, no rerank/force-includes/boosts per sub-query) → `Promise.all` merge with max rrf_score by id → `collectForceIncludes(plan.originalQuery, originalIntent, originalRoute, supabase)` → optional `runStructuredFilter` (gated on `originalIntent.isStructured`) → parse → `applyBoosts(..., originalIntent, originalRoute, plan.originalQuery, boostMul=1)` → sort → slice topK. Stage 4.6 invariants hold by construction because force-includes and boosts key off the user's original wording. `perStep` floor raised to 160 on theory/counter/matchup routes to compensate for dropping the original query from the parallel batch.
 - **Raw candidates primitive (Phase 5 Step 1)**: `rawCandidates(question, fetchK, onProgress?): Promise<{raw, intent, route}>` — private helper in [lib/rag.ts](../lib/rag.ts). Does embed + classify + route + RPC only. Shared between the single-query path (where `query()` applies rerank/structured/force-includes/boosts downstream) and the Phase 5 executor callback (which accumulates raw rows across sub-queries, then applies force-includes/boosts post-merge against the original query).
 - **Multi-signal re-ranking**: 14 boost categories in [lib/rag/boost.ts](../lib/rag/boost.ts) via `applyBoosts(candidates, intent, route, question, boostMul)`. Calibrated to RRF scale (~0.02-0.035), multiplied by `boostMul` (1 when no reranker active, 20 when reranker scores in [0,1] replace RRF). Categories include: tier baselines (knowledge/team/usage/transcript/matchup/older-reference), structured results (+0.1), exact-entity matches (+0.04), counter/matchup knowledge-doc lift (+0.04), rules-doc mechanic lift (+0.035), adversarial banned-item rank-1 boost (+0.15), Stage 6.1 theory-route / archetype / vsPair / phantom / phantomEvolved boosts, speed-tiers doc (+0.035), item-intent (+0.03), team-intent usage/team lift (+0.03), project-doc penalty (-0.08). Full list in source.
-- **Reranker dispatch (Phase 3 dormant, Phase 5-unblocked)**: [lib/rag.ts:169-210](../lib/rag.ts) reads `RERANKER` env (`crossencoder|gemma|jina|none`, default falls through to "jina"). [lib/rerank.ts](../lib/rerank.ts) holds three reranker clients:
+- **Reranker dispatch (Phase 3 dormant, Phase 5-unblocked)**: [lib/rag.ts](../lib/rag.ts) reads `RERANKER` env (`crossencoder|gemma|jina|none`, **default `"none"` since 2026-04-23** — was silently `"jina"` before, wasting 300-500ms per RAG call on 403s from the depleted Jina account). [lib/rerank.ts](../lib/rerank.ts) holds three reranker clients:
   - `rerankCandidates` (Jina v2, dormant — balance depleted, returns null without API key)
   - `rerankWithGemma` (~140 LOC, Gemma 4 26B pointwise via OpenRouter, inline 10-slot worker pool, manual `AbortController` + `clearTimeout`, 800-char snippet, per-query SHA256 LRU cache)
   - `rerankWithCrossEncoder` (~80 LOC, BAAI/bge-reranker-base via HF Inference `text-classification` pipeline, single batched HTTP call for all 40 candidates, 1500-char snippet)

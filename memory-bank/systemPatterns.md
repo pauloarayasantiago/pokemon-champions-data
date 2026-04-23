@@ -20,7 +20,8 @@
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap)
 │   ├── embed.ts                BGE-small-en-v1.5 (384-dim, fp32, CLS pool, BGE query prefix, batch 64)
 │   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking dispatch (RERANKER env: crossencoder|gemma|jina|none) + staleness
-│   ├── rerank.ts               Three reranker clients (Phase 3, BLOCKED-pending-Phase-5): rerankCandidates (Jina, dormant), rerankWithGemma (OpenRouter pointwise, 10-slot worker pool), rerankWithCrossEncoder (BAAI/bge-reranker-base via HF Inference, batched). All return null on failure → caller falls through to RRF + boosts (boostMul=1)
+│   ├── rerank.ts               Three reranker clients (Phase 3, BLOCKED-pending-Phase-5): rerankCandidates (Jina, dormant), rerankWithGemma (OpenRouter pointwise, 10-slot worker pool), rerankWithCrossEncoder (BAAI/bge-reranker-base via HF Inference, batched). All return null on failure → caller falls through to RRF + boosts (boostMul=1). Default RERANKER is "none" since 2026-04-23 (was silently "jina" before, wasting 300-500ms/call on 403s)
+│   ├── phantom-guard.ts        Pre-flight agent-layer interceptor (Phase A4, 2026-04-23): detectPhantomPokemon() scans user message for pre-evos (PRE_EVO_MAP, 23 entries) + explicit roster-excluded names (EXPLICIT_PHANTOMS — Amoonguss; extensible). formatPhantomRefusal() emits user-facing redirect text. Used by src/app/api/team/route.ts POST handler + scripts/eval-models.ts runAgent() to short-circuit the agent loop before LLM call
 │   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
 │   ├── structured-query.ts     NL→SQL stat filter builder (type, speed, attack thresholds)
 │   ├── eval-data.ts            25 eval test cases across 8 categories
@@ -121,3 +122,15 @@
 14. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 1.000
 15. **Incremental** — index-data.ts paginates `SELECT id FROM pc_chunks` into a Set, skips already-indexed chunks (--force wipes pc_chunks before re-upsert)
 16. **Full test suite** — 251 tests via `npm test`: calc (41), integration (74), eval (25), stress (111)
+
+## Agent Loop Pipeline (webapp + eval harness)
+
+The agent layer wraps the RAG layer. It runs in two places: [src/app/api/team/route.ts](../src/app/api/team/route.ts) POST handler (production webapp, SSE streaming) and [scripts/eval-models.ts](../scripts/eval-models.ts) `runAgent()` (eval harness, no streaming). Both share the same interceptor + agent loop shape.
+
+1. **Parse request** — `TeamRequestBody = {model, messages[], systemPromptVersion?}`. Validate model against `MODEL_REGISTRY`, messages array non-empty.
+2. **Emit `meta` SSE** — `{type: "meta", requestId, model, provider, remoteName, tier, systemPromptVersion}` fires on request start (webapp only).
+3. **Phantom-Pokemon interceptor (Phase A4, 2026-04-23)** — `detectPhantomPokemon(lastUserContent)` from [lib/phantom-guard.ts](../lib/phantom-guard.ts). If any phantom (pre-evo from `PRE_EVO_MAP` or explicit-banned) is found, emit `{type: "phantom_pokemon_refused", phantoms}` + `{type: "content", delta: formatPhantomRefusal(phantoms)}` + `{type: "done", finishReason: "phantom_refusal", totalMs}` and close. **LLM is never called for phantom queries** (0 tokens, <100ms). Eval harness `runAgent()` returns a synthetic result with `finalContent = formatPhantomRefusal(...)` and `turns: 0` instead of streaming.
+4. **Agent loop** (up to `MAX_TOOL_ITERATIONS = 20`) — `chatStream()` against the model with `TOOL_DEFINITIONS` and `SYSTEM_PROMPT`. For each iteration: stream `content` deltas, collect `tool_call`s, emit `iter_start`/`iter_end`, push assistant message onto `messages[]`.
+5. **Tool execution** — Stage 6.3 parallelism: `Promise.all` over the turn's tool calls; each runs via `executeTool()` which routes to `search` / `calc` / `pokedex` / `validate_set`. `tool_start`/`tool_end`/`tool_result` SSE events fire for UI; `search` results feed `seenChunkIds` for citation validation.
+6. **Termination** — when `finishReason !== "tool_calls"`, validate claims-json against `seenChunkIds` via `validateCitations()` (Phase 2). If invalid and retry not yet fired, nudge once (`citation_retry`), continue. Otherwise emit `citation_result` + `done` and close.
+7. **Guardrails** — eval harness only: hard pokedex dedup cap (3rd+ identical call refused, not logged), post-loop force-completion (fires once if lastContent empty or no team-json block, disables tools for pure text), tool-syntax-garbage nudge (catches raw `call:name{args}` text output instead of real tool_calls — known Gemma failure mode).
