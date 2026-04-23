@@ -716,9 +716,11 @@ Big session — three orthogonal wins and one behavioral insight that reframes t
 
 **Decision:** DEFAULT_MODEL stays `gemma-4-26b`. No challenger beat it on a cost+quality basis; the phantom interceptor was the lever that actually moved user-visible trust.
 
-**Snapshots:** `snapshots/model-eval-2026-04-23T*.json` (10+ new files across the session). Qwen3:8b smoke still queued (pull-dependent, may finish post-commit — future session can add its memo).
+**Snapshots:** `snapshots/model-eval-2026-04-23T*.json` (14 new files across the session, including the post-commit qwen3/qwen2.5-coder smokes).
 
-**Memory memos written this session:** `project_groq_llama33_eval.md`, `project_deepseek_v32_eval.md`, `project_glm_45_air_eval.md`, `project_gemini_25_flash_lite_eval.md`, `project_phantom_pokemon_systemic.md`. Index updated in `MEMORY.md`.
+**Followup: qwen3:8b + qwen2.5-coder:7b Ollama smokes (post-first-commit):** qwen3:8b = 4/13 (behavior 0/5 all timeouts, 40% citations, 136s/test — NOT upgrade over qwen2.5-7b). qwen2.5-coder:7b = 2/13 (retrieval 0/5, 0% citations, 73s/test — coder variant fails agentic retrieval entirely). Both pass `phantom_pokemon` in 0.0s, confirming the interceptor is model-agnostic. Conclusion: 7-8B Q4 class too weak for this workload; next try would require 12GB+ server GPU.
+
+**Memory memos written this session:** `project_groq_llama33_eval.md`, `project_deepseek_v32_eval.md`, `project_glm_45_air_eval.md`, `project_gemini_25_flash_lite_eval.md`, `project_phantom_pokemon_systemic.md`, `project_qwen3_8b_eval.md`, `project_qwen25_coder_7b_eval.md`. Index updated in `MEMORY.md`.
 
 ## Pending
 

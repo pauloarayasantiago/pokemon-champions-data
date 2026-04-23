@@ -71,8 +71,10 @@ Appended post strategic reframe. Captures the 7-model bake-off + phantom interce
 | Gemma 4 26B A4B (default, 3-run history) | 12-13/13 | 80-100% | 25k | 44s | ~$0.008 | **Retained as default** |
 | Groq Llama 3.3 70B | 0/13 | n/a | n/a | n/a | free | NO-GO (tool_use_failed + 12k TPM) |
 | GPT-OSS 20B | crashed | n/a | 550k (test 1) | 665s (test 1) | high | NO-GO (reasoning bloat + socket timeout) |
-| qwen2.5-7b (Ollama local) | 8/13 | 60% | 17k | 100s | $0 | Below bar |
+| qwen2.5-7b (Ollama local) | 8/13 | 60% | 17k | 100s | $0 | Best of 4 locals, still below bar |
 | llama3.1-8b (Ollama local) | 4/13 | 20% | 17.4k | 124s | $0 | Below bar |
+| qwen3:8b (Ollama local) | 4/13 | 40% | 8.9k | 136s | $0 | Behavior 0/5 (all timeouts); NOT upgrade over qwen2.5-7b |
+| qwen2.5-coder:7b (Ollama local) | 2/13 | 0% | 34k | 73s | $0 | Coder variant fails retrieval entirely |
 | DeepSeek V3.2 | 12/13 | 100% | 62k | 85s | ~$0.022 | Viable paid opt-in, not default-worthy |
 | GLM-4.5-Air (3-run) | 13/12/12 | 100%/100%/100% | avg 92k (46/155/75) | avg 48s | **~$0.038** | Tightest citation floor; token variance disqualifies as default |
 | Gemini 2.5 Flash Lite | 10/13 | 20% | 37k | 12s | ~$0.008 | Fast + cheap but chaotic (47 nudges) |
@@ -95,7 +97,7 @@ Appended post strategic reframe. Captures the 7-model bake-off + phantom interce
 
 ### A2 — Ollama local model eval · SHIPPED — NO-GO (2026-04-23)
 
-qwen2.5-7b: 8/13 @ 17k tok/pass, 60% citation validity, 100s/test avg. llama3.1-8b: 4/13 @ 17.4k tok/pass, 20% citation validity, 124s/test. Neither hit the 10/13 viable-local bar; the "smaller models lose coherence after 2-3 steps" pattern matches community reports for this class. Registry entries retained for future stronger local models. qwen3:8b pull was in-flight at end of session; if smoke finishes a future session can add a memo.
+Four local models tested at Q4_K_M on RTX 2070 SUPER 8GB: qwen2.5-7b (8/13 — best), llama3.1-8b (4/13), qwen3:8b (4/13, behavior 0/5 all timeouts), qwen2.5-coder:7b (2/13, 0% citations). None cleared the 10/13 viable-local bar. "Smaller models lose coherence after 2-3 steps" pattern matches community reports. **Every local passed `phantom_pokemon` in 0.0s**, confirming the interceptor works model-agnostic. A genuine free local path would need 12GB+ VRAM (remote server) for a 14B+ Q4 model. Registry entries retained for reference. Memos: [project_qwen3_8b_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_qwen3_8b_eval.md), [project_qwen25_coder_7b_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_qwen25_coder_7b_eval.md).
 
 ### A1-alt — OpenRouter paid bake-off · SHIPPED (2026-04-23)
 

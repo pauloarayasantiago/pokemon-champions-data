@@ -1,0 +1,445 @@
+{
+  "timestamp": "2026-04-23T21:47:21.977Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "qwen3-8b"
+  ],
+  "tests": [
+    {
+      "id": "tool_workflow",
+      "tag": "behavior"
+    },
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "validate_loop",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "item_availability",
+      "tag": "behavior"
+    },
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "usage_teammates",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    },
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "qwen3-8b": {
+      "passes": 4,
+      "total": 13,
+      "tokens_total": 35460,
+      "tokens_per_pass": 8865,
+      "mean_latency_ms": 136034.53846153847,
+      "mean_turns": 1.5384615384615385,
+      "nudge_count": 1,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 5
+        },
+        "retrieval": {
+          "passes": 2,
+          "total": 5
+        },
+        "hallucination": {
+          "passes": 2,
+          "total": 3
+        }
+      },
+      "citation_validity_rate": 0.4,
+      "citation_retrieval_tests": 5,
+      "citation_retrieval_valid": 2,
+      "citation_total_cited": 4,
+      "citation_total_valid": 4,
+      "citation_retries": 1
+    }
+  },
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "tag": "behavior",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "pokedex never called (only: none)",
+      "latencyMs": 120015,
+      "turns": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "No ```team-json block found anywhere in response",
+      "latencyMs": 120015,
+      "turns": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "validate_loop",
+      "tag": "behavior",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "validate_set never called (pokedex: 2x, other: none)",
+      "latencyMs": 211148,
+      "turns": 2,
+      "inputTokens": 2106,
+      "outputTokens": 837,
+      "totalTokens": 2943,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "pokedex never called — no data gathered",
+      "latencyMs": 120006,
+      "turns": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "item_availability",
+      "tag": "behavior",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "No valid Champions items mentioned in response",
+      "latencyMs": 190367,
+      "turns": 2,
+      "inputTokens": 2111,
+      "outputTokens": 619,
+      "totalTokens": 2730,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Dragonite held items Champions"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "qwen3-8b",
+      "pass": true,
+      "reason": "Flagged both Amoonguss + Porygon2 as unavailable",
+      "latencyMs": 1,
+      "turns": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "contentPreview": "The following Pokemon are not available in Champions:\n- Amoonguss is not available in Champions — Amoonguss is not in the Champions roster. Use Venusaur, Roserade, or another Grass-type.\n- Porygon2 is not available in Champions — pre-evolution — Champions only allows fully-evolved forms; use Porygon-Z instead. Use Porygon-Z."
+    },
+    {
+      "testId": "stat_accuracy",
+      "tag": "hallucination",
+      "modelKey": "qwen3-8b",
+      "pass": true,
+      "reason": "All 6 stats match (91/124/115/145/125/100)",
+      "latencyMs": 206753,
+      "turns": 2,
+      "inputTokens": 7654,
+      "outputTokens": 1843,
+      "totalTokens": 9497,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "Mega Dragonite's base stats in **Champions** are as follows:\n\n- **HP**: 91  \n- **Attack**: 124  \n- **Defense**: 115  \n- **Sp. Atk**: 145  \n- **Sp. Def**: 125  \n- **Speed**: 100  \n\nThese stats are derived from the **Mega Dragonite** entry in the Champions Pokédex, which explicitly lists its adjusted base stats (BST: 700) and Mega-specific mechanics.  \n\n---\n\n```claims-json\n{\n  \"claims\": []\n}\n```"
+    },
+    {
+      "testId": "banned_comprehensive",
+      "tag": "hallucination",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "Only 0 banned items listed (need ≥5): none",
+      "latencyMs": 120014,
+      "turns": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "qwen3-8b",
+      "pass": true,
+      "reason": "Reported 51% vs truth 51% (Δ0.0pp)",
+      "latencyMs": 61173,
+      "turns": 2,
+      "inputTokens": 4988,
+      "outputTokens": 553,
+      "totalTokens": 5541,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 1,
+      "citationValidCount": 1,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar tournament usage Regulation M-A",
+            "topK": 1
+          }
+        }
+      ],
+      "contentPreview": "Incineroar's current tournament usage percentage in Pokemon Champions Regulation M-A is **51.0%** according to recent competitive statistics.\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Incineroar usage sits at 51.0% in Reg M-A.\", \"chunk_ids\": [\"usage:incineroar\"]}\n  ]\n}\n```"
+    },
+    {
+      "testId": "usage_teammates",
+      "tag": "retrieval",
+      "modelKey": "qwen3-8b",
+      "pass": true,
+      "reason": "Named 3/3 top teammates: sneasler, incineroar, charizard",
+      "latencyMs": 125372,
+      "turns": 2,
+      "inputTokens": 5967,
+      "outputTokens": 1124,
+      "totalTokens": 7091,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 3,
+      "citationValidCount": 3,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "topK": 3,
+            "query": "Garchomp top teammates in Champions VGC"
+          }
+        }
+      ],
+      "contentPreview": "The top 3 Pokémon most commonly paired with Garchomp in current Champions VGC are:\n\n1. **Sneasler** (51.08% usage with Garchomp)  \n2. **Incineroar** (48.875% usage with Garchomp)  \n3. **Charizard** (32.628% usage with Garchomp)  \n\nThese pairings are derived from tournament usage statistics and are validated for Champions legality.  \n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Garchomp's top teammate is Sneasler at 51.08% usage.\", \"chunk_ids\": [\"usage:garchomp\"]},\n    {\"text\": \"Incineroar is Garchomp's second-most common teammate at 48.875%.\", \"chunk_ids\": [\"usage:garchomp\"]},\n    {\"text\": \"C"
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "Only 0 recognizable teammates (need ≥3): none",
+      "latencyMs": 181798,
+      "turns": 2,
+      "inputTokens": 2113,
+      "outputTokens": 621,
+      "totalTokens": 2734,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament team Champions Regulation M-A"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "Missing: creator, Garchomp, tier-list context",
+      "latencyMs": 145002,
+      "turns": 2,
+      "inputTokens": 2113,
+      "outputTokens": 245,
+      "totalTokens": 2358,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Garchomp Regulation A Doubles tier list",
+            "topK": 5
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "meta_core_attribution",
+      "tag": "retrieval",
+      "modelKey": "qwen3-8b",
+      "pass": false,
+      "reason": "No percentage mentioned",
+      "latencyMs": 166785,
+      "turns": 2,
+      "inputTokens": 2111,
+      "outputTokens": 455,
+      "totalTokens": 2566,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Archaludon + Pelipper rain core win rate"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    }
+  ]
+}

@@ -49,7 +49,13 @@ All providers route through `openai-compat.ts` (OpenAI chat completions format).
 - Local: `OLLAMA_BASE_URL` (default `http://localhost:11434`) — for 7-9B models on RTX 2070 SUPER 8GB
 - Remote: `OLLAMA_REMOTE_URL` + `OLLAMA_REMOTE_KEY` — for larger models on a managed server
 - Routes by model ID prefix: `remote-*` → remote config, others → local config
-- **2026-04-23 eval:** qwen2.5-7b 8/13 @ 17k tok/pass, 60% citation validity, ~100s/test. llama3.1-8b 4/13 @ 17k tok, 20% citation validity. Both below the 10/13 gate. qwen3:8b + qwen2.5-coder:7b registry entries added but not yet pulled — future session could test.
+- **2026-04-23 eval (4 local models tested — none viable):**
+  - qwen2.5-7b: 8/13 @ 17k tok/pass, 60% citations, ~100s/test — **best of the four**
+  - llama3.1-8b: 4/13 @ 17k tok/pass, 20% citations, 124s/test
+  - qwen3:8b: 4/13 @ 8.9k tok/pass, 40% citations, 136s/test — behavior 0/5 (all timeouts); NOT an upgrade over qwen2.5-7b despite being newer
+  - qwen2.5-coder:7b: 2/13 @ 34k tok/pass, **0% citations**, 73s/test — coder variant fails retrieval
+  - All four now pass `phantom_pokemon` in 0.0s (interceptor handles it pre-LLM — confirms the interceptor is model-agnostic).
+  - **Conclusion:** 7-8B Q4 class of local model doesn't clear the 10/13 viable bar for this workload. Would need a 12GB+ server GPU (`remote-qwen32b` or similar) to get meaningful local performance.
 
 ### Model Registry (post 2026-04-23 bake-off)
 ```
@@ -74,11 +80,11 @@ Paid hosted (direct):
 Free hosted (Groq):
   llama-3.3-70b   → llama-3.3-70b-versatile        (NO-GO — tool_use_failed + 12k TPM cap)
 
-Ollama local (RTX 2070 SUPER — 8GB → 7-9B Q4 only):
-  qwen2.5-7b         → qwen2.5:7b-instruct-q4_K_M     (8/13 — below viable bar)
-  llama3.1-8b        → llama3.1:8b-instruct-q4_K_M    (4/13 — below viable bar)
-  qwen3-8b           → qwen3:8b                       (registered 2026-04-23, not pulled)
-  qwen2.5-coder-7b   → qwen2.5-coder:7b               (registered 2026-04-23, not pulled)
+Ollama local (RTX 2070 SUPER — 8GB → 7-9B Q4 only; all below 10/13 viable bar):
+  qwen2.5-7b         → qwen2.5:7b-instruct-q4_K_M     (8/13, 60% cit, 100s — best of 4 locals)
+  llama3.1-8b        → llama3.1:8b-instruct-q4_K_M    (4/13, 20% cit)
+  qwen3-8b           → qwen3:8b                       (4/13, 40% cit, behavior 0/5 all timeouts)
+  qwen2.5-coder-7b   → qwen2.5-coder:7b               (2/13, 0% cit — coder variant not agentic)
 
 Ollama remote (server GPU TBD):
   remote-gemma4      → gemma4:27b-it-q4_K_M
