@@ -160,19 +160,28 @@ export async function query(
 ): Promise<Result[]> {
   await checkStaleness();
 
-  // Stage 6.3 — Plan-and-Execute DAG. Rule-driven decomposition based on
-  // routeQuery() signals. Fires BEFORE embedding so the multi-step branch
-  // doesn't waste work on a single embed we're about to discard.
+  // Stage 6.3 — Plan-and-Execute DAG (Phase 5 redesign). Rule-driven
+  // decomposition based on routeQuery() signals. Fires BEFORE embedding
+  // so the multi-step branch doesn't waste work on a single embed we're
+  // about to discard. Under Phase 5, executePlan fans out sub-query RAW
+  // candidates (via rawCandidates — no rerank/force-includes/boosts)
+  // and re-applies force-includes + boosts ONCE post-merge against the
+  // ORIGINAL query/intent/route.
   if (!options?.skipPlanner && process.env.QUERY_PLANNER_ENABLED !== "false") {
     const intent0 = classifyQuery(question);
     const route0 = routeQuery(question, intent0);
     const plan = planQuery(question, intent0, route0);
     if (plan.steps.length > 1) {
+      const supabase = supabaseServer();
       return executePlan(
         plan,
         topK,
-        (q, k) => query(q, k, undefined, { skipPlanner: true }),
+        intent0,
+        route0,
+        supabase,
+        async (q, fetchK) => (await rawCandidates(q, fetchK, onProgress)).raw,
         onProgress,
+        1, // boostMul — Phase 3 retry will plumb reranker-aware value through
       );
     }
   }

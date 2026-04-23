@@ -1,0 +1,791 @@
+{
+  "timestamp": "2026-04-23T07:33:44.197Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "tool_workflow",
+      "tag": "behavior"
+    },
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "validate_loop",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "item_availability",
+      "tag": "behavior"
+    },
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "usage_teammates",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    },
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 12,
+      "total": 13,
+      "tokens_total": 301669,
+      "tokens_per_pass": 25139.083333333332,
+      "mean_latency_ms": 43955.846153846156,
+      "mean_turns": 4.384615384615385,
+      "nudge_count": 14,
+      "dedup_count": 8,
+      "by_tag": {
+        "behavior": {
+          "passes": 5,
+          "total": 5
+        },
+        "retrieval": {
+          "passes": 5,
+          "total": 5
+        },
+        "hallucination": {
+          "passes": 2,
+          "total": 3
+        }
+      },
+      "citation_validity_rate": 0.8,
+      "citation_retrieval_tests": 5,
+      "citation_retrieval_valid": 4,
+      "citation_total_cited": 37,
+      "citation_total_valid": 34,
+      "citation_retries": 8
+    }
+  },
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "pokedex called 2x (Dragonite ✓), validate 0x",
+      "latencyMs": 127942,
+      "turns": 5,
+      "inputTokens": 22151,
+      "outputTokens": 2307,
+      "totalTokens": 24458,
+      "nudgeCount": 2,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 4,
+      "citationValidCount": 4,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Dragonite VGC Champions meta team"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Sneasler"
+          }
+        }
+      ],
+      "contentPreview": "To build a successful team around **Mega Dragonite**, we are focusing on its role as a high-pressure Dragon Dance sweeper. Mega Dragonite's **Multiscale** ability allows it to survive almost any single hit at full HP, enabling it to set up a Dragon Dance and snowball through the opponent's team.\n\nBecause Mega Dragonite is a powerful but relatively slow setup sweeper (even after one Dragon Dance), this team incorporates **Speed Control**, **Redirection**, and **Intimidate support** to ensure Dragonite can reach its full potential safely.\n\n### Team Strategy\n1.  **Mega Dragonite (The Win Conditio"
+    },
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "team-json valid — 6 Pokemon, archetype: \"Rain\"",
+      "latencyMs": 86340,
+      "turns": 14,
+      "inputTokens": 64539,
+      "outputTokens": 1723,
+      "totalTokens": 66262,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 4,
+      "citationValidCount": 4,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Champions VGC Doubles rain team meta"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Basculegion"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingambit"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Sneasler"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Starmie"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Hurricane",
+              "Hydro Pump",
+              "Tailwind",
+              "Protect"
+            ],
+            "pokemon": "Pelipper"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Swift Swim",
+            "item": "Focus Sash",
+            "moves": [
+              "Wave Crash",
+              "Last Respects",
+              "Aqua Jet",
+              "Protect"
+            ],
+            "pokemon": "Basculegion"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Stamina",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Electro Shot",
+              "Flash Cannon",
+              "Draco Meteor",
+              "Protect"
+            ],
+            "pokemon": "Archaludon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Supreme Overlord",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Kowtow Cleave",
+              "Sucker Punch",
+              "Iron Head",
+              "Protect"
+            ],
+            "pokemon": "Kingambit"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Unburden",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Dire Claw",
+              "Close Combat",
+              "Coaching",
+              "Protect"
+            ],
+            "pokemon": "Sneasler"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Natural Cure",
+            "item": "Starminite",
+            "megaStone": "Starminite",
+            "moves": [
+              "Hydro Pump",
+              "Psychic",
+              "Ice Beam",
+              "Protect"
+            ],
+            "pokemon": "Starmie"
+          }
+        }
+      ],
+      "contentPreview": "This Rain team is built around the high-pressure synergy of weather-boosted Water moves and the unique mechanics of the Champions format. By utilizing **Pelipper** to set the rain, we enable the explosive offensive potential of **Basculegion**, **Archaludon**, and **Mega Starmie**.\n\n### Team Strategy\nThe team operates through a combination of speed control and heavy-hitting special and physical attackers:\n\n1.  **Weather Setup & Speed Control**: **Pelipper** is the cornerstone. It sets the rain to boost Water-type damage and ensure moves like *Hurricane* never miss. It also provides *Tailwind* "
+    },
+    {
+      "testId": "validate_loop",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "validate_set called 6x, pokedex 10x",
+      "latencyMs": 116404,
+      "turns": 6,
+      "inputTokens": 32032,
+      "outputTokens": 2580,
+      "totalTokens": 34612,
+      "nudgeCount": 3,
+      "dedupCount": 2,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hippowdon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Metagross"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gastrodon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Garchomp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Tyranitarite",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Rush",
+            "item": "Focus Sash",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Rock Slide",
+              "Protect"
+            ],
+            "pokemon": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Stealth Rock",
+              "Earthquake",
+              "Slack Off",
+              "Protect"
+            ],
+            "pokemon": "Hippowdon"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Rough Skin",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Dragon Claw",
+              "Earthquake",
+              "Swords Dance",
+              "Protect"
+            ],
+            "pokemon": "Garchomp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Intimidate",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Waterfall",
+              "Dragon Dance",
+              "Earthquake",
+              "Protect"
+            ],
+            "pokemon": "Gyarados"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Corviknight"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Mirror Armor",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Brave Bird",
+              "Body Press",
+              "Roost",
+              "U-turn"
+            ],
+            "pokemon": "Corviknight"
+          }
+        }
+      ],
+      "contentPreview": "To build an effective Sand Rush team in Champions, we need to ensure a reliable sand setter, a primary Sand Rush sweeper, and several teammates that provide defensive utility or offensive pressure to prevent the team from being easily walled.\n\n### Team Analysis\n\n**The Sand Core:**\nThe heart of the team is the synergy between **Tyranitar** and **Excadrill**. \n- **Tyranitar** serves as our primary Mega Evolution. Its *Sand Stream* ability sets the weather required to activate Excadrill's *Sand Rush*, doubling its Speed in a Sandstorm. Mega Tyranitar provides massive bulk and offensive pressure.\n"
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Efficient: 9 pokedex calls, 7 unique mons (all ≤2 calls each)",
+      "latencyMs": 47432,
+      "turns": 14,
+      "inputTokens": 68056,
+      "outputTokens": 1408,
+      "totalTokens": 69464,
+      "nudgeCount": 3,
+      "dedupCount": 6,
+      "citationValid": true,
+      "citationTotal": 4,
+      "citationValidCount": 4,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "top Trick Room teams Champions 2026 VGC Doubles"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Hatterene"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Farigiraf"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Incineroar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Clefable"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna-Bloodmoon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ursaluna"
+          }
+        }
+      ],
+      "contentPreview": "Based on the meta-analysis of high-performing archetypes in Champions 2026, Trick Room is currently the highest-performing archetype with an approximate win rate of ~64% [md:data/knowledge/team_archetypes.md:6]. \n\nTo build a successful Trick Room team, we need a combination of reliable setters, priority blockers, and devastating attackers that benefit from the speed reversal.\n\n**Unavailable Pokemon:**\n*   **Ursaluna** is unavailable in Champions because it is not in the permitted roster of 186 fully-evolved Pokemon + Pikachu.\n\n**Team Strategy:**\nThis team follows a \"Semi-Trick Room\" hybrid app"
+    },
+    {
+      "testId": "item_availability",
+      "tag": "behavior",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Valid items listed: sitrus berry, lum berry, mega stone",
+      "latencyMs": 66086,
+      "turns": 3,
+      "inputTokens": 12160,
+      "outputTokens": 1405,
+      "totalTokens": 13565,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 5,
+      "citationValidCount": 5,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Dragonite best held items Champions VGC"
+          }
+        }
+      ],
+      "contentPreview": "In Champions, Dragonite is a highly relevant threat, currently sitting at a 12.0% usage rate in tournaments [usage:dragonite]. Because this game utilizes **Mega Evolution** as its primary gimmick and excludes items like Life Orb or Choice Specs, your item selection for Dragonite is focused on either achieving a Mega Evolution or utilizing Berries and type-boosting items to support its high offensive presence.\n\nBased on current tournament data, here are your best options for Dragonite:\n\n### 1. Mega Evolution: Dragoninite\nThis is the most popular choice, used in approximately 65.1% of Dragonite "
+    },
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": false,
+      "reason": "Failed to flag either Amoonguss or Porygon2 as unavailable",
+      "latencyMs": 17194,
+      "turns": 1,
+      "inputTokens": 4083,
+      "outputTokens": 247,
+      "totalTokens": 4330,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [],
+      "contentPreview": "I apologize for the error. In my previous response, I did not make any factual claims drawn from a `search` tool result, as I was responding strictly to the availability of the Pokemon based on the provided game rules. \n\nSince I did not call any search tools to provide usage percentages, win rates, or meta information, an empty claims array is the correct and required way to conclude my response according to the instructions.\n\n```claims-json\n{\n  \"claims\": []\n}\n```"
+    },
+    {
+      "testId": "stat_accuracy",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "All 6 stats match (91/124/115/145/125/100)",
+      "latencyMs": 4890,
+      "turns": 2,
+      "inputTokens": 6964,
+      "outputTokens": 171,
+      "totalTokens": 7135,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        }
+      ],
+      "contentPreview": "Mega Dragonite's base stats in Champions are as follows:\n\n*   **HP:** 91\n*   **Attack:** 124\n*   **Defense:** 115\n*   **Sp. Atk:** 145\n*   **Sp. Def:** 125\n*   **Speed:** 100"
+    },
+    {
+      "testId": "banned_comprehensive",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 14 banned items + all 3 missing gimmicks",
+      "latencyMs": 29361,
+      "turns": 2,
+      "inputTokens": 7433,
+      "outputTokens": 1139,
+      "totalTokens": 8572,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 5,
+      "citationValidCount": 5,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Pokemon Champions mechanics and items differences from Scarlet/Violet"
+          }
+        }
+      ],
+      "contentPreview": "In Pokémon Champions, several key mechanics and items from the Scarlet/Violet era have been removed or replaced to define the game's specific competitive landscape. \n\n### **Unavailable Battle Mechanics**\nThe following mechanics from Scarlet/Violet are **not available** in Champions:\n*   **Terastallization:** This mechanic does not exist in Champions.\n*   **Dynamax / Gigantamax:** These mechanics are not present.\n*   **Z-Moves:** These mechanics are not present.\n\nInstead, the primary battle gimmick in Champions is **Mega Evolution**. Each team is permitted exactly **one Mega Evolution**, with 5"
+    },
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 51% vs truth 51% (Δ0.0pp)",
+      "latencyMs": 6152,
+      "turns": 2,
+      "inputTokens": 6243,
+      "outputTokens": 105,
+      "totalTokens": 6348,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 1,
+      "citationValidCount": 1,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar tournament usage percentage Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "Incineroar's current tournament usage in Pokemon Champions is 51.0%.\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Incineroar competitive usage statistics: Ranked #1 with 51.0% usage in Champions tournaments.\", \"chunk_ids\": [\"usage:incineroar\"]}\n  ]\n}\n```"
+    },
+    {
+      "testId": "usage_teammates",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 3/3 top teammates: sneasler, incineroar, charizard",
+      "latencyMs": 20237,
+      "turns": 2,
+      "inputTokens": 30217,
+      "outputTokens": 306,
+      "totalTokens": 30523,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 3,
+      "citationValidCount": 3,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "top pokemon paired with Garchomp current Champions VGC"
+          }
+        }
+      ],
+      "contentPreview": "Based on current Champions VGC tournament usage statistics, the top 3 Pokémon most commonly paired with Garchomp are:\n\n1. **Sneasler** (51.080%)\n2. **Incineroar** (48.875%)\n3. **Charizard** (32.628%)\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Sneasler is paired with Garchomp in 51.080% of cases.\", \"chunk_ids\": [\"usage:garchomp\"]},\n    {\"text\": \"Incineroar is paired with Garchomp in 48.875% of cases.\", \"chunk_ids\": [\"usage:garchomp\"]},\n    {\"text\": \"Charizard is paired with Garchomp in 32.628% of cases.\", \"chunk_ids\": [\"usage:garchomp\"]}\n  ]\n}\n```"
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Named 5 real Mega Golurk teammates: incineroar, torkoal, venusaur, sneasler, farigiraf",
+      "latencyMs": 22935,
+      "turns": 2,
+      "inputTokens": 5356,
+      "outputTokens": 643,
+      "totalTokens": 5999,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 5,
+      "citationValidCount": 5,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament winning team Champions Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "In Champions Regulation M-A, a highly successful tournament-winning team archetype centers around **Mega Golurk** as a powerful offensive presence. Due to the nature of Mega Evolution in this format, Mega Golurk functions as a primary wallbreaker, often utilizing its high physical damage to pressure opponents early.\n\nBased on recent tournament data for Mega Golurk, the most consistent team structure utilizes defensive and support pieces to mitigate its lack of speed and provide coverage for its weaknesses. The other five team members typically found on a winning roster include:\n\n1.  **Farigira"
+    },
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+      "latencyMs": 11229,
+      "turns": 2,
+      "inputTokens": 20649,
+      "outputTokens": 365,
+      "totalTokens": 21014,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 3,
+      "citationValidCount": 3,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Garchomp Regulation A Doubles tier list"
+          }
+        }
+      ],
+      "contentPreview": "In their Regulation A Doubles tier list for *Pokemon Champions*, content creator **AngrySlowbroPlus** places **Garchomp** in the **S tier**.\n\nAccording to their analysis:\n*   **Viability:** They consider Garchomp to be \"good\" and potentially even better/more consistent than Charizard in the current meta.\n*   **Strengths:** They highlight that Garchomp is very versatile and can be run in many different ways. Specifically, they note that **Earthquake spam** is \"very powerful at the moment.\"\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"AngrySlowbroPlus places Garchomp in the S tier for Regulatio"
+    },
+    {
+      "testId": "meta_core_attribution",
+      "tag": "retrieval",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Reported 55.8% (truth ~55.8%)",
+      "latencyMs": 15224,
+      "turns": 2,
+      "inputTokens": 8855,
+      "outputTokens": 532,
+      "totalTokens": 9387,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 3,
+      "citationValidCount": 0,
+      "citationInvalidIds": [
+        "knowledge:team_archetypes.md:1",
+        "knowledge:team_archetypes.md:1",
+        "knowledge:team_archetypes.md:1"
+      ],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Archaludon Pelipper rain core win rate"
+          }
+        }
+      ],
+      "contentPreview": "In the current Pokemon Champions meta, the Archaludon + Pelipper rain core has a win rate of **55.8%** and maintains a usage rate of **20.8%** (knowledge:team_archetypes.md:1).\n\nThis core is highly effective because Pelipper's Drizzle ability provides the rain necessary for Archaludon to utilize **Electro Shot** without a charge turn, granting it a free +1 Special Attack boost while also ensuring moves like Thunder and Hurricane never miss (knowledge:team_archetypes.md:1).\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Archaludon + Pelipper (55.8% WR, 20.8% usage).\", \"chunk_ids\": [\"knowledge:te"
+    }
+  ]
+}
