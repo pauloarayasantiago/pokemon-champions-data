@@ -1,22 +1,31 @@
 # Active Context
 
-_Last updated: 2026-04-23 (post strategic reframe — Phase 3 retry downgraded, Tier A priorities in place). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-23 (post 7-model bake-off + phantom-Pokemon interceptor ship). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
 
 ## TL;DR
 
-- **Retrieval baseline:** nDCG@10 = **0.853** (post-Phase-5, 2,329 chunks). Per-intent stable: matchup 0.7552, counter 0.6924, adversarial 0.6853 (invariant held). Snapshot: [retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json).
-- **Agentic baseline** (`gemma-4-26b --real-rag`, 3-run): 13/13, 13/13, 12/13 @ ~25k tok/pass, ~44s/test. Run-3 miss is `phantom_pokemon` (Gemma skipped tools). Citation validity 100%/100%/80% on retrieval tests.
-- **Strategic reframe (2026-04-23):** Phases 0-5 moved retrieval from 0.849 → 0.853 over ~2 weeks. The remaining user-value levers are NOT further RAG tuning — they are (1) which LLM drives the agent loop, (2) content freshness, (3) Gemma behavior flakes. **Phase 3 reranker retry downgraded** from "NEXT" to Tier B (reassess after Tier A). See [rag-master-plan.md](rag-master-plan.md) "Strategic reframe (2026-04-23)".
-- **Provider keys available today** (no infra work): OpenRouter (Gemma 4 26B, Gemma 4 31B, GPT-OSS, Gemini 3 Flash), Anthropic (Sonnet 4.6, Opus 4.7), Groq (Llama 3.3 70B), HF Inference (embeddings + cross-encoder). **NOT installed:** Ollama (A2 install task).
-- **Current online default:** `gemma-4-26b` (`google/gemma-4-26b-a4b-it` via OpenRouter, free). Only model ever benchmarked on the 13-test suite with real RAG. Huge untapped option space.
+- **Retrieval baseline:** nDCG@10 = **0.853** unchanged (post-Phase-5, 2,329 chunks). Snapshot: [retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json).
+- **Agentic baseline post-interceptor** (`gemma-4-26b --real-rag`, 3-run 2026-04-23): **13/13, 13/13, 12/13** @ 30k avg tok/pass, ~36s/test avg. Run-3 miss is `team_json` (pre-existing Gemma "forgot required JSON block" flake, unrelated to interceptor). **phantom_pokemon passes 3/3** (was 2/3 pre-interceptor). Citation 80%/100%/80% on retrieval tests — open Gemma-side hallucination issue, independent of phantom fix.
+- **2026-04-23 session — MAJOR reframe.** Tested 7 LLMs (Gemma, Groq Llama 3.3 70B, GPT-OSS 20B, qwen2.5-7b/llama3.1-8b Ollama, DeepSeek V3.2, GLM-4.5-Air, Gemini 2.5 Flash Lite). **`phantom_pokemon` fails on EVERY model tested** — not a Gemma flake, it's systemic. A4 reframed from "Gemma flake fix" to "model-agnostic phantom Pokemon interceptor". Shipped as [lib/phantom-guard.ts](../lib/phantom-guard.ts) + wiring in [src/app/api/team/route.ts](../src/app/api/team/route.ts) and [scripts/eval-models.ts](../scripts/eval-models.ts).
+- **Default model retained: `gemma-4-26b`.** No challenger beat it on cost+quality. DeepSeek V3.2 matches at 3× cost; GLM-4.5-Air matches at 5× cost with 3.4× token variance. Detail in [memory/project_default_model.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_default_model.md).
+- **Gemma 4 26B A4B is PAID** ($0.06/$0.33 per M, ~$0.008/run) — earlier docs mis-labeled it as free tier. The `:free` suffix applies only to the 31B variant.
+- **Bug fix shipped:** `lib/rag.ts:223` default `RERANKER` fallback changed from `"jina"` to `"none"`. Jina's account has been depleted; fallback was wasting 300-500ms per RAG call on a silent 403. Retrieval unchanged.
 
 ## Next actions (Tier A, in order)
 
-1. **A1 — Groq Llama 3.3 70B eval** (already configured, free): `npx tsx scripts/eval-models.ts --models llama-3.3-70b --real-rag` × 3. If beats Gemma: flip default in [src/lib/llm.ts](../src/lib/llm.ts).
-2. **A2 — Ollama install + local model eval** (qwen2.5-7b + llama3.1-8b at Q4 for the RTX 2070 SUPER 8GB). Quickstart in master-plan. Unlocks free local CLI path.
-3. **A3 — Content enrichment**: singles-meta doc, tier list reconciliation (`meta_snapshot.md` vs AngrySlowbroPlus), fresh Pikalytics + tournament refresh, TheDelybird's 5 template archetypes.
-4. **A4 — Gemma flake fixes**: tighten tool-first directive (phantom_pokemon), update retry nudge to list valid chunk_ids (citation hallucination).
-5. A5 _(optional)_ — Haiku 4.5 / Sonnet 4.6 eval for a measured "premium paid" tier.
+1. **A3 — Content enrichment** (now top Tier A since A1/A2/A4 shipped): singles-meta doc, tier list reconciliation (`meta_snapshot.md` vs AngrySlowbroPlus), fresh Pikalytics + tournament refresh, TheDelybird's 5 template archetypes.
+2. **A4b — Prompt hardening (optional follow-up to interceptor)** — tighten system prompt "MUST call pokedex first" directive as belt-and-suspenders alongside the interceptor. Low priority since interceptor is the structural fix.
+3. A5 _(optional)_ — Haiku 4.5 / Sonnet 4.6 eval for a measured "premium paid" tier.
+4. Tier B: Phase 3 reranker retry (deferred unless A3 reveals retrieval is still the UX bottleneck).
+
+## Session 2026-04-23 — SHIPPED list
+
+- A1 (Groq Llama 3.3 70B eval) — NO-GO; Groq parser rejects Llama native tool format + 12k TPM cap. Memo: [project_groq_llama33_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_groq_llama33_eval.md).
+- A2 (Ollama local eval) — NO-GO on 7-8B Q4 for this workload; qwen2.5-7b 8/13 + llama3.1-8b 4/13. Registry additions retained for future stronger local models.
+- A4 (phantom_pokemon interceptor) — SHIPPED; single-test smoke passes in 0ms/0 tokens; 3-run variance measuring.
+- OpenRouter bake-off — DeepSeek V3.2, GLM-4.5-Air (3-run), Gemini 2.5 Flash Lite. No challenger beat Gemma on cost+quality. Registry adds in `scripts/eval-models.ts`.
+- Jina default fix — `lib/rag.ts:223`.
+- Memo files: [project_deepseek_v32_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_deepseek_v32_eval.md), [project_glm_45_air_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_glm_45_air_eval.md), [project_gemini_25_flash_lite_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_gemini_25_flash_lite_eval.md), [project_phantom_pokemon_systemic.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_phantom_pokemon_systemic.md).
 
 Tier B / C + dead code cleanup detail: master-plan.
 

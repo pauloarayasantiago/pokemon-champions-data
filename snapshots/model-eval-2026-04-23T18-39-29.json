@@ -1,0 +1,601 @@
+{
+  "timestamp": "2026-04-23T18:39:29.328Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "llama3.1-8b"
+  ],
+  "tests": [
+    {
+      "id": "tool_workflow",
+      "tag": "behavior"
+    },
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "validate_loop",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "item_availability",
+      "tag": "behavior"
+    },
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "usage_teammates",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    },
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "llama3.1-8b": {
+      "passes": 4,
+      "total": 13,
+      "tokens_total": 69772,
+      "tokens_per_pass": 17443,
+      "mean_latency_ms": 124166.61538461539,
+      "mean_turns": 2.076923076923077,
+      "nudge_count": 9,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 1,
+          "total": 5
+        },
+        "retrieval": {
+          "passes": 3,
+          "total": 5
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 3
+        }
+      },
+      "citation_validity_rate": 0.2,
+      "citation_retrieval_tests": 5,
+      "citation_retrieval_valid": 1,
+      "citation_total_cited": 5,
+      "citation_total_valid": 3,
+      "citation_retries": 8
+    }
+  },
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "tag": "behavior",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "pokedex never called (only: none)",
+      "latencyMs": 120019,
+      "turns": 1,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "No ```team-json block found anywhere in response",
+      "latencyMs": 241634,
+      "turns": 5,
+      "inputTokens": 9094,
+      "outputTokens": 684,
+      "totalTokens": 9778,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "type": "Rain team archetype in VGC Doubles Champions format",
+            "topK": "5"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "6 move Rain movesets Pelipper"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": "Based on the results, I can see that there are some banned pre-evolutions in VGC Doubles Champions format. Let's make sure to exclude those from our team.\n\nLet's start with a Rain Archetype team for VGC Doubles Champions format. According to the search result, here is a possible archetype:\n\n```json\n{\"archetype\": \"Rain\", \"pokemon\": []}\n```\n\nFor this team, we will need 6 Pokemon that are fully evolved and have appropriate moves for a Rain Archetype. We also need one Mega Evolution."
+    },
+    {
+      "testId": "validate_loop",
+      "tag": "behavior",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "validate_set never called (pokedex: 2x, other: search,search)",
+      "latencyMs": 169329,
+      "turns": 2,
+      "inputTokens": 1890,
+      "outputTokens": 279,
+      "totalTokens": 2169,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Sand Rush Tyranitar team Champions"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Sand Rush Excadrill team Champions"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": "} \n\nteam-json\n{\n  \"archetype\": \"Sand Rush\",\n  \"pokemon\": [\n    {\n      \"name\": \"Tyranitar\",\n      \"item\": \"\",\n      \"ability\": \"Sand Stream\",\n      \"moves\": [\"Stone Edge\", \"Earthquake\", \"Close Combat\", \"\"],\n      \"spread\": \"4/0/4/32/0/28\",\n      \"nature\": \"\"\n    },\n     {\n      \"name\": \"Excadrill\",\n      \"item\": \"\",\n      \"ability\": \"Sand Rush\",\n      \"moves\": [\"Drill Run\", \"Iron Head\", \"Earthquake\", \"\"],\n      \"spread\": \"4/0/0/32/31/28\",\n      \"nature\": \"\"\n    }\n  ]\n}\n\nclaims-json\n{\n  \"claims\": [\n    {\"text\": \"Current Meta Team, Sand Rush is a viable archetype in Champions.\", \"chunk_ids\": [\"k"
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "llama3.1-8b",
+      "pass": true,
+      "reason": "Efficient: 5 pokedex calls, 5 unique mons (all ≤2 calls each)",
+      "latencyMs": 197420,
+      "turns": 2,
+      "inputTokens": 1887,
+      "outputTokens": 495,
+      "totalTokens": 2382,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Torkoal"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Torkoal",
+            "ability": null,
+            "item": "Sitrus Berry",
+            "megaStone": "None",
+            "moves": [
+              "Recover",
+              "Protect",
+              "Yawn",
+              "Heat Wave"
+            ]
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Giratina-Origin"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": null,
+            "item": "Focus Sash",
+            "megaStone": null,
+            "moves": [
+              "Shadow Sneak",
+              "Will-O-Wisp",
+              "Trick Room",
+              "Shadow Force"
+            ],
+            "pokemon": "Giratina-Origin"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kadabra"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Kadabra",
+            "ability": null,
+            "item": "Leftovers",
+            "megaStone": null,
+            "moves": [
+              "Trick Room",
+              "Psychic",
+              "Shadow Ball",
+              "Imprison"
+            ]
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mandibuzz"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Overcoat",
+            "item": null,
+            "megaStone": null,
+            "moves": [
+              "Shadow Sneak",
+              "Will-O-Wisp",
+              "Trick Room",
+              "Sky Attack"
+            ],
+            "pokemon": "Mandibuzz"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Froslass"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": null,
+            "item": "Choice Scarf",
+            "megaStone": null,
+            "moves": [
+              "Trick Room",
+              "Shadow Ball",
+              "Ice Punch",
+              "Frozen Tears"
+            ],
+            "pokemon": "Froslass"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": "}\n```\n\nClaims:\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\" : \"According to pokedex output, Kadabra legal movepool includes Imprison.\", \"chunk_ids\": [\"pokedex:kadabra\"]},\n    {\"text\" : \"Pokedex indicates Froslass's ability set only contains Frozen Tears. No other options from previous train data exists here or in 'knowledge:meta_rules.md#ability-sets'.\", \"chunk_ids\": [\"pokedex:froslass\"]},\n  ]\n}\n```"
+    },
+    {
+      "testId": "item_availability",
+      "tag": "behavior",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "No valid Champions items mentioned in response",
+      "latencyMs": 82251,
+      "turns": 2,
+      "inputTokens": 7922,
+      "outputTokens": 484,
+      "totalTokens": 8406,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "held items champions dragonite"
+          }
+        }
+      ],
+      "contentPreview": "{\"name\": \"pokedex\", \"parameters\": {\"name\":\"Dragonite\"}}\n{\"name\": \"search\", \"parameters\": {\"query\":\"held items champions dragonite\"}}"
+    },
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "Failed to flag either Amoonguss or Porygon2 as unavailable",
+      "latencyMs": 9932,
+      "turns": 1,
+      "inputTokens": 3568,
+      "outputTokens": 61,
+      "totalTokens": 3629,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [],
+      "contentPreview": "I cannot help build a team that features pre-evolutions, as they are not allowed in the Champions game. Is there anything else I can help you with?"
+    },
+    {
+      "testId": "stat_accuracy",
+      "tag": "hallucination",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "Only 0/6 stat values match — expected 91/124/115/145/125/100, found numbers [134, 150, 90, 80]",
+      "latencyMs": 64134,
+      "turns": 2,
+      "inputTokens": 5436,
+      "outputTokens": 400,
+      "totalTokens": 5836,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 2,
+      "citationValidCount": 0,
+      "citationInvalidIds": [
+        "pokemon:dragonite",
+        "usage:none"
+      ],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite-Mega"
+          }
+        }
+      ],
+      "contentPreview": "Here's the corrected answer:\n\nI cannot provide an HP, Attack, Defense, Sp. Atk, Sp. Def value and/or Speed value for Dragonite mega-evolved in Champions. Instead I can tell you that  the base stats for Dragonite (which is available) in each of its categories are as follows:\n\n* HP: 134\n* Attack: 150\n* Defense: 90\n* Special Attack: Not Available (see above)\n* Special Defense: 80\n* Speed: 80\n\nThese values reflect those listed in the Pokedex for Pokémon 'Dragonite'.\n\n```team-json\n{\n  \"archetype\": \"Rain\",\n  \"pokemon\": []\n}\n```\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Dragonite is a fully-evolv"
+    },
+    {
+      "testId": "banned_comprehensive",
+      "tag": "hallucination",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "Only 0 banned items listed (need ≥5): none",
+      "latencyMs": 57386,
+      "turns": 2,
+      "inputTokens": 7310,
+      "outputTokens": 323,
+      "totalTokens": 7633,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "topK": "5",
+            "query": "Champions unavailable in S/V - item/mechanic"
+          }
+        }
+      ],
+      "contentPreview": "{\"name\": \"search\", \"parameters\": {\"query\":\"champions unavailable in S/V - item/mechanic\",\"topK\":\"5\"}}"
+    },
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "llama3.1-8b",
+      "pass": true,
+      "reason": "Reported 51% vs truth 51% (Δ0.0pp)",
+      "latencyMs": 100654,
+      "turns": 2,
+      "inputTokens": 6015,
+      "outputTokens": 611,
+      "totalTokens": 6626,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "json-parse: Expected ',' or ']' after array element in JSON at position 272 (line 4 column 111)",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar tournament team champions regulation M-A usage percent",
+            "topK": 1
+          }
+        }
+      ],
+      "contentPreview": "Here is the revised response:\n\nIncineroar's current tournament usage percentage in Pokémon Champions Regulation M-A is 51.0%. [citation:chunk_id=\"usage:incineroar\"](1)\n\nThe top moves used with Incineroar are:\n* Fake Out: unselectable after turn 1.\n* Protect: 8 PP only.\n* Parting Shot\n* Flare Blitz\n* Throat Chop\n* Darkest Lariat\n* Will-O-Wisp\n* Helping Hand\n* Taunt\n* Snarl\n\nThe top items used with Incineroar are:\n* Sitrus Berry\n* Chople Berry\n* Shuca Berry\n* Leftovers\n* Lum Berry\n\n```team-json\n{\n  \"archetype\": \"Fire/Dark\",\n  \"pokemon\": [\n    {\n      \"name\": \"Incineroar\",\n      \"item\": \"Sitrus B"
+    },
+    {
+      "testId": "usage_teammates",
+      "tag": "retrieval",
+      "modelKey": "llama3.1-8b",
+      "pass": true,
+      "reason": "Named 3/3 top teammates: sneasler, incineroar, charizard",
+      "latencyMs": 76786,
+      "turns": 2,
+      "inputTokens": 7401,
+      "outputTokens": 422,
+      "totalTokens": 7823,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "{\"type\":\"string\",\"value\": \"Garchomp partner\"}",
+            "topK": "3"
+          }
+        }
+      ],
+      "contentPreview": "Here is the revised response with the required `claims-json` block:\n\nThe top 3 Pokémon most commonly paired with Garchomp in current Champions VGC are:\n\n1.Sneasler\n2.Incineroar \n3.Charizard\n\n```team-json\n{\n  \"pokemon\": [\n    {\"name\":\"Sneasler\", \"item\" : \"\", \"ability\" : \"\", \"moves\": [\"Earthquake\",\"Dragon Claw\",\"Wide Guard\",\"Protect\"], \"spread\":\"32/0/0/4/16/20\"}, \n    {\"name\":\"Incineroar\", \"item\" :\"Sitrus Berry\", \"ability\" : \"\" ,\"moves\":[\"Swords Dance\", \"Stone Edge\", \"Stomping Tantrum\"],\"spread\":\"48/12/8/18/8/30\",\"nature\": \"Jolly\"},\n    {\"name\":\"Charizard\", \"item\":\"\",\"ability\": \"Turboblaze\",\"mov"
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "Only 1 recognizable teammates (need ≥3): incineroar",
+      "latencyMs": 295091,
+      "turns": 2,
+      "inputTokens": 4458,
+      "outputTokens": 1046,
+      "totalTokens": 5504,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "{\"tournamentTeams\": [{\"reg\": \"M-A\", \"winLossRecord\": \"6-0\", \"tier\": \"Platinum\", \"teams\": [{}]}], \"requestId\": \"12345\"}"
+          }
+        }
+      ],
+      "contentPreview": "Based on the search results, I will suggest a team built around Mega Golurk that is similar to some of the recent tournament-winning teams in Champions Regulation M-A.\n\nThe team members are:\n\n1. Mega Golurk (leader)\n2. Basculegion\n3. Corviknight\n4. Incineroar\n5. Floette-Eternal-Mega\n6. Maushold-Four\n\nThis core team composition is similar to recent tournament-winning teams in Champions Regulation M-A, and it showcases a balance of physical and special attackers with a variety of strengths and weaknesses.\n\nTo validate this team, I will call validate_set for each member:\n```python\nvalidate_set(po"
+    },
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "llama3.1-8b",
+      "pass": false,
+      "reason": "Missing: creator, Garchomp, tier-list context",
+      "latencyMs": 126292,
+      "turns": 2,
+      "inputTokens": 1897,
+      "outputTokens": 28,
+      "totalTokens": 1925,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "tierlist regulation a champions doubles angryslowbroplus garchomp"
+          }
+        }
+      ],
+      "error": "fetch error: TimeoutError: The operation was aborted due to timeout",
+      "contentPreview": ""
+    },
+    {
+      "testId": "meta_core_attribution",
+      "tag": "retrieval",
+      "modelKey": "llama3.1-8b",
+      "pass": true,
+      "reason": "Reported 55.8% (truth ~55.8%)",
+      "latencyMs": 73238,
+      "turns": 2,
+      "inputTokens": 7680,
+      "outputTokens": 381,
+      "totalTokens": 8061,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 3,
+      "citationValidCount": 3,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Archaludon + Pelipper rain core win rate champions"
+          }
+        }
+      ],
+      "contentPreview": "Here is the revised response:\n\nThe win rate of the Archaludon + Pelipper rain core in the current Pokemon Champions meta is approximately **55.8%**.\n\n```\nteam-json\n{\n  \"archetype\": \"Rain\",\n  \"pokemon\": [\n    {\n      \"name\": \"Archaludon\",\n      \"item\": \"\",\n      \"ability\": \"\",\n      \"moves\": [],\n      \"spread\": \"\",\n      \"nature\": \"\"\n    },\n    {\n      \"name\": \"Pelipper\",\n      \"item\": \"\",\n      \"ability\": \"\",\n      \"moves\": [],\n      \"spread\": \"\",\n      \"nature\": \"\"\n    }\n  ]\n}\n```\n\n```claims-json\n{\n  \"claims\": [\n    {\"text\": \"Archaludon + Pelipper rain core has ~55.8% win rate.\", \"chunk_ids\":"
+    }
+  ]
+}

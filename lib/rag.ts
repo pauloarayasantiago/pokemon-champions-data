@@ -220,7 +220,7 @@ export async function query(
   const rerankT0 = Date.now();
   const rerankerChoice =
     (process.env.RERANKER ?? "").toLowerCase() ||
-    (process.env.GEMMA_RERANK_ENABLED === "true" ? "gemma" : "jina");
+    (process.env.GEMMA_RERANK_ENABLED === "true" ? "gemma" : "none");
   const candidatesForRerank = raw.map((r) => ({
     id: r.id as string,
     text: r.text as string,

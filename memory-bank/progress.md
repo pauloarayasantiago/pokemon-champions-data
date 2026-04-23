@@ -681,6 +681,45 @@ Two-part structural fix that promoted `tournament_retrieval` from 0/13 to consis
 
 **Remaining 1/13 — `creator_opinion`:** Flaky ~50% pass rate. Scoring: `mentionsCreator` + `mentionsGarchomp` + `mentionsTierList (/tier list|tier-list|ranking/)`. Model finds creator + Garchomp but sometimes omits "tier list" exact phrasing. Fix: add dedicated stub entry with AngrySlowbroPlus + tier-list keywords. Deferred to next session.
 
+### Session 2026-04-23 — 7-model bake-off + Jina default fix + phantom Pokemon interceptor
+
+Big session — three orthogonal wins and one behavioral insight that reframes the master plan.
+
+**Models evaluated on the 13-test agentic suite (`--real-rag`, 1-smoke unless noted):**
+
+| Model | Provider | Pass | Citations | Tok/pass | Latency | Est $/run | Notes |
+|---|---|---|---|---|---|---|---|
+| Groq Llama 3.3 70B | Groq (free) | **0/13** | n/a | n/a | n/a | $0 | Tool_use_failed parsing rejection (Llama native XML format) + 12k TPM cap. NO-GO on free tier. |
+| GPT-OSS 20B | OpenRouter (paid) | **crashed** | n/a | 550k on test 1 alone | 665s/test | high | Reasoning-mode bloat → socket timeout mid-run. Not a low-token candidate. |
+| qwen2.5-7b | Ollama local | 8/13 | 60% | 17k | 99.7s | $0 | 2/5 behavior, 4/5 retrieval, citations weak. Below 10/13 viable bar. |
+| llama3.1-8b | Ollama local | 4/13 | 20% | 17.4k | 124s | $0 | Tool timeouts on 3+ tests. Below bar. |
+| DeepSeek V3.2 | OpenRouter (paid) | 12/13 | 100% | 62k | 85s | ~$0.022 | Matches Gemma pass rate, better citation floor, 3× cost. Not flipped. |
+| GLM-4.5-Air (3-run) | OpenRouter (paid) | 13/12/12 | 100%/100%/100% | avg 92k (46k/155k/75k) | avg 48s | ~$0.038 | Highest variance in tok/pass (3.4× range). Matches Gemma pass rate, better citations, ~5× cost. Not flipped. |
+| Gemini 2.5 Flash Lite | OpenRouter (paid) | 10/13 | **20%** | 37k | 12s | ~$0.008 | Fast & cheap but chaotic (47 nudges, 9 dedups). Unreliable tool-use. Not viable. |
+| Gemma 4 26B A4B (default) | OpenRouter (paid) | 12-13/13 | 80-100% | 25k | 44s | ~$0.008 | Session confirmed the current default is still the best cost/quality tier for this workload. |
+
+**Cost clarification.** Earlier this session I mis-called Gemma 4 26B "free tier" — it's actually paid at $0.06/M in, $0.33/M out. Correct per-run cost: ~$0.008 (not $0). Updated [memory/project_default_model.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_default_model.md) accordingly.
+
+**Behavioral insight (reframe A4):** Every model tested — including the three that matched Gemma on overall pass rate — failed `phantom_pokemon` at 1/3-3/3 rate. Every LLM sees "Amoonguss" or "Porygon2", answers from training data without calling `pokedex`. This is NOT a Gemma flake. It's a systemic LLM-behavior issue that LLM selection cannot fix. Master plan's A4 ("Gemma flake fixes") reframed → "phantom Pokemon interceptor (model-agnostic)".
+
+**Structural fix shipped (A4):** [lib/phantom-guard.ts](../lib/phantom-guard.ts) + wiring in [src/app/api/team/route.ts](../src/app/api/team/route.ts) (POST handler, post-meta/pre-loop, emits `phantom_pokemon_refused` SSE event + content delta + done) and [scripts/eval-models.ts](../scripts/eval-models.ts) `runAgent()` (same short-circuit). Reuses `PRE_EVO_MAP` (now exported) from [lib/team-validator.ts](../lib/team-validator.ts) for 23 pre-evos; adds a small `EXPLICIT_PHANTOMS` table (Amoonguss today; extensible) for fully-evolved Pokemon removed from the Champions roster. Word-boundary match uses hyphen-aware lookarounds (`(?<![a-z0-9-])name(?![a-z0-9-])`) so "porygon" inside "porygon-z" doesn't match.
+
+**Verification:**
+- 18 unit assertions pass (`npx tsx lib/phantom-guard.ts`).
+- Single-test `phantom_pokemon` smoke on Gemma: **1/1 in 0ms, 0 tokens** (short-circuit works — LLM never called).
+- Full 3-run Gemma `--real-rag` post-interceptor: **13/13, 13/13, 12/13** @ 30k avg tok/pass, ~36s/test avg. phantom_pokemon passes **3/3 runs** (was 2/3 pre-interceptor). Run-3 miss is `team_json` (pre-existing "forgot the required JSON block" flake, documented in `project_gemma_agentic_quirks.md` — unrelated to interceptor). Citation validity 80%/100%/80% on retrieval tests (separate Gemma-side hallucination issue, reframed as A4c).
+- Retrieval eval: nDCG@10 = **0.853 confirmed unchanged** (all per-intent numbers identical to Phase 5 baseline — adversarial 0.685, counter 0.692, matchup 0.755, item 0.991, move 0.995, stat 0.839, team 0.844, usage 0.981). Interceptor is agent-layer only; RAG is untouched.
+
+**Bug fix — Jina default firing:** [lib/rag.ts:222-223](../lib/rag.ts) default `RERANKER` fallback was `"jina"` when env unset. Jina account has been depleted for months → every RAG call was burning 300-500ms on a 403 before falling back to RRF-only. activeContext.md claimed the default was RRF+boosts-only; actual code said otherwise. Changed fallback to `"none"`. Retrieval baseline 0.853 unchanged (Jina was silently no-op'ing anyway). Eval logs now Jina-free.
+
+**Registry additions:** `scripts/eval-models.ts` MODELS dict gained `llama-3.3-70b` (Groq), `gpt-oss-20b` (paid OR), `gemini-2.5-flash-lite` (paid OR), `glm-4.5-air` (paid OR), `qwen3-8b` (Ollama local), `qwen2.5-coder-7b` (Ollama local). The two Ollama tags and Groq-keyed entry are structurally new; the OR entries are plain OpenAI-compat routes through the existing `callOpenRouter()` dispatcher.
+
+**Decision:** DEFAULT_MODEL stays `gemma-4-26b`. No challenger beat it on a cost+quality basis; the phantom interceptor was the lever that actually moved user-visible trust.
+
+**Snapshots:** `snapshots/model-eval-2026-04-23T*.json` (10+ new files across the session). Qwen3:8b smoke still queued (pull-dependent, may finish post-commit — future session can add its memo).
+
+**Memory memos written this session:** `project_groq_llama33_eval.md`, `project_deepseek_v32_eval.md`, `project_glm_45_air_eval.md`, `project_gemini_25_flash_lite_eval.md`, `project_phantom_pokemon_systemic.md`. Index updated in `MEMORY.md`.
+
 ## Pending
 
 ### Large-file refactors (flagged 2026-04-21 after Stage 6.3)

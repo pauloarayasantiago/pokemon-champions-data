@@ -1,0 +1,836 @@
+{
+  "timestamp": "2026-04-23T18:51:22.581Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemini-2.5-flash-lite"
+  ],
+  "tests": [
+    {
+      "id": "tool_workflow",
+      "tag": "behavior"
+    },
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "validate_loop",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "item_availability",
+      "tag": "behavior"
+    },
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "usage_teammates",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    },
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "gemini-2.5-flash-lite": {
+      "passes": 10,
+      "total": 13,
+      "tokens_total": 367688,
+      "tokens_per_pass": 36768.8,
+      "mean_latency_ms": 11976.538461538461,
+      "mean_turns": 6.230769230769231,
+      "nudge_count": 47,
+      "dedup_count": 9,
+      "by_tag": {
+        "behavior": {
+          "passes": 4,
+          "total": 5
+        },
+        "retrieval": {
+          "passes": 4,
+          "total": 5
+        },
+        "hallucination": {
+          "passes": 2,
+          "total": 3
+        }
+      },
+      "citation_validity_rate": 0.2,
+      "citation_retrieval_tests": 5,
+      "citation_retrieval_valid": 1,
+      "citation_total_cited": 9,
+      "citation_total_valid": 9,
+      "citation_retries": 12
+    }
+  },
+  "results": [
+    {
+      "testId": "tool_workflow",
+      "tag": "behavior",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "pokedex called 2x (Dragonite ✓), validate 0x",
+      "latencyMs": 15512,
+      "turns": 12,
+      "inputTokens": 34081,
+      "outputTokens": 799,
+      "totalTokens": 34880,
+      "nudgeCount": 12,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite-Mega"
+          }
+        }
+      ],
+      "contentPreview": "I cannot fulfill this request. We have not yet agreed upon a valid team. My previous responses have repeatedly stated that Mega Dragonite is not a legal Pokémon in the Champions 2026 format.\n\nPlease choose a valid Mega Evolution or a different set of Pokémon to build a team around, and I will then be able to generate the `team-json` block for you."
+    },
+    {
+      "testId": "team_json",
+      "tag": "behavior",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "team-json valid — 6 Pokemon, archetype: \"Rain\"",
+      "latencyMs": 21600,
+      "turns": 16,
+      "inputTokens": 54258,
+      "outputTokens": 2606,
+      "totalTokens": 56864,
+      "nudgeCount": 3,
+      "dedupCount": 1,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Barraskewda"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingdra"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Comfey"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tornadus-Therian"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Porygon-Z"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Goodra"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Pelipper",
+            "ability": "Drizzle",
+            "item": "Sitrus Berry",
+            "megaStone": null,
+            "moves": [
+              "Hydro Pump",
+              "Hurricane",
+              "Wide Guard",
+              "Protect"
+            ]
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Blastoise"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "moves": [
+              "Hydro Pump",
+              "Aura Sphere",
+              "Dark Pulse",
+              "Water Pulse"
+            ],
+            "ability": "Mega Launcher",
+            "pokemon": "Blastoise",
+            "megaStone": "Blastoisinite",
+            "item": "Blastoisinite"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Kingambit"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Kingambit",
+            "megaStone": null,
+            "ability": "Supreme Overlord",
+            "item": "Black Glasses",
+            "moves": [
+              "Kowtow Cleave",
+              "Sucker Punch",
+              "Iron Head",
+              "Protect"
+            ]
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Black Glasses item Champions"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Toxapex"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "megaStone": null,
+            "item": "Mystic Water",
+            "moves": [
+              "Scald",
+              "Baneful Bunker",
+              "Recover",
+              "Protect"
+            ],
+            "ability": "Regenerator",
+            "pokemon": "Toxapex"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Toxapex"
+          }
+        }
+      ],
+      "contentPreview": "I apologize for the oversight. There were no specific claims drawn from search results in my previous response that required citation in the `claims-json` block. The team composition was based on general VGC strategy and the available Pokemon and mechanics within the Champions format, rather than specific tournament data or cited statistics. Therefore, the `claims` array remains empty.\n\n```team-json\n{\n  \"archetype\": \"Rain\",\n  \"pokemon\": [\n    {\n      \"name\": \"Pelipper\",\n      \"item\": \"Sitrus Berry\",\n      \"ability\": \"Drizzle\",\n      \"moves\": [\"Hydro Pump\", \"Hurricane\", \"Wide Guard\", \"Protect\"]"
+    },
+    {
+      "testId": "validate_loop",
+      "tag": "behavior",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "validate_set called 11x, pokedex 10x",
+      "latencyMs": 29937,
+      "turns": 14,
+      "inputTokens": 85301,
+      "outputTokens": 5105,
+      "totalTokens": 90406,
+      "nudgeCount": 5,
+      "dedupCount": 8,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "megaStone": "Excadrillite",
+            "pokemon": "Excadrill",
+            "item": "Excadrillite",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Protect",
+              "Swords Dance"
+            ],
+            "ability": "Sand Rush"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Excadrill"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "item": "Focus Sash",
+            "ability": "Sand Rush",
+            "pokemon": "Excadrill",
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Protect",
+              "Swords Dance"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "item": "Choice Band",
+            "pokemon": "Tyranitar",
+            "ability": "Sand Stream",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Rock Slide"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "item": "Sitrus Berry",
+            "ability": "Sand Stream",
+            "pokemon": "Tyranitar",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Rock Slide"
+            ]
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Leftovers",
+            "moves": [
+              "Rock Slide",
+              "Earthquake",
+              "Stealth Rock",
+              "Protect"
+            ],
+            "pokemon": "Gigalith"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Slaking"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Truant",
+            "item": "Choice Band",
+            "moves": [
+              "Giga Impact",
+              "Earthquake",
+              "Hammer Arm",
+              "Protect"
+            ],
+            "pokemon": "Slaking"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Tyranitar"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "item": "Life Orb",
+            "moves": [
+              "Earthquake",
+              "Dragon Claw",
+              "Swords Dance",
+              "Protect"
+            ],
+            "ability": "Sand Rush",
+            "pokemon": "Garchomp"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Camerupt"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Ninetales"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Mamoswine"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Bisharp"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "moves": [
+              "Earthquake",
+              "Iron Head",
+              "Protect",
+              "Swords Dance"
+            ],
+            "item": "Focus Sash",
+            "pokemon": "Excadrill",
+            "ability": "Sand Rush"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "ability": "Sand Stream",
+            "item": "Sitrus Berry",
+            "moves": [
+              "Stone Edge",
+              "Crunch",
+              "Earthquake",
+              "Rock Slide"
+            ],
+            "pokemon": "Tyranitar"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Camerupt"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Camerupt",
+            "moves": [
+              "Earth Power",
+              "Lava Plume",
+              "Protect",
+              "Stealth Rock"
+            ],
+            "ability": "Solid Rock",
+            "item": "Leftovers"
+          }
+        },
+        {
+          "name": "validate_set",
+          "args": {
+            "pokemon": "Ninetales",
+            "moves": [
+              "Fire Blast",
+              "Solar Beam",
+              "Will-O-Wisp",
+              "Protect"
+            ],
+            "item": "Firium Z",
+            "ability": "Drought"
+          }
+        }
+      ],
+      "contentPreview": "Camerupt is validated! Next, Ninetales.\n"
+    },
+    {
+      "testId": "pokedex_dedup",
+      "tag": "behavior",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": false,
+      "reason": "pokedex never called — no data gathered",
+      "latencyMs": 15469,
+      "turns": 14,
+      "inputTokens": 42649,
+      "outputTokens": 1152,
+      "totalTokens": 43801,
+      "nudgeCount": 15,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [],
+      "contentPreview": "I cannot fulfill this request. I am unable to generate a `team-json` block or a `claims-json` block because I do not have the necessary information from you.\n\nTo build a team, I need a list of Pokémon that you want to include. Without this input, I cannot proceed with validating Pokémon, suggesting moves or items, or constructing the team.\n\nPlease provide me with a list of 6 Pokémon names. Once I have that information, I can then proceed with building the team, ensuring all items and moves are legal, and finally provide both the `team-json` and `claims-json` blocks as requested."
+    },
+    {
+      "testId": "item_availability",
+      "tag": "behavior",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "Valid items listed: sitrus berry, mega stone",
+      "latencyMs": 7992,
+      "turns": 3,
+      "inputTokens": 10387,
+      "outputTokens": 700,
+      "totalTokens": 11087,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Dragonite held items Champions"
+          }
+        }
+      ],
+      "contentPreview": "For Dragonite in Champions, your held item options depend on whether you want to Mega Evolve it or utilize its base form.\n\nIf you plan to Mega Evolve Dragonite into Mega Dragonite, the **Dragonite Stone** is the required item. In its Mega Evolved form, Dragonite gains the Flying type and significantly boosts its stats, particularly its Special Attack.\n\nIf you are not Mega Evolving Dragonite, here are some of the best held items based on common usage:\n\n*   **Sitrus Berry**: Provides HP recovery when the Pokémon's HP drops below a certain threshold, increasing its longevity in battle.\n*   **Drag"
+    },
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": false,
+      "reason": "Failed to flag either Amoonguss or Porygon2 as unavailable",
+      "latencyMs": 2814,
+      "turns": 1,
+      "inputTokens": 3670,
+      "outputTokens": 594,
+      "totalTokens": 4264,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [],
+      "contentPreview": "I apologize for the oversight. Since my previous response only contained information about unavailable Pokémon and did not utilize any search results, there were no factual claims to include in the `claims-json` block.\n\nIf you would like me to build a team, I will ensure that all factual claims derived from search results are properly cited in the `claims-json` block alongside the `team-json` block."
+    },
+    {
+      "testId": "stat_accuracy",
+      "tag": "hallucination",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "All 6 stats match (91/124/115/145/125/100)",
+      "latencyMs": 14958,
+      "turns": 3,
+      "inputTokens": 9206,
+      "outputTokens": 310,
+      "totalTokens": 9516,
+      "nudgeCount": 2,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Dragonite"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Dragonite base stats Champions"
+          }
+        }
+      ],
+      "contentPreview": "The Mega Evolution of Dragonite in Champions has the following base stats: HP 91, Attack 124, Defense 115, Sp. Atk 145, Sp. Def 125, and Speed 100. This results in a total base stat of 700. It's important to note that Mega Dragonite has a higher Special Attack and lower Physical Attack compared to its base form.\n```json\n{\"claims\": [{\"text\": \"Mega Dragonite has the following base stats: HP 91, Attack 124, Defense 115, Sp. Atk 145, Sp. Def 125, and Speed 100.\", \"chunk_ids\": [\"mega:mega-dragonite:16\", \"data/transcripts/unknown_kneeckoh-how-to-use-mega-dragonite-in-champions-ranked-battles-pokemon"
+    },
+    {
+      "testId": "banned_comprehensive",
+      "tag": "hallucination",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "Named 14 banned items + all 3 missing gimmicks",
+      "latencyMs": 6923,
+      "turns": 2,
+      "inputTokens": 8436,
+      "outputTokens": 1313,
+      "totalTokens": 9749,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Pokemon Champions banned items and mechanics"
+          }
+        }
+      ],
+      "contentPreview": "Here is a comprehensive list of items and battle mechanics from Scarlet/Violet that are NOT available in Pokemon Champions:\n\n**Battle Gimmicks:**\n*   **Terastallization:** Does not exist in Pokemon Champions.\n*   **Dynamax/Gigantamax:** Does not exist in Pokemon Champions.\n*   **Z-Moves:** Do not exist in Pokemon Champions.\n*   **Mega Evolution:** This is the *only* battle gimmick available in Pokemon Champions.\n\n**Items:**\nThe following items from Scarlet/Violet are NOT available in Pokemon Champions:\n*   Life Orb\n*   Choice Band\n*   Choice Specs\n*   Assault Vest\n*   Rocky Helmet\n*   Flame Or"
+    },
+    {
+      "testId": "usage_lookup",
+      "tag": "retrieval",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "Reported 51% vs truth 51% (Δ0.0pp)",
+      "latencyMs": 5392,
+      "turns": 3,
+      "inputTokens": 6186,
+      "outputTokens": 53,
+      "totalTokens": 6239,
+      "nudgeCount": 2,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Incineroar tournament usage percentage Pokemon Champions Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "In Champions Regulation M-A, Incineroar holds the #1 rank in tournament usage at a substantial 51.0%."
+    },
+    {
+      "testId": "usage_teammates",
+      "tag": "retrieval",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "Named 3/3 top teammates: sneasler, incineroar, charizard",
+      "latencyMs": 5775,
+      "turns": 2,
+      "inputTokens": 7797,
+      "outputTokens": 807,
+      "totalTokens": 8604,
+      "nudgeCount": 1,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Garchomp partners Champions VGC"
+          }
+        }
+      ],
+      "contentPreview": "The top 3 Pokemon most commonly paired with Garchomp in Champions VGC are:\n\n1. Sneasler\n2. Incineroar\n3. Charizard\n\nI found this information in the usage data for Garchomp.\n\n```json\n{\n  \"claims\": [\n    {\n      \"text\": \"Sneasler is the most common partner for Garchomp, appearing on 51.080% of teams together.\",\n      \"chunk_ids\": [\n        \"usage:garchomp\"\n      ]\n    },\n    {\n      \"text\": \"Incineroar is the second most common partner for Garchomp, appearing on 48.875% of teams together.\",\n      \"chunk_ids\": [\n        \"usage:garchomp\"\n      ]\n    },\n    {\n      \"text\": \"Charizard is the third m"
+    },
+    {
+      "testId": "tournament_retrieval",
+      "tag": "retrieval",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "Named 4 real Mega Golurk teammates: incineroar, torkoal, venusaur, farigiraf",
+      "latencyMs": 6227,
+      "turns": 2,
+      "inputTokens": 4687,
+      "outputTokens": 1359,
+      "totalTokens": 6046,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 9,
+      "citationValidCount": 9,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Mega Golurk tournament team Champions Regulation M-A"
+          }
+        }
+      ],
+      "contentPreview": "The search results did not yield a specific winning team featuring Mega Golurk in Champions Regulation M-A. However, I can construct a team based on Golurk's common usage and teammates in that format.\n\nMega Golurk, with its signature ability Iron Fist boosting its punch moves and its signature move Poltergeist, is a strong offensive threat. It often pairs with Pokemon that can enable its strategy or cover its weaknesses. Based on common Golurk usage, here's a potential team:\n\nHere is a potential team composition featuring Mega Golurk:\n\n*   **Mega Golurk** (Ability: Iron Fist, Item: Golurkite) "
+    },
+    {
+      "testId": "creator_opinion",
+      "tag": "retrieval",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": true,
+      "reason": "Attributed Garchomp view to AngrySlowbroPlus's tier list",
+      "latencyMs": 14797,
+      "turns": 4,
+      "inputTokens": 70795,
+      "outputTokens": 180,
+      "totalTokens": 70975,
+      "nudgeCount": 2,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "AngrySlowbroPlus Regulation A Doubles tier list Garchomp Champions"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "Garchomp tier list Champions Regulation A Doubles"
+          }
+        }
+      ],
+      "contentPreview": "There is no mention of Garchomp in the provided tier list from AngrySlowbroPlus. The tier list creator discusses many Pokemon, including those in S, A, B, C, D, and F tiers, and offers detailed explanations for their placements. However, Garchomp is not specifically mentioned or ranked in this particular tier list."
+    },
+    {
+      "testId": "meta_core_attribution",
+      "tag": "retrieval",
+      "modelKey": "gemini-2.5-flash-lite",
+      "pass": false,
+      "reason": "No percentage mentioned",
+      "latencyMs": 8299,
+      "turns": 5,
+      "inputTokens": 14996,
+      "outputTokens": 261,
+      "totalTokens": 15257,
+      "nudgeCount": 2,
+      "dedupCount": 0,
+      "citationValid": false,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": true,
+      "citationParseError": "no-block",
+      "toolCallLog": [
+        {
+          "name": "search",
+          "args": {
+            "query": "Archaludon + Pelipper Rain core win rate"
+          }
+        },
+        {
+          "name": "search",
+          "args": {
+            "query": "pokemon champions banned items"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Archaludon"
+          }
+        },
+        {
+          "name": "pokedex",
+          "args": {
+            "name": "Pelipper"
+          }
+        }
+      ],
+      "contentPreview": "In Pokémon Champions, Mega Evolution is the sole battle gimmick; mechanics like Terastallization, Dynamax, and Z-Moves do not exist. Items such as Life Orb, Choice Band, Choice Specs, Assault Vest, and others are unavailable. The roster consists of 186 fully-evolved Pokémon."
+    }
+  ]
+}

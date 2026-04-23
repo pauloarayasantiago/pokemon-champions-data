@@ -1,6 +1,6 @@
 # Pokemon Champions RAG — Master Plan (Canonical)
 
-_Last revision: 2026-04-23, post strategic reframe. This doc is the canonical forward plan. History is archived in [progress.md](progress.md); right-now state in [activeContext.md](activeContext.md)._
+_Last revision: 2026-04-23 (post 7-model bake-off + phantom-Pokemon interceptor ship). This doc is the canonical forward plan. History is archived in [progress.md](progress.md); right-now state in [activeContext.md](activeContext.md)._
 
 ---
 
@@ -17,11 +17,12 @@ Both surfaces pull from the same Supabase-backed RAG index. Retrieval is shared;
 
 ## 30-second catch-up
 
-- **Retrieval:** nDCG@10 = **0.853** on the 100-case golden set. Planner-decomposed queries (vsPair / counter-archetype / team-archetype) now apply force-includes + boosts post-merge against the user's original query (Phase 5 fix). Citation validation (Phase 2) hits chunk_ids 80-100% per run across 3 runs — agent-side hallucinations, not retrieval.
-- **Online model:** `gemma-4-26b` (`google/gemma-4-26b-a4b-it` via OpenRouter, free). 12-13/13 pass on the 13-test agentic suite, ~25k tok/pass, ~44s/test avg. Known flake: `phantom_pokemon` (1/3 rate) where the model fails to refuse a query about an unavailable Pokemon without consulting tools.
+- **Retrieval:** nDCG@10 = **0.853** on the 100-case golden set (unchanged by the 2026-04-23 interceptor — it runs at the agent layer, not RAG). Citation validation (Phase 2) still hits chunk_ids 80-100%.
+- **Online model:** `gemma-4-26b` (`google/gemma-4-26b-a4b-it` via OpenRouter, **paid $0.06/$0.33 per M, ~$0.008/run** — earlier docs mis-labeled this as free tier; only the 31B variant has a `:free` suffix). 12-13/13 pass on the 13-test agentic suite, ~25k tok/pass, ~44s/test avg. `phantom_pokemon` used to fail ~1/3 runs — **now fixed by the 2026-04-23 tool-layer interceptor** (short-circuits the agent loop when the user names a pre-evo or roster-excluded Pokemon).
+- **7-model bake-off (2026-04-23):** tested Groq Llama 3.3 70B, GPT-OSS 20B, qwen2.5-7b, llama3.1-8b, DeepSeek V3.2, GLM-4.5-Air, Gemini 2.5 Flash Lite alongside Gemma. **No challenger beat Gemma on cost+quality.** DeepSeek matches at 3× cost; GLM matches at 5× cost with 3.4× token-variance. All but Gemma fail `phantom_pokemon` too — it's systemic, not Gemma-specific. Detail in [progress.md](progress.md) "Session 2026-04-23" entry.
 - **Local CLI:** Claude Opus/Sonnet via this conversation. `/lookup` returns RAG results; I synthesize. Works well for open-ended analysis.
-- **Provider keys available today** (no infra changes): OpenRouter, Anthropic (Sonnet 4.6, Opus 4.7), Groq (Llama 3.3 70B free), HF Inference. **Not yet:** Ollama local (not installed).
-- **Dormant code:** three reranker clients (Jina, Gemma pointwise, BGE cross-encoder) behind `RERANKER` env var. Default is RRF + boosts only. Not re-enabled this cycle.
+- **Provider keys available today:** OpenRouter (multiple paid + free), Anthropic (Sonnet 4.6, Opus 4.7), Groq (Llama 3.3 70B free but unusable — see memo), HF Inference. **Ollama local** now installed; qwen2.5-7b + llama3.1-8b pulled, both below viable bar at Q4.
+- **Dormant code:** three reranker clients (Jina, Gemma pointwise, BGE cross-encoder) behind `RERANKER` env var. Default was silently firing Jina on every request before 2026-04-23 (fix: [lib/rag.ts:223](../lib/rag.ts) default now `"none"`).
 
 ---
 
@@ -43,11 +44,13 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | # | Phase | Tier | Status | Owner next action |
 |---|---|---|---|---|
 | 0-5 | RAG infra + Phase 2 citation + Phase 4 split + Phase 5 executor | — | SHIPPED | History in [progress.md](progress.md) |
-| **A1** | **Groq Llama 3.3 70B eval (free, already configured)** | A | **NOT STARTED → NEXT** | Run 13-test agentic suite, compare vs Gemma 4 26B |
-| **A2** | **Ollama install + local model eval** | A | **NOT STARTED** | Install Ollama, pull qwen2.5-7b + qwen2.5:14b-Q4, run eval |
-| **A3** | **Content enrichment round** | A | **NOT STARTED** | Singles meta doc; tier list reconciliation; fresh tournament data |
-| **A4** | **Gemma flake fixes** (phantom_pokemon + chunk_id hallucination) | A | **NOT STARTED** | Prompt tightening + measure via 3-run variance |
-| A5 | Haiku 4.5 / Sonnet 4.6 eval (paid premium tier) | A | NOT STARTED | Optional — run if user wants a paid-quality option |
+| A1 | Groq Llama 3.3 70B eval | A | **SHIPPED — NO-GO (2026-04-23)** | Tool parser rejects Llama native format + 12k TPM cap. Memo: `project_groq_llama33_eval.md` |
+| A2 | Ollama local model eval (qwen2.5-7b + llama3.1-8b) | A | **SHIPPED — NO-GO (2026-04-23)** | 8/13 + 4/13 on Q4 smoke; registry retained for future stronger models |
+| A1-alt | OpenRouter paid bake-off (DeepSeek V3.2, GLM-4.5-Air, Gemini 2.5 Flash Lite, GPT-OSS 20B) | A | **SHIPPED (2026-04-23)** | No challenger beat Gemma on cost+quality. Memos: `project_deepseek_v32_eval.md`, `project_glm_45_air_eval.md`, `project_gemini_25_flash_lite_eval.md` |
+| A4 | Phantom Pokemon interceptor (model-agnostic) | A | **SHIPPED (2026-04-23)** | `lib/phantom-guard.ts` + wiring in route.ts + eval-models.ts. Single-test smoke 1/1 in 0ms |
+| **A3** | **Content enrichment round** | A | **NOT STARTED → NEXT** | Singles meta doc; tier list reconciliation; fresh tournament data |
+| A4b | Prompt hardening follow-up (optional belt-and-suspenders alongside interceptor) | A | DEFERRED | Tighten system prompt "call pokedex first" — only if interceptor alone shows gaps |
+| A5 | Haiku 4.5 / Sonnet 4.6 eval (paid premium tier) | A | NOT STARTED | Optional — run if user wants a premium option |
 | B1 | Phase 3 reranker retry (cross-encoder, post-merge in executor) | B | DEFERRED (reassess after Tier A) | Only if Tier A doesn't close UX gap |
 | B2 | Subagents + progressive disclosure (split CLAUDE.md) | B | DEFERRED | Ergonomics; no user-visible urgency |
 | C1 | eval-models.ts / chunker.ts splits | C | DEFERRED | Housekeeping; ship if actively blocking |
@@ -57,48 +60,48 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 
 ---
 
+## Session findings (2026-04-23)
+
+Appended post strategic reframe. Captures the 7-model bake-off + phantom interceptor ship in one place so future sessions don't re-read the progress.md entry to orient.
+
+**Models evaluated** (all `--real-rag`, 13-test agentic suite, 1-run smoke unless noted):
+
+| Model | Pass | Citations | Tok/pass | Latency | Est $/run | Verdict |
+|---|---|---|---|---|---|---|
+| Gemma 4 26B A4B (default, 3-run history) | 12-13/13 | 80-100% | 25k | 44s | ~$0.008 | **Retained as default** |
+| Groq Llama 3.3 70B | 0/13 | n/a | n/a | n/a | free | NO-GO (tool_use_failed + 12k TPM) |
+| GPT-OSS 20B | crashed | n/a | 550k (test 1) | 665s (test 1) | high | NO-GO (reasoning bloat + socket timeout) |
+| qwen2.5-7b (Ollama local) | 8/13 | 60% | 17k | 100s | $0 | Below bar |
+| llama3.1-8b (Ollama local) | 4/13 | 20% | 17.4k | 124s | $0 | Below bar |
+| DeepSeek V3.2 | 12/13 | 100% | 62k | 85s | ~$0.022 | Viable paid opt-in, not default-worthy |
+| GLM-4.5-Air (3-run) | 13/12/12 | 100%/100%/100% | avg 92k (46/155/75) | avg 48s | **~$0.038** | Tightest citation floor; token variance disqualifies as default |
+| Gemini 2.5 Flash Lite | 10/13 | 20% | 37k | 12s | ~$0.008 | Fast + cheap but chaotic (47 nudges) |
+
+**Key insight:** Every LLM tested (including those matching Gemma's pass rate) failed `phantom_pokemon` at 1/3-3/3 rate. Switching LLMs does NOT fix this — it's systemic. Master plan's A4 reframed from "Gemma flake fix" to "agent-side interceptor (model-agnostic)".
+
+**A4 interceptor shipped:** [lib/phantom-guard.ts](../lib/phantom-guard.ts) + wiring in [src/app/api/team/route.ts](../src/app/api/team/route.ts) (POST handler, post-meta/pre-loop) and [scripts/eval-models.ts](../scripts/eval-models.ts) (`runAgent()`). Reuses `PRE_EVO_MAP` (newly exported from [lib/team-validator.ts](../lib/team-validator.ts)) for 23 pre-evos + small `EXPLICIT_PHANTOMS` table (Amoonguss today; extensible). Hyphen-aware word-boundary match. 18 unit assertions pass; single-test `phantom_pokemon` smoke 1/1 in 0ms / 0 tokens.
+
+**Bug fix:** [lib/rag.ts:223](../lib/rag.ts) default `RERANKER` fallback `"jina"` → `"none"`. Was wasting 300-500ms per RAG call on silent 403s. Retrieval baseline 0.853 unchanged.
+
+**Registry additions in [scripts/eval-models.ts:59-78](../scripts/eval-models.ts):** `llama-3.3-70b` (Groq), `gpt-oss-20b`, `gemini-2.5-flash-lite`, `glm-4.5-air` (paid OR), `qwen3-8b`, `qwen2.5-coder-7b` (Ollama local). Plus new `GROQ_API` endpoint constant alongside `OLLAMA_LOCAL` / `OLLAMA_REMOTE`.
+
+---
+
 ## Part A — Active priorities (user-value first)
 
-### A1 — Groq Llama 3.3 70B eval
+### A1 — Groq Llama 3.3 70B eval · SHIPPED — NO-GO (2026-04-23)
 
-**Rationale.** Already configured (`GROQ_API_KEY` set, `llama-3.3-70b` in `MODEL_REGISTRY`). Free tier. Groq's infrastructure is known for low latency (often <10s/call vs Gemma 4 26B's ~2-8s per tool call via OpenRouter). Never run through the 13-test suite.
+0/13. Groq's server-side parser rejects Llama 3.3 70B's native XML tool-call format (`<function=name{...}/>`) even with OpenAI-format `tools` + `tool_choice: "auto"` in the request; separately, the free-tier 12k TPM cap can't fit the 13-test suite's ~4k tokens/call bursts. Registry entry retained in case Groq fixes the parser or the user opens a paid tier. Detail: [memory/project_groq_llama33_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_groq_llama33_eval.md).
 
-**Tasks.**
-- [ ] `npx tsx scripts/eval-models.ts --models llama-3.3-70b --real-rag` × 1 smoke run. Confirm it doesn't crash on tool use.
-- [ ] Full 3-run variance: `for i in 1 2 3; do npx tsx scripts/eval-models.ts --models llama-3.3-70b --real-rag; done`.
-- [ ] Compare vs Gemma 4 26B baseline (13/13, 13/13, 12/13 @ ~25k tok, 44s avg): pass rate, tok/pass, latency, citation validity.
+### A2 — Ollama local model eval · SHIPPED — NO-GO (2026-04-23)
 
-**Gates.**
-- [ ] ≥ 12/13 on all 3 runs.
-- [ ] Citation validity ≥ 80% on retrieval-category tests (matching Gemma's floor).
-- [ ] No forbidden hits.
+qwen2.5-7b: 8/13 @ 17k tok/pass, 60% citation validity, 100s/test avg. llama3.1-8b: 4/13 @ 17.4k tok/pass, 20% citation validity, 124s/test. Neither hit the 10/13 viable-local bar; the "smaller models lose coherence after 2-3 steps" pattern matches community reports for this class. Registry entries retained for future stronger local models. qwen3:8b pull was in-flight at end of session; if smoke finishes a future session can add a memo.
 
-**Decision after eval.**
-- If Llama 3.3 70B beats Gemma on pass rate AND latency: flip `DEFAULT_MODEL` in [src/lib/llm.ts](../src/lib/llm.ts). Online webapp gets faster, free, higher-quality responses.
-- If it matches at lower latency: make it the default but keep Gemma as fallback.
-- If it underperforms: document and skip.
+### A1-alt — OpenRouter paid bake-off · SHIPPED (2026-04-23)
 
-### A2 — Ollama local model eval
+User authorized paid OR credits; tested DeepSeek V3.2, GLM-4.5-Air (3-run), Gemini 2.5 Flash Lite, and GPT-OSS 20B. Full table in the "Session findings (2026-04-23)" section above. Verdict: none beat Gemma 4 26B A4B on cost+quality. DeepSeek is a viable paid opt-in (100% citation floor, 3× cost); GLM matches Gemma on pass rate but with 3.4× token-variance; Gemini 2.5 Flash Lite is fast + cheap but chaotic (20% citations). Registry entries retained as opt-ins. Memos in the memory/ folder.
 
-**Rationale.** Not installed today. Local inference means (1) the local CLI doesn't burn OpenRouter credits, (2) user could serve the webapp from their own machine via a tunnel if desired, (3) offline capability. System constraints: Windows 11, RTX 2070 SUPER 8GB VRAM → fits Q4 models up to ~8B cleanly, can push 14B with partial CPU offload.
-
-**Tasks.**
-- [ ] Install Ollama: https://ollama.com/download/windows
-- [ ] Start service: `ollama serve` (should auto-start as service on install)
-- [ ] Pull models: `ollama pull qwen2.5:7b-instruct-q4_K_M` then `ollama pull llama3.1:8b-instruct-q4_K_M`. Optional stretch: `ollama pull qwen2.5:14b-instruct-q4_K_M` (will be slow but tests reasoning ceiling).
-- [ ] Verify: `curl http://localhost:11434/api/tags` lists the models.
-- [ ] Eval: `npx tsx scripts/eval-models.ts --models qwen2.5-7b,llama3.1-8b --real-rag` (single-run smoke first, then 3-run variance on the winner).
-
-**Gates.**
-- [ ] At least one local model hits ≥ 10/13 on the 13-test suite.
-- [ ] Tool use works (Ollama supports OpenAI-compatible function calling on qwen2.5 + llama3.1).
-- [ ] No OOM on the user's 8GB VRAM.
-
-**Decision after eval.**
-- Local Ollama viable → add `/team --model qwen2.5-7b` as a free offline path for local CLI work.
-- Local Ollama not viable at 7-8B → consider whether a remote Ollama box (rented GPU) is worth it for `remote-qwen32b`. Probably not unless the user has a GPU server already.
-
-### A3 — Content enrichment round
+### A3 — Content enrichment round (NEXT)
 
 **Rationale.** Retrieval quality is a ceiling set by what's in the index. Users ask about the current meta — if the data is 3 months stale, no amount of boost tuning saves the answer. This is the highest-ROI "work on the data, not the code" phase.
 
@@ -115,23 +118,13 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 
 **No commit gate** — content updates are low-risk; ship per item.
 
-### A4 — Gemma flake fixes
+### A4 — Phantom Pokemon interceptor · SHIPPED (2026-04-23)
 
-**Rationale.** Phase 5's 3-run variance exposed two Gemma behaviors that directly hurt user trust:
-1. `phantom_pokemon` test: Gemma sometimes answers from training data without calling tools (1 fail in 3 runs). Run-3 had 0 tools, 4330 tokens, failed.
-2. Citation hallucination: Run-3 had 3/37 invalid chunk_ids even after auto-retry nudge. Gemma occasionally fabricates plausible-looking chunk IDs.
+Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-agnostic)" after 7-model bake-off confirmed every LLM fails `phantom_pokemon` at ~1/3-3/3 rate. Fix shipped at [lib/phantom-guard.ts](../lib/phantom-guard.ts); wired into [src/app/api/team/route.ts](../src/app/api/team/route.ts) (post-meta, pre-agent-loop; emits `phantom_pokemon_refused` SSE event + content delta + done) and [scripts/eval-models.ts](../scripts/eval-models.ts) (`runAgent()` short-circuit). Exported `PRE_EVO_MAP` from [lib/team-validator.ts](../lib/team-validator.ts) (23 pre-evolutions) + added small `EXPLICIT_PHANTOMS` table (Amoonguss today; extensible). 18 unit assertions pass; single-test Gemma smoke goes from "fails 1/3 runs" to 1/1 in 0ms / 0 tokens. Detail: [memory/project_phantom_pokemon_systemic.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_phantom_pokemon_systemic.md).
 
-**Tasks.**
-- [ ] `phantom_pokemon`: strengthen system prompt directive — "IF the user names a Pokemon, you MUST call `pokedex` BEFORE answering. Do not answer from memory even if you think you know." Verify via re-run of the failing test.
-- [ ] chunk_id hallucination: tighten the retry nudge in [lib/validate-citations.ts](../lib/validate-citations.ts) to explicitly list the valid chunk_ids from the search result set, so the retry has the true IDs to pick from.
-- [ ] Full 3-run variance to measure improvement.
+**A4b (deferred):** Prompt hardening as belt-and-suspenders alongside the interceptor — tighten [src/lib/system-prompt.ts](../src/lib/system-prompt.ts) "MUST call pokedex first" clause. Low priority since the interceptor is the structural fix; revisit only if the interceptor shows gaps in production.
 
-**Gates.**
-- [ ] ≥ 12/13 on all 3 runs (unchanged from Phase 5 gate).
-- [ ] `phantom_pokemon` passes on ≥ 2/3 runs (up from 2/3 currently).
-- [ ] Citation validity ≥ 95% on retrieval-tagged tests (up from 80-100% currently).
-
-**Target commit:** `fix(agent): Gemma tool-first directive + retry nudge lists valid chunk_ids`.
+**Citation hallucination (separate from phantom_pokemon):** still open as a Gemma-side issue. Gemma occasionally fabricates chunk_ids even after the Phase 2 auto-retry nudge. Fix not shipped this session — the retry nudge in [lib/validate-citations.ts](../lib/validate-citations.ts) could be tightened to explicitly list the valid chunk_ids from the search result set. Fold into A3 or a future A4c if it proves user-visible.
 
 ### A5 — Haiku 4.5 / Sonnet 4.6 eval _(optional premium tier)_
 
@@ -218,11 +211,12 @@ npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
 
 | After | Overall nDCG | Agentic pass rate | Commentary |
 |---|---|---|---|
-| Today (Phase 5) | 0.853 | 12-13/13 @ Gemma 4 26B | Baseline |
-| Post A1 (Groq Llama 3.3 70B default) | 0.853 (unchanged) | 13/13 expected @ faster latency | Same retrieval, better LLM |
-| Post A2 (Ollama local) | 0.853 | 10-12/13 @ qwen2.5-7b | Free tier for local CLI; quality tradeoff vs 26B |
+| Pre-Phase-5 | 0.849 | 12/13 | Prior baseline |
+| Phase 5 ship (2026-04-23 AM) | 0.853 | 12-13/13 @ Gemma | Executor redesign |
+| A1/A2 bake-off (2026-04-23) | 0.853 | 12-13/13 @ Gemma (retained) | No challenger beat Gemma on cost+quality |
+| **A4 interceptor ship (2026-04-23)** | **0.853 confirmed unchanged** | **13/13, 13/13, 12/13** with phantom_pokemon 3/3 | `team_json` is the new Run-3 flake (pre-existing). phantom_pokemon now short-circuits pre-LLM. Citation still 80-100% (Gemma-side hallucination, separate A4c) |
 | Post A3 (content enrichment) | 0.853-0.86 | — | Users get better answers on current meta; may not move the frozen-golden-set nDCG |
-| Post A4 (flake fixes) | 0.853 | **13/13 on all 3 runs** + citation validity ≥95% | Direct trust improvement |
+| Post A4c (citation hallucination fix, if pursued) | 0.853 | 13/13 + citation validity ≥95% | Tightens retry-nudge in lib/validate-citations.ts |
 | If B1 ever ships | 0.87-0.90 est | 12-13/13 | Marginal UX gain vs infra cost |
 
 ---

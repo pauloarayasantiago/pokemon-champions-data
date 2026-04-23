@@ -24,7 +24,7 @@ export const BANNED_MOVES_BY_POKEMON: Record<string, ReadonlySet<string>> = {
 
 // Common S/V pre-evolutions absent from Champions (which only allows fully-evolved forms).
 // Keys are lowercased query names; values are the fully-evolved form to redirect to.
-const PRE_EVO_MAP: Record<string, string> = {
+export const PRE_EVO_MAP: Record<string, string> = {
   porygon2: "Porygon-Z",
   porygon: "Porygon-Z",
   clefairy: "Clefable",

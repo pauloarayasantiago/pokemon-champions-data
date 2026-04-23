@@ -24,6 +24,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { lookupPokemon, validateSet, BANNED_ITEMS, type SetInput } from "../lib/team-validator.js";
+import { detectPhantomPokemon, formatPhantomRefusal } from "../lib/phantom-guard.js";
 import { query as ragQuery } from "../lib/rag.js";
 import {
   extractClaimsBlock,
@@ -55,20 +56,28 @@ loadEnv();
 const OPENROUTER_KEY = () => process.env.OPENROUTER_API_KEY ?? "";
 const OLLAMA_LOCAL   = () => `${process.env.OLLAMA_BASE_URL   ?? "http://localhost:11434"}/v1/chat/completions`;
 const OLLAMA_REMOTE  = () => `${process.env.OLLAMA_REMOTE_URL ?? "http://localhost:11434"}/v1/chat/completions`;
+const GROQ_API       = () => `${process.env.GROQ_BASE_URL     ?? "https://api.groq.com/openai/v1"}/chat/completions`;
 
 const MODELS: Record<string, { remoteName: string; label: string; provider?: string; apiUrl?: () => string; apiKey?: () => string }> = {
   // OpenRouter hosted
   "nemotron-super": { remoteName: "openai/gpt-oss-120b:free",   label: "GPT-OSS 120B (OpenRouter)" },
+  "gpt-oss-20b":    { remoteName: "openai/gpt-oss-20b",         label: "GPT-OSS 20B (OpenRouter, paid)" },
   "gemma-4-31b":    { remoteName: "google/gemma-4-31b-it:free", label: "Gemma 4 31B IT (OpenRouter)" },
   "gemma-4-26b":    { remoteName: "google/gemma-4-26b-a4b-it",  label: "Gemma 4 26B A4B (OpenRouter)" },
   "gemini-3-flash": { remoteName: "google/gemini-3-flash-preview", label: "Gemini 3 Flash Preview (OpenRouter)" },
   "deepseek-v3":    { remoteName: "deepseek/deepseek-v3.2",      label: "DeepSeek V3.2 (OpenRouter)" },
+  "gemini-2.5-flash-lite": { remoteName: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite (OpenRouter, paid)" },
+  "glm-4.5-air":    { remoteName: "z-ai/glm-4.5-air",             label: "GLM-4.5-Air (OpenRouter, paid)" },
+  // Groq hosted (free tier)
+  "llama-3.3-70b":  { remoteName: "llama-3.3-70b-versatile",     label: "Llama 3.3 70B (Groq)", apiUrl: GROQ_API, apiKey: () => process.env.GROQ_API_KEY ?? "" },
   // Anthropic direct (requires funded ANTHROPIC_API_KEY)
   "claude-sonnet":  { remoteName: "claude-sonnet-4-6",           label: "Claude Sonnet 4.6 (Anthropic)", provider: "anthropic" },
   // Anthropic via OpenRouter (uses OPENROUTER_API_KEY — no separate Anthropic billing needed)
   "claude-sonnet-or": { remoteName: "anthropic/claude-sonnet-4-5", label: "Claude Sonnet 4.5 (OpenRouter)" },
   // Ollama local (RTX 2070 SUPER — 8GB → 7-9B Q4 only)
   "qwen2.5-7b":   { remoteName: "qwen2.5:7b-instruct-q4_K_M",      label: "Qwen 2.5 7B (Local Ollama)",   apiUrl: OLLAMA_LOCAL,  apiKey: () => "ollama" },
+  "qwen2.5-coder-7b": { remoteName: "qwen2.5-coder:7b",             label: "Qwen 2.5 Coder 7B (Local Ollama)", apiUrl: OLLAMA_LOCAL, apiKey: () => "ollama" },
+  "qwen3-8b":     { remoteName: "qwen3:8b",                        label: "Qwen 3 8B (Local Ollama)",     apiUrl: OLLAMA_LOCAL,  apiKey: () => "ollama" },
   "llama3.1-8b":  { remoteName: "llama3.1:8b-instruct-q4_K_M",     label: "Llama 3.1 8B (Local Ollama)",  apiUrl: OLLAMA_LOCAL,  apiKey: () => "ollama" },
   // Ollama remote (your server — update remoteName after pulling)
   "remote-gemma4":  { remoteName: "gemma3:27b-it-q4_K_M",           label: "Gemma 4 27B (Remote Server)",  apiUrl: OLLAMA_REMOTE, apiKey: () => process.env.OLLAMA_REMOTE_KEY ?? "ollama" },
@@ -675,6 +684,29 @@ async function runAgent(
   const t0 = Date.now();
   let turns = 0;
   let lastContent = "";
+
+  // Pre-flight phantom-Pokemon interceptor (mirrors src/app/api/team/route.ts).
+  // Short-circuits the agent loop when the user names a Pokemon outside the 186-roster.
+  const phantoms = detectPhantomPokemon(userPrompt);
+  if (phantoms.length > 0) {
+    lastContent = formatPhantomRefusal(phantoms);
+    return {
+      finalContent: lastContent,
+      toolCallLog,
+      turns: 0,
+      latencyMs: Date.now() - t0,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      nudgeCount: 0,
+      dedupCount: 0,
+      citationValid: true,
+      citationTotal: 0,
+      citationValidCount: 0,
+      citationInvalidIds: [],
+      citationRetryFired: false,
+    };
+  }
   let inputTokens = 0;
   let outputTokens = 0;
   let totalTokens = 0;

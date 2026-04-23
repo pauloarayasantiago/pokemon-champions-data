@@ -9,6 +9,7 @@ import {
 } from "@/lib/llm";
 import { TOOL_DEFINITIONS, executeTool } from "@/lib/tools";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@/lib/system-prompt";
+import { detectPhantomPokemon, formatPhantomRefusal } from "@core/phantom-guard";
 import {
   extractClaimsBlock,
   validateCitations,
@@ -90,6 +91,23 @@ export async function POST(request: NextRequest) {
           systemPromptVersion: SYSTEM_PROMPT_VERSION,
         });
         log(`start model=${body.model} provider=${providerInfo.provider}`);
+
+        // Pre-flight phantom-Pokemon interceptor — short-circuits the agent loop
+        // when the user names a Pokemon outside the 186-roster (pre-evo or removed).
+        // Every LLM tested fails this category ~1/3+ of the time without this guard.
+        const lastUser = [...messages].reverse().find((m) => m.role === "user");
+        if (lastUser && typeof lastUser.content === "string") {
+          const phantoms = detectPhantomPokemon(lastUser.content);
+          if (phantoms.length > 0) {
+            const refusal = formatPhantomRefusal(phantoms);
+            send({ type: "phantom_pokemon_refused", phantoms });
+            send({ type: "content", delta: refusal });
+            send({ type: "done", finishReason: "phantom_refusal", totalMs: Date.now() - tStart });
+            log(`phantom_refusal phantoms=${phantoms.map((p) => p.phantom).join(",")} in ${Date.now() - tStart}ms`);
+            controller.close();
+            return;
+          }
+        }
 
         for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
           const iterT0 = Date.now();

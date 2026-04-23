@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-04-23T19:56:40.222Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "gemma-4-26b"
+  ],
+  "tests": [
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    }
+  ],
+  "summary": {
+    "gemma-4-26b": {
+      "passes": 1,
+      "total": 1,
+      "tokens_total": 0,
+      "tokens_per_pass": 0,
+      "mean_latency_ms": 0,
+      "mean_turns": 0,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 0,
+          "total": 0
+        },
+        "hallucination": {
+          "passes": 1,
+          "total": 1
+        }
+      },
+      "citation_validity_rate": 0,
+      "citation_retrieval_tests": 0,
+      "citation_retrieval_valid": 0,
+      "citation_total_cited": 0,
+      "citation_total_valid": 0,
+      "citation_retries": 0
+    }
+  },
+  "results": [
+    {
+      "testId": "phantom_pokemon",
+      "tag": "hallucination",
+      "modelKey": "gemma-4-26b",
+      "pass": true,
+      "reason": "Flagged both Amoonguss + Porygon2 as unavailable",
+      "latencyMs": 0,
+      "turns": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "nudgeCount": 0,
+      "dedupCount": 0,
+      "citationValid": true,
+      "citationTotal": 0,
+      "citationValidCount": 0,
+      "citationInvalidIds": [],
+      "citationRetryFired": false,
+      "toolCallLog": [],
+      "contentPreview": "The following Pokemon are not available in Champions:\n- Amoonguss is not available in Champions — Amoonguss is not in the Champions roster. Use Venusaur, Roserade, or another Grass-type.\n- Porygon2 is not available in Champions — pre-evolution — Champions only allows fully-evolved forms; use Porygon-Z instead. Use Porygon-Z."
+    }
+  ]
+}
