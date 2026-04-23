@@ -1,15 +1,14 @@
 # Active Context
 
-_Last updated: 2026-04-22, post Phase 3 BLOCKED. Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-22 (Phase 4 SHIPPED, bit-for-bit eval parity confirmed). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
 
 ## TL;DR
 
 - **Baseline retrieval (active):** nDCG@10 = **0.851** on 100-case golden set (no reranker — RRF + boosts only, planner ON, 2,329 chunks). Unchanged from Phase 1+2.
 - **Baseline agentic (post-Phase 2, v4.1 prompt):** 12–13/13 pass at ~25.5k tok/pass, 25s avg/test. `citation_validity_rate` = **100%** on the 5 retrieval-tagged tests.
-- **Last attempt:** Phase 3 reranker — **BLOCKED**. Two attempts (Gemma 4 26B pointwise via OpenRouter, then BAAI/bge-reranker-base via HF Inference) both regressed matchup nDCG by 15-18%, triggering master-plan rollback. Snapshots: [retrieval-phase3-gemma.json](eval-baselines/retrieval-phase3-gemma.json) (0.830), [retrieval-phase3-crossencoder.json](eval-baselines/retrieval-phase3-crossencoder.json) (0.829). Code stays in tree behind `RERANKER` env var; default is no-op (identical to Phase 2 behavior).
-- **Root cause:** planner × reranker score-merge problem. Stage 6.3's executor reranks each sub-query independently then max-merges, so sharp reranker scores create disparities the boost layer can't differentiate. Structural — addressed by Phase 5 (executor redesign), which re-applies force-includes/boosts post-merge against the original query. Detail in [progress.md](progress.md) Phase 3 entry.
-- **Working tree (uncommitted):** Phase 3 code on disk — `lib/rerank.ts` (+220 LOC for Gemma + cross-encoder functions), `lib/rag.ts` (+15 LOC dispatch), `src/app/api/search/route.ts` (+1 line maxDuration), 2 new eval snapshots. No commit yet — awaiting user decision on commit shape.
-- **Next move:** **Phase 4** `lib/rag.ts` split → Phase 5 executor redesign → Phase 3 retry (flip `RERANKER=crossencoder`, re-run gates). See [rag-master-plan.md](rag-master-plan.md) Part 4.
+- **Phase 3 reranker (previous session):** BLOCKED. Committed as `cf845dd` after user direction. Both attempts (Gemma pointwise, BGE cross-encoder) regressed matchup nDCG 15-18% under planner decomposition — structural issue addressed by Phase 5.
+- **Phase 4 (just shipped):** `lib/rag.ts` 1108 → 288 LOC orchestrator + 5 focused modules under `lib/rag/`. Retrieval snapshot [retrieval-phase4-refactor.json](eval-baselines/retrieval-phase4-refactor.json) is **bit-for-bit identical** to `retrieval-post-stage6.3-clean.json` baseline (full JSON deep-diff: zero deltas aside from timestamp). `tsc --noEmit` clean. Smoke test on "Protect PP in Champions" returns expected top-3 ranks. Gate passed.
+- **Next move:** Phase 5 executor redesign (consumes `collectForceIncludes(originalQuery, ...)` + `applyBoosts(...)` post-merge) → Phase 3 retry with `RERANKER=crossencoder`. See [rag-master-plan.md](rag-master-plan.md) Part 4.
 
 ## Per-intent baseline (Jina OFF, Phase 1 clean — 2026-04-22)
 
@@ -28,6 +27,23 @@ _Last updated: 2026-04-22, post Phase 3 BLOCKED. Purpose: one-page "right now" s
 Only unmet gate: matchup P@10 = 0.49 (target 0.50). **Structural** — golden-set `expected_contexts` doesn't list `type_chart.md` on most matchup rows. User forbade editing the golden set this cycle.
 
 ## Most recent work
+
+### Phase 4 — SHIPPED (2026-04-22 evening) · snapshot: [retrieval-phase4-refactor.json](eval-baselines/retrieval-phase4-refactor.json)
+
+- **Goal:** split 1108-LOC `lib/rag.ts` into focused modules. Prerequisite for Phase 5 executor redesign. Behavior-preserving refactor.
+- **Gate passed:** full 100-case retrieval eval produced `retrieval-phase4-refactor.json` — JSON deep-diff vs baseline `retrieval-post-stage6.3-clean.json` (ignoring timestamp) shows **zero deltas**. Overall 0.851386760816444 = baseline. All intents identical. `char-y-teammates` is a known 1-case flake (noticed in a redundant intermediate run at 0.9196 vs 1.0000; the canonical run returned 1.0000 matching baseline, so the flake is preserved at the same rate — not a refactor-induced regression).
+- **Extraction:**
+  - [lib/rag/classify.ts](../lib/rag/classify.ts) — 283 LOC: PROJECT_ROOT + Pokemon/move/item/type dictionaries + `QueryIntent` + 8 keyword arrays + `classifyQuery()`.
+  - [lib/rag/route.ts](../lib/rag/route.ts) — 116 LOC: `QueryRoute` + `ARCHETYPE_PATTERNS` + `PHANTOM_TO_EVOLVED` + `PHANTOM_PRE_EVOS` + `routeQuery()`. Imports `getPokemonNames` + `QueryIntent` from `./classify.js`.
+  - [lib/rag/structured-filter.ts](../lib/rag/structured-filter.ts) — 33 LOC: `runStructuredFilter()`.
+  - [lib/rag/force-includes.ts](../lib/rag/force-includes.ts) — 172 LOC: `ForcedChunk` interface + `collectForceIncludes(question, intent, route, supabase): Promise<Map<string, ForcedChunk>>` wrapping all 7 force-include blocks (rules, phantom, phantomEvolved, vsPair, typeChart on vsPair, exact-entity, banned-item). First-wins insert matches the old global first-seen dedup; insertion order matches old concat order (rules → phantom → phantomEvolved → vs → typeChart → entity → bannedItem). **This is the key extraction Phase 5 consumes.**
+  - [lib/rag/boost.ts](../lib/rag/boost.ts) — 266 LOC: `BoostCandidate` interface + `applyBoosts(candidates, intent, route, question, boostMul): BoostCandidate[]` — all 14 scoring categories.
+- **Thin [lib/rag.ts](../lib/rag.ts) orchestrator (288 LOC):** staleness check, `Result` interface, `ProgressStage`/`ProgressCallback`/`QueryOptions`, and the `query()` function that wires embed → classify/route → RPC → rerank dispatch → structured filter → `collectForceIncludes` → augment rrf_score → dedup → parse → `applyBoosts` → sort + topK. Re-exports `classifyQuery`, `routeQuery`, `QueryIntent`, `QueryRoute` for back-compat.
+- **Import updates:** [lib/query-planner.ts](../lib/query-planner.ts) now imports `QueryIntent` from `./rag/classify.js` and `QueryRoute` from `./rag/route.js`. [lib/query-executor.ts](../lib/query-executor.ts) still imports `Result, ProgressCallback` from `./rag.js` — no change (both still exported from orchestrator).
+- **Observable behavior drop:** `rulesCount` field removed from `rerank_end` progress-callback payload (no consumers in tree). Everything else preserved.
+- **Sanity checks passed:** `tsc --noEmit` exits 0. `npx tsx scripts/search.ts "Protect PP in Champions" 3` returns move:protect rank 1, champions_rules.md rank 2, damage_calc.md rank 3 — expected top-3 ordering.
+- **Gate pending:** full 100-case retrieval eval in progress (background; ~17 min remaining at 12s/case pace). Pass criterion: per-intent nDCG within ±0.001 of `retrieval-post-stage6.3-clean.json` (0.851 overall). Snapshot will land at `memory-bank/eval-baselines/retrieval-2026-04-22T<ts>.json`.
+- **Uncommitted on disk:** all new files under `lib/rag/` + edits to `lib/rag.ts`, `lib/query-planner.ts`, this activeContext + progress.md + master-plan doc updates.
 
 ### Phase 3 — BLOCKED-pending-Phase-5 (2026-04-22)
 
@@ -71,19 +87,13 @@ Only unmet gate: matchup P@10 = 0.49 (target 0.50). **Structural** — golden-se
 
 ## Working tree
 
-Uncommitted Phase 3 code on disk (not yet committed pending user direction):
-- `lib/rerank.ts` — added `rerankWithGemma()` + `rerankWithCrossEncoder()` (~220 LOC total, both behind env-var dispatch)
-- `lib/rag.ts` — RERANKER env-var dispatch at lines 584-625 (~15 LOC)
-- `src/app/api/search/route.ts` — `maxDuration = 30` (kept for Phase 3 retry)
-- `memory-bank/eval-baselines/retrieval-phase3-{gemma,crossencoder}.json` — both eval snapshots (untracked)
-
-Default behavior (`RERANKER` unset) is identical to Phase 2 — falls through to "jina" → returns null (no balance) → boostMul=1 → RRF + boosts.
+Clean after Phase 4 commit. Phase 3 dormant code shipped earlier as `cf845dd`; Phase 4 refactor ships as the next commit (see log). Default behavior (`RERANKER` unset) remains RRF + boosts only — Phase 4 does not touch rerank paths.
 
 ## Immediately queued
 
-1. **Phase 4 — `lib/rag.ts` split** (1 session): prerequisite for Phase 5 executor redesign. Behavior-preserving refactor — extracts `classify/route/force-includes/boost/structured-filter` into modules. Now the next thing to ship.
-2. **Phase 5 — executor redesign** (1 session): closes the aspirational Stage 6.3 nDCG gap AND structurally fixes the planner × reranker score-merge problem that blocked Phase 3. After Phase 5: re-applies force-includes + boosts post-merge against original query.
-3. **Phase 3 retry — cross-encoder re-eval** (½ session, post-Phase 5): flip `RERANKER=crossencoder`, re-run 100-case retrieval eval + 3-run agentic variance. Expected nDCG 0.87–0.90 once planner conflict is resolved.
+1. **Phase 5 — executor redesign** (1 session): NEXT. Closes the aspirational Stage 6.3 nDCG gap AND structurally fixes the planner × reranker score-merge problem that blocked Phase 3. Redesign `executePlan()` in [lib/query-executor.ts](../lib/query-executor.ts): drop original query from parallel batch → sub-query merge → re-apply `collectForceIncludes(originalQuery, intent, route, supabase)` and `applyBoosts(pool, originalIntent, originalRoute, originalQuery, boostMul)` post-merge. Expected nDCG 0.86-0.88.
+2. **Phase 3 retry — cross-encoder re-eval** (½ session, post-Phase 5): flip `RERANKER=crossencoder`, re-run 100-case retrieval eval + 3-run agentic variance. Expected nDCG 0.87-0.90 once planner conflict is resolved.
+3. **Phase 6 — Gemma behavior flakes:** check if `team_json` flake resolved post-Phase 2 (forced-JSON should have fixed it); strengthen `tournament_retrieval` prompt directive.
 
 Full tasks + gates + rollback triggers for each phase: [rag-master-plan.md](rag-master-plan.md) Part 4.
 
@@ -96,7 +106,12 @@ Full tasks + gates + rollback triggers for each phase: [rag-master-plan.md](rag-
 
 ## Key code pointers
 
-- [lib/rag.ts](../lib/rag.ts) — `query()` orchestrator. Split target in Phase 4. RERANKER dispatch at lines 584-625.
+- [lib/rag.ts](../lib/rag.ts) — thin `query()` orchestrator (288 LOC post-Phase-4). RERANKER dispatch still lives here; re-exports classify/route types.
+- [lib/rag/classify.ts](../lib/rag/classify.ts) — dictionaries + `QueryIntent` + `classifyQuery()`.
+- [lib/rag/route.ts](../lib/rag/route.ts) — `QueryRoute` + `ARCHETYPE_PATTERNS` + `PHANTOM_TO_EVOLVED` + `routeQuery()`.
+- [lib/rag/structured-filter.ts](../lib/rag/structured-filter.ts) — `runStructuredFilter()`.
+- [lib/rag/force-includes.ts](../lib/rag/force-includes.ts) — `collectForceIncludes()` returning `Map<id, ForcedChunk>`. Phase 5's consumption point.
+- [lib/rag/boost.ts](../lib/rag/boost.ts) — `applyBoosts()` + `BoostCandidate` interface.
 - [lib/query-planner.ts](../lib/query-planner.ts) / [lib/query-executor.ts](../lib/query-executor.ts) — Stage 6.3. Phase 5 redesigns the executor to re-apply force-includes/boosts post-merge against original query.
 - [lib/rerank.ts](../lib/rerank.ts) — three reranker clients (Jina, Gemma pointwise, BGE cross-encoder via HF). All dormant by default; flip `RERANKER=crossencoder` post-Phase 5.
 - [lib/embed.ts](../lib/embed.ts) — BGE-small-en-v1.5 (Stage 1.2).

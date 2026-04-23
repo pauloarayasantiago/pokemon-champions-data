@@ -1,17 +1,17 @@
 # Pokemon Champions RAG — Master Plan (Canonical)
 
-_Last revision: 2026-04-22, post Phase 3 BLOCKED. This doc is the canonical forward-looking plan; stage-by-stage history lives in [progress.md](progress.md)._
+_Last revision: 2026-04-22, post Phase 4 SHIPPED. This doc is the canonical forward-looking plan; stage-by-stage history lives in [progress.md](progress.md)._
 
 ---
 
 ## 30-second catch-up
 
-- **Current baseline:** retrieval nDCG@10 = **0.851** on the 100-case golden set (Phases 1 + 2 clean, RRF + boosts only); 13-test agentic eval 12-13/13 at ~25.5k tok/pass for Gemma 4 26B with citation_validity = 100%.
-- **Shipped:** Stages 0–2, 3/4/4.6, 6.1, 6.3 (commit `b056e4c`), Phase 1 cleanup (`7767a0a`), Phase 2 forced-JSON + chunk_id validation (`bc02d11`).
-- **BLOCKED:** Phase 3 reranker. Both attempts (Gemma pointwise, BGE cross-encoder via HF) regressed matchup nDCG by 15-18%. Code stays in [lib/rerank.ts](../lib/rerank.ts) behind `RERANKER` env var; default behavior unchanged from Phase 2. **Root cause: planner × reranker score-merge problem — structural, addressed by Phase 5.** See Phase 3 section.
+- **Current baseline:** retrieval nDCG@10 = **0.851** on the 100-case golden set (Phases 1 + 2 + 4 clean, RRF + boosts only); 13-test agentic eval 12-13/13 at ~25.5k tok/pass for Gemma 4 26B with citation_validity = 100%.
+- **Shipped:** Stages 0–2, 3/4/4.6, 6.1, 6.3 (commit `b056e4c`), Phase 1 cleanup (`7767a0a`), Phase 2 forced-JSON + chunk_id validation (`bc02d11`), Phase 3 dormant reranker code (`cf845dd`), Phase 4 `lib/rag.ts` split (see log, behavior-preserving, bit-for-bit identical).
+- **BLOCKED:** Phase 3 reranker (code in tree but dormant behind `RERANKER` env var). Both attempts (Gemma pointwise, BGE cross-encoder via HF) regressed matchup nDCG by 15-18%. **Root cause: planner × reranker score-merge problem — structural, addressed by Phase 5.** See Phase 3 section.
 - **Abandoned:** Stage 5 (EmbeddingGemma — Italian not a requirement → rolled back). Stage 3 Contextual Retrieval + 6.2 CRAG dropped (paid APIs).
 - **Key constraint:** no paid APIs **except** OpenRouter Gemma 4 26B + free HF Inference. Jina is permanently OFF. See [memory/project_no_paid_apis.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
-- **Next move:** Phase 4 (rag.ts split) → Phase 5 (executor redesign) → Phase 3 retry (flip `RERANKER=crossencoder`, re-run gates). See Part 4.
+- **Next move:** Phase 5 (executor redesign — consumes the `collectForceIncludes` / `applyBoosts` extractions from Phase 4) → Phase 3 retry (flip `RERANKER=crossencoder`, re-run gates). See Part 4.
 
 ---
 
@@ -25,7 +25,7 @@ Update this table as each phase moves state. Source of truth for "what's done / 
 | 1 | Cleanup + clean baseline | ½ session | SHIPPED | 2026-04-22 | 2026-04-22 | `7767a0a` | `retrieval-post-stage6.3-clean.json` |
 | 2 | Forced-JSON + chunk_id validation | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | `bc02d11` | n/a (adds `citation_validity_rate` → 100% on v4.1) |
 | 3 | Reranker (Gemma + cross-encoder) | 2 sessions | BLOCKED-pending-Phase-5 | 2026-04-22 | — | — | `retrieval-phase3-{gemma,crossencoder}.json` |
-| 4 | `lib/rag.ts` split | 1 session | NOT STARTED → NEXT | — | — | — | (bit-for-bit identical) |
+| 4 | `lib/rag.ts` split | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | (see log) | `retrieval-phase4-refactor.json` (bit-for-bit = baseline) |
 | 5 | Executor redesign | 1 session | NOT STARTED → unblocks Phase 3 reranker | — | — | — | `retrieval-post-phase5-executor.json` |
 | 6 | Gemma behavior flakes | ½ session | NOT STARTED | — | — | — | agentic 13/13 |
 | 7 | Subagents + progressive disclosure | 1–2 sessions | NOT STARTED | — | — | — | smoke parity |
@@ -307,24 +307,25 @@ Confirming evidence: smoke on a passthrough query ("Protect PP in Champions") mo
 
 ### Phase 4 — `lib/rag.ts` split _(was original Phase 3)_
 
-**Status:** NOT STARTED · Started: — · Shipped: — · Commit: — · Snapshot: (bit-for-bit identical to Phase 3)
+**Status:** SHIPPED · Started: 2026-04-22 · Shipped: 2026-04-22 · Commit: see log · Snapshot: [retrieval-phase4-refactor.json](../memory-bank/eval-baselines/retrieval-phase4-refactor.json)
 
 **Goal.** Prerequisite for Phase 5. Pure refactor, behavior-preserving.
 
 **Tasks:**
-- [ ] Extract `rag/classify.ts` — `classifyQuery()`, `QueryIntent`, all keyword lists, name/move/item/type dictionaries.
-- [ ] Extract `rag/route.ts` — `routeQuery()`, `QueryRoute`, `ARCHETYPE_PATTERNS`, `PHANTOM_TO_EVOLVED`.
-- [ ] Extract `rag/force-includes.ts` — `collectForceIncludes(question, intent, route, supabase): Promise<Map<string, ForcedChunk>>` wraps all 6 force-include blocks. **This is the key extraction that unblocks Phase 5.**
-- [ ] Extract `rag/boost.ts` — `applyBoosts(candidates, intent, route, question, boostMul): Result[]` — the 200-LOC scoring layer.
-- [ ] Extract `rag/structured-filter.ts` — `runStructuredFilter()`.
-- [ ] `lib/rag.ts` shrinks to the `query()` orchestrator (~100 LOC).
-- [ ] Full 100-case retrieval eval, compare byte-for-byte with Phase 3 snapshot.
+- [x] Extract [lib/rag/classify.ts](../lib/rag/classify.ts) (283 LOC) — `classifyQuery()`, `QueryIntent`, 8 keyword lists, `getPokemonNames` / `getMoveNames` / `getItemNames` / `getPokemonTypes` dictionaries.
+- [x] Extract [lib/rag/route.ts](../lib/rag/route.ts) (116 LOC) — `routeQuery()`, `QueryRoute`, `ARCHETYPE_PATTERNS`, `PHANTOM_TO_EVOLVED` (exported), `PHANTOM_PRE_EVOS`.
+- [x] Extract [lib/rag/force-includes.ts](../lib/rag/force-includes.ts) (172 LOC) — `collectForceIncludes(question, intent, route, supabase): Promise<Map<string, ForcedChunk>>` wraps all 7 force-include blocks with first-wins insert (matches old global dedup). **Key extraction for Phase 5.**
+- [x] Extract [lib/rag/boost.ts](../lib/rag/boost.ts) (266 LOC) — `applyBoosts(candidates, intent, route, question, boostMul): BoostCandidate[]` — the 200-LOC scoring layer.
+- [x] Extract [lib/rag/structured-filter.ts](../lib/rag/structured-filter.ts) (33 LOC) — `runStructuredFilter()`.
+- [x] `lib/rag.ts` shrinks to 288-LOC orchestrator (staleness check + types + `query()` wiring + back-compat re-exports of `classifyQuery` / `routeQuery` / `QueryIntent` / `QueryRoute`).
+- [x] [lib/query-planner.ts](../lib/query-planner.ts) updated to pull types from `./rag/classify.js` and `./rag/route.js` (lib/query-executor.ts untouched — `Result, ProgressCallback` still resolve via rag.ts re-exports).
+- [x] Full 100-case retrieval eval snapshot produced and JSON-deep-diffed against baseline.
 
 **Gates:**
-- [ ] Retrieval eval byte-for-byte identical to Phase 3 snapshot.
-- [ ] No cyclic imports; each module compiles in isolation.
+- [x] Retrieval eval byte-for-byte identical to baseline — `retrieval-phase4-refactor.json` deep-diff vs `retrieval-post-stage6.3-clean.json` returns zero deltas (ignoring timestamp). Overall 0.851386760816444 = baseline. All per-intent and per-case values match.
+- [x] No cyclic imports; `tsc --noEmit` exits 0. Each module compiles in isolation.
 
-**Target commit:** `refactor(rag): split lib/rag.ts into focused modules`
+**Shipped commit:** `refactor(rag): split lib/rag.ts into focused modules [Phase 4]` (see git log).
 
 ---
 
@@ -523,7 +524,7 @@ Phase 13 (webapp)         — separate track
 | Phase 2 (forced-JSON) | **0.851** measured | No retrieval impact (faithfulness only); citation_validity_rate = 100% |
 | Phase 3 attempt 1 (Gemma) | **0.830** measured | ❌ Regressed matchup −15%; planner × reranker score-merge problem |
 | Phase 3 attempt 2 (cross-encoder) | **0.829** measured | ❌ Regressed matchup −18%, adversarial −4.8%; same structural issue |
-| Phase 4 (rag.ts split) | 0.851 expected | Flat — behavior-preserving refactor |
+| Phase 4 (rag.ts split) | **0.851 measured** | Flat — behavior-preserving refactor, bit-for-bit identical to baseline |
 | Phase 5 (executor redesign) | 0.86–0.88 expected | Sub-queries compete for top-10 via post-merge force-includes (Stage 4.6 invariant preserved) |
 | Phase 3-retry (post Phase 5) | 0.87–0.90 expected | With executor fix, cross-encoder no longer fights the boost layer |
 | Phase 6–9 | marginal / flat | Maintenance + housekeeping |

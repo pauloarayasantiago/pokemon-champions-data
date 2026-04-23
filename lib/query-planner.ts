@@ -1,13 +1,14 @@
 // Stage 6.3 — Plan-and-Execute DAG (rule-driven)
 //
 // Decomposes a user query into 1–3 parallel sub-queries based on the
-// signals emitted by routeQuery() in ./rag.ts. No LLM call — planning is
-// pure, deterministic, fast, and cannot fail on malformed JSON.
+// signals emitted by routeQuery() in ./rag/route.ts. No LLM call —
+// planning is pure, deterministic, fast, and cannot fail on malformed JSON.
 //
 // A single-step plan ("passthrough") means the executor is skipped and the
 // existing single-query pipeline runs unchanged.
 
-import type { QueryIntent, QueryRoute } from "./rag.js";
+import type { QueryIntent } from "./rag/classify.js";
+import type { QueryRoute } from "./rag/route.js";
 
 export interface QueryStep {
   /** Debug-only id used in traces ("left", "right", "chart"). */
