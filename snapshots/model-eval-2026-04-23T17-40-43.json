@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-04-23T17:40:43.624Z",
+  "config": {
+    "useRealRag": true,
+    "runs": 1
+  },
+  "models": [
+    "llama-3.3-70b"
+  ],
+  "tests": [
+    {
+      "id": "tool_workflow",
+      "tag": "behavior"
+    },
+    {
+      "id": "team_json",
+      "tag": "behavior"
+    },
+    {
+      "id": "validate_loop",
+      "tag": "behavior"
+    },
+    {
+      "id": "pokedex_dedup",
+      "tag": "behavior"
+    },
+    {
+      "id": "item_availability",
+      "tag": "behavior"
+    },
+    {
+      "id": "phantom_pokemon",
+      "tag": "hallucination"
+    },
+    {
+      "id": "stat_accuracy",
+      "tag": "hallucination"
+    },
+    {
+      "id": "banned_comprehensive",
+      "tag": "hallucination"
+    },
+    {
+      "id": "usage_lookup",
+      "tag": "retrieval"
+    },
+    {
+      "id": "usage_teammates",
+      "tag": "retrieval"
+    },
+    {
+      "id": "tournament_retrieval",
+      "tag": "retrieval"
+    },
+    {
+      "id": "creator_opinion",
+      "tag": "retrieval"
+    },
+    {
+      "id": "meta_core_attribution",
+      "tag": "retrieval"
+    }
+  ],
+  "summary": {
+    "llama-3.3-70b": {
+      "passes": 0,
+      "total": 0,
+      "tokens_total": 0,
+      "tokens_per_pass": 0,
+      "mean_latency_ms": 0,
+      "mean_turns": 0,
+      "nudge_count": 0,
+      "dedup_count": 0,
+      "by_tag": {
+        "behavior": {
+          "passes": 0,
+          "total": 0
+        },
+        "retrieval": {
+          "passes": 0,
+          "total": 0
+        },
+        "hallucination": {
+          "passes": 0,
+          "total": 0
+        }
+      },
+      "citation_validity_rate": 0,
+      "citation_retrieval_tests": 0,
+      "citation_retrieval_valid": 0,
+      "citation_total_cited": 0,
+      "citation_total_valid": 0,
+      "citation_retries": 0
+    }
+  },
+  "results": []
+}
