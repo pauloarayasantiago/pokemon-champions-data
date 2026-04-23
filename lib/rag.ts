@@ -10,16 +10,15 @@ import {
 import { supabaseServer } from "./supabase.js";
 import { planQuery } from "./query-planner.js";
 import { executePlan } from "./query-executor.js";
-import { classifyQuery } from "./rag/classify.js";
-import { routeQuery } from "./rag/route.js";
+import { classifyQuery, type QueryIntent } from "./rag/classify.js";
+import { routeQuery, type QueryRoute } from "./rag/route.js";
 import { runStructuredFilter } from "./rag/structured-filter.js";
 import { collectForceIncludes } from "./rag/force-includes.js";
 import { applyBoosts, type BoostCandidate } from "./rag/boost.js";
 
 // Re-export types so existing callers (scripts/*, lib/query-planner.ts,
 // lib/query-executor.ts) keep working without import churn.
-export type { QueryIntent } from "./rag/classify.js";
-export type { QueryRoute } from "./rag/route.js";
+export type { QueryIntent, QueryRoute };
 export { classifyQuery, routeQuery };
 
 const PROJECT_ROOT = process.env.POKEMON_DATA_ROOT
@@ -102,6 +101,57 @@ export interface QueryOptions {
   skipPlanner?: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// Raw candidate fetch — embed + classify + route + hybrid RPC. No rerank, no
+// force-includes, no boosts, no sort. Returns the unreranked, unboosted raw
+// DB rows plus the intent/route derived from the question. Shared between
+// the single-query path (query() below) and the Phase 5 executor fan-out
+// (lib/query-executor.ts calls this via a thin callback). Emits the same
+// embed_*/rpc_* progress events the single-query pipeline used to emit
+// inline, so SSE consumers see per-sub-query progress under the planner.
+// ---------------------------------------------------------------------------
+
+async function rawCandidates(
+  question: string,
+  fetchK: number,
+  onProgress?: ProgressCallback,
+): Promise<{
+  raw: Record<string, unknown>[];
+  intent: QueryIntent;
+  route: QueryRoute;
+}> {
+  const embedT0 = Date.now();
+  onProgress?.("embed_start", { chars: question.length });
+  const [vector] = await embed([question], "query");
+  onProgress?.("embed_end", { ms: Date.now() - embedT0, dim: vector?.length ?? 0 });
+
+  const intent = classifyQuery(question);
+  const route = routeQuery(question, intent);
+  const supabase = supabaseServer();
+
+  const rpcT0 = Date.now();
+  onProgress?.("rpc_start", {
+    fetchK,
+    categories: intent.categories,
+    pokemonName: intent.pokemonName,
+    moveName: intent.moveName,
+    itemName: intent.itemName,
+  });
+  const { data: hybridRaw, error: hybridErr } = await supabase.rpc("pc_hybrid_search", {
+    p_embedding: vector,
+    p_query: question,
+    p_categories: intent.categories.length > 0 ? intent.categories : null,
+    p_fetch_k: fetchK,
+    p_rrf_k: 60,
+  });
+  onProgress?.("rpc_end", { ms: Date.now() - rpcT0, rows: (hybridRaw ?? []).length });
+  if (hybridErr) {
+    throw new Error(`pc_hybrid_search RPC failed: ${hybridErr.message}`);
+  }
+  const raw = (hybridRaw ?? []) as Record<string, unknown>[];
+  return { raw, intent, route };
+}
+
 export async function query(
   question: string,
   topK = 5,
@@ -127,14 +177,13 @@ export async function query(
     }
   }
 
-  const embedT0 = Date.now();
-  onProgress?.("embed_start", { chars: question.length });
-  const [vector] = await embed([question], "query");
-  onProgress?.("embed_end", { ms: Date.now() - embedT0, dim: vector?.length ?? 0 });
-
-  const intent = classifyQuery(question);
-  const route = routeQuery(question, intent);
-  const supabase = supabaseServer();
+  // Preliminary classify/route to compute the fetchK heuristic. rawCandidates
+  // classifies again internally (cheap, deterministic) and returns its own
+  // intent/route that we use downstream — discarding these preliminary
+  // values. Double-classify keeps the helper self-contained and the callback
+  // pattern thin for the executor.
+  const intentPrelim = classifyQuery(question);
+  const routePrelim = routeQuery(question, intentPrelim);
 
   // Always fetch a healthy candidate pool so rerank boosts can surface the
   // right chunk even when topK is small (e.g. Protect in moves.csv can sit
@@ -142,29 +191,11 @@ export async function query(
   // theory-routed queries get a larger floor because Pokemon chunks can
   // rank past 80 when FTS match is weak on strategic vocabulary (e.g.
   // "pivots into Tyranitar" — Pokemon chunk has no "pivot/defensive" terms).
-  const baseFloor = route.route === "theory" || intent.isCounterQuery || intent.isMatchupQuery ? 160 : 80;
+  const baseFloor = routePrelim.route === "theory" || intentPrelim.isCounterQuery || intentPrelim.isMatchupQuery ? 160 : 80;
   const fetchK = Math.max(topK * 8, baseFloor);
 
-  const rpcT0 = Date.now();
-  onProgress?.("rpc_start", {
-    fetchK,
-    categories: intent.categories,
-    pokemonName: intent.pokemonName,
-    moveName: intent.moveName,
-    itemName: intent.itemName,
-  });
-  const { data: hybridRaw, error: hybridErr } = await supabase.rpc("pc_hybrid_search", {
-    p_embedding: vector,
-    p_query: question,
-    p_categories: intent.categories.length > 0 ? intent.categories : null,
-    p_fetch_k: fetchK,
-    p_rrf_k: 60,
-  });
-  onProgress?.("rpc_end", { ms: Date.now() - rpcT0, rows: (hybridRaw ?? []).length });
-  if (hybridErr) {
-    throw new Error(`pc_hybrid_search RPC failed: ${hybridErr.message}`);
-  }
-  const raw = (hybridRaw ?? []) as Record<string, unknown>[];
+  const { raw, intent, route } = await rawCandidates(question, fetchK, onProgress);
+  const supabase = supabaseServer();
 
   // Reranker (cross-encoder / Gemma / Jina, configurable via RERANKER env).
   // Score the top-40 RPC candidates. When active, scores live in [0, 1] —
