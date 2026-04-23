@@ -121,28 +121,21 @@ Ollama remote (wired, server GPU TBD):
 - **Hybrid search**: Single RPC `pc_hybrid_search(p_embedding, p_query, p_categories, p_fetch_k, p_rrf_k)` — combines ANN + FTS via RRF in one round-trip, returns `rrf_score` (~0.02-0.035 scale)
   - Uses `websearch_to_tsquery('english', p_query)` for FTS
   - CTEs for vec + fts rankings, `RANK() OVER` → `1/(k+rank)` combined
-- **Intent classification**: Rule-based `classifyQuery()` in `lib/rag.ts` — detects usage/counter/stat/item/move/team queries via word-boundary matching against keyword sets + Pokemon name dictionary + move name dictionary
+- **Intent classification**: Rule-based `classifyQuery()` in [lib/rag/classify.ts](../lib/rag/classify.ts) — detects usage/counter/stat/item/move/team queries via word-boundary matching against keyword sets + Pokemon name dictionary + move name dictionary. Dictionaries (`getPokemonNames`/`getMoveNames`/`getItemNames`/`getPokemonTypes`) are lazy-loaded from the CSVs in the same module.
+- **Query routing (Stage 6.1)**: `routeQuery()` in [lib/rag/route.ts](../lib/rag/route.ts) — emits `QueryRoute { route, archetype, vsPair, phantomName, phantomEvolved }` used by force-include, pool-sizing, and boost logic. `ARCHETYPE_PATTERNS` + `PHANTOM_TO_EVOLVED` also live here.
 - **Source filtering**: `data_category` array passed to the RPC (`ANY(p_categories)`)
-- **Structured queries**: `lib/structured-query.ts` + `runStructuredFilter()` in `lib/rag.ts` — NL→supabase-js query builder chain (`.or()` per type, `.gte()/.lte()` per stat, `.not('pokemon_name','is',null)`)
+- **Structured queries**: [lib/structured-query.ts](../lib/structured-query.ts) + `runStructuredFilter()` in [lib/rag/structured-filter.ts](../lib/rag/structured-filter.ts) — NL→supabase-js query builder chain (`.or()` per type, `.gte()/.lte()` per stat, `.not('pokemon_name','is',null)`)
   - Runs as a second round-trip alongside the hybrid RPC; results merged and deduped in TS
-- **Multi-signal re-ranking**: 8 additive boosts calibrated to RRF scale (~0.02-0.035), multiplied by `boostMul` (1 when no reranker active, 20 when reranker scores in [0,1] replace RRF):
-  - Structured results: +0.1
-  - Usage intent + matching Pokemon: +0.1
-  - General usage intent: +0.05
-  - Exact Pokemon name match: +0.04
-  - Exact move name match: +0.04
-  - Counter query + knowledge docs: +0.015
-  - Item chunk + item intent: +0.03
-  - Team chunk penalty (non-team queries): -0.015
-  - Project docs penalty: -0.08
-- **Reranker dispatch (Phase 3, BLOCKED-pending-Phase-5)**: [lib/rag.ts:584-625](../lib/rag.ts) reads `RERANKER` env (`crossencoder|gemma|jina|none`, default falls through to "jina"). [lib/rerank.ts](../lib/rerank.ts) holds three reranker clients:
+- **Force-include subsystem (post-Phase 4)**: `collectForceIncludes(question, intent, route, supabase): Promise<Map<string, ForcedChunk>>` in [lib/rag/force-includes.ts](../lib/rag/force-includes.ts). 7 blocks merged with first-wins insert (matches old global first-seen dedup), insertion order rules(0.08) → phantom(0.10) → phantomEvolved(0.09) → vsPair(0.08) → typeChart(0.07) → entity(0.08) → bannedItem(0.08). Phase 5 will re-call this against the ORIGINAL query after sub-query merge — structural fix for the planner × reranker score-merge problem.
+- **Multi-signal re-ranking**: 14 boost categories in [lib/rag/boost.ts](../lib/rag/boost.ts) via `applyBoosts(candidates, intent, route, question, boostMul)`. Calibrated to RRF scale (~0.02-0.035), multiplied by `boostMul` (1 when no reranker active, 20 when reranker scores in [0,1] replace RRF). Categories include: tier baselines (knowledge/team/usage/transcript/matchup/older-reference), structured results (+0.1), exact-entity matches (+0.04), counter/matchup knowledge-doc lift (+0.04), rules-doc mechanic lift (+0.035), adversarial banned-item rank-1 boost (+0.15), Stage 6.1 theory-route / archetype / vsPair / phantom / phantomEvolved boosts, speed-tiers doc (+0.035), item-intent (+0.03), team-intent usage/team lift (+0.03), project-doc penalty (-0.08). Full list in source.
+- **Reranker dispatch (Phase 3, BLOCKED-pending-Phase-5)**: [lib/rag.ts:169-210](../lib/rag.ts) reads `RERANKER` env (`crossencoder|gemma|jina|none`, default falls through to "jina"). [lib/rerank.ts](../lib/rerank.ts) holds three reranker clients:
   - `rerankCandidates` (Jina v2, dormant — balance depleted, returns null without API key)
   - `rerankWithGemma` (~140 LOC, Gemma 4 26B pointwise via OpenRouter, inline 10-slot worker pool, manual `AbortController` + `clearTimeout`, 800-char snippet, per-query SHA256 LRU cache)
   - `rerankWithCrossEncoder` (~80 LOC, BAAI/bge-reranker-base via HF Inference `text-classification` pipeline, single batched HTTP call for all 40 candidates, 1500-char snippet)
   - All return `Map<id, score>` in [0,1] or `null` on failure → caller falls through to RRF + boosts (boostMul=1). RERANK_POOL=40.
   - Both Phase 3 attempts regressed matchup nDCG by 15-18% — Stage 6.3's per-sub-query rerank + max-merge breaks the boost-layer calibration. Phase 5 (executor redesign) re-applies force-includes/boosts post-merge against the original query, fixing the conflict. Re-eval after Phase 5 ships.
 - **Chunk overlap**: Trailing-paragraph overlap for markdown chunks split on paragraph breaks (last 3 lines of previous paragraph prepended)
-- **Staleness detection**: `checkStaleness()` in `rag.ts` reads `pc_index_meta` row `file_mtimes`, compares against current filesystem mtimes, warns on stderr if stale (runs once per process)
+- **Staleness detection**: `checkStaleness()` in [lib/rag.ts](../lib/rag.ts) (kept in the orchestrator since it's a once-per-process initialization concern) reads `pc_index_meta` row `file_mtimes`, compares against current filesystem mtimes, warns on stderr if stale.
 - **Citation validation (Phase 2, 2026-04-22)**: [lib/validate-citations.ts](../lib/validate-citations.ts) — shared module. Agent responses must end with a `claims-json` fenced block; server-side validator checks every cited `chunk_id` against the set returned by `search` calls in the conversation. Hallucinated IDs trigger one auto-retry nudge. Used by both the prod agent loop ([src/app/api/team/route.ts](../src/app/api/team/route.ts)) and the eval harness ([scripts/eval-models.ts](../scripts/eval-models.ts)). Prod streams a `citation_result` SSE event; eval exposes `citation_validity_rate` in the summary + snapshot.
 - **Matchup intent**: `isMatchupQuery` detection + MATCHUP_KEYWORDS + category boosting (+0.06 matchup data, +0.06 Pokemon name match)
 - **Eval**: 25 test cases, `npx tsx scripts/eval.ts` — current: 100% pass, MRR 1.000

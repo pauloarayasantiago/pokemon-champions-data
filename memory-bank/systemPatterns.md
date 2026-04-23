@@ -110,11 +110,13 @@
 4. **Store** — Supabase `pc_chunks`: id (PK), text, embedding VECTOR(384), source, source_type, data_category, metadata JSONB, pokemon_name, col_type1/2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst (null for non-Pokemon), text_tsv TSVECTOR GENERATED
 5. **Index** — HNSW on embedding (`vector_cosine_ops`), GIN on text_tsv, btree on data_category + pokemon_name
 6. **Meta** — `pc_index_meta` upserted after reindex (keys: indexed_at, embedding_model, chunk_count, file_count, file_mtimes)
-7. **Classify** — Rule-based `classifyQuery()` detects intent (usage, counter, stat, item, move, team) via word-boundary matching against keyword sets + Pokemon name dictionary + move name dictionary
-8. **Search** — Single RPC `pc_hybrid_search(p_embedding, p_query, p_categories, p_fetch_k, p_rrf_k=60)` fuses pgvector ANN + Postgres FTS via RRF in one round-trip
-9. **Structured** — If stat query detected, parallel supabase-js query: `.or()` per type + `.gte()/.lte()` per stat + `.not('pokemon_name','is',null)`
-10. **Merge + Re-rank** — Deduplicate hybrid + structured results, apply 8 additive boosts (structured +0.1, usage +0.1/0.05, exact Pokemon name +0.04, exact move name +0.04, counter knowledge +0.015, item intent +0.03, team penalty -0.015, project -0.08), sort by score, return topK
-11. **Staleness** — `checkStaleness()` runs once per process, reads `pc_index_meta.file_mtimes`, compares against disk, warns on stderr
-12. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 1.000
-13. **Incremental** — index-data.ts paginates `SELECT id FROM pc_chunks` into a Set, skips already-indexed chunks (--force wipes pc_chunks before re-upsert)
-14. **Full test suite** — 251 tests via `npm test`: calc (41), integration (74), eval (25), stress (111)
+7. **Classify** — `classifyQuery()` in [lib/rag/classify.ts](../lib/rag/classify.ts): rule-based intent detection (usage, counter, stat, item, move, team) via word-boundary matching against keyword sets + Pokemon/move/item/type dictionaries.
+8. **Route** — `routeQuery()` in [lib/rag/route.ts](../lib/rag/route.ts): emits `QueryRoute { route, archetype, vsPair, phantomName, phantomEvolved }` driving force-includes and boost routing.
+9. **Search** — Single RPC `pc_hybrid_search(p_embedding, p_query, p_categories, p_fetch_k, p_rrf_k=60)` fuses pgvector ANN + Postgres FTS via RRF in one round-trip.
+10. **Structured** — `runStructuredFilter()` in [lib/rag/structured-filter.ts](../lib/rag/structured-filter.ts): if stat query detected, parallel supabase-js query with `.or()` per type + `.gte()/.lte()` per stat + `.not('pokemon_name','is',null)`.
+11. **Force-include** — `collectForceIncludes()` in [lib/rag/force-includes.ts](../lib/rag/force-includes.ts): 7 blocks (rules, phantom, phantom-evolved, vsPair, type-chart, exact-entity, banned-item) returning `Map<id, ForcedChunk>` with first-wins insert.
+12. **Merge + Re-rank** — Dedup hybrid + structured + forced results, then `applyBoosts()` in [lib/rag/boost.ts](../lib/rag/boost.ts) applies 14 boost categories (structured +0.1, usage +0.1/0.05, exact Pokemon/move/item +0.04, counter knowledge +0.04, adversarial banned-item +0.15, vsPair primaries +0.12, phantom/phantomEvolved +0.12/+0.14, theory-route +0.025, archetype +0.025, speed-tiers +0.035, item intent +0.03, team-chunk penalty -0.015 on non-team, project -0.08). Sort by score, return topK.
+13. **Staleness** — `checkStaleness()` in [lib/rag.ts](../lib/rag.ts) runs once per process, reads `pc_index_meta.file_mtimes`, compares against disk, warns on stderr
+14. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 1.000
+15. **Incremental** — index-data.ts paginates `SELECT id FROM pc_chunks` into a Set, skips already-indexed chunks (--force wipes pc_chunks before re-upsert)
+16. **Full test suite** — 251 tests via `npm test`: calc (41), integration (74), eval (25), stress (111)
