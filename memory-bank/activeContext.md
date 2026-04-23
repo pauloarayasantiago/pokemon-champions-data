@@ -1,31 +1,38 @@
 # Active Context
 
-_Last updated: 2026-04-23 (Phase 5 SHIPPED — executor redesign landed, structural prerequisite for Phase 3 retry in place). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-23 (post strategic reframe — Phase 3 retry downgraded, Tier A priorities in place). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
 
 ## TL;DR
 
-- **Baseline retrieval (active):** nDCG@10 = **0.853** on 100-case golden set (no reranker — RRF + boosts only, planner ON, 2,329 chunks). Up from 0.851 pre-Phase-5. Per-intent: matchup 0.7552 (+0.0138), counter 0.6924 (+0.0009), adversarial 0.6853 (unchanged — Stage 4.6 invariant holds), all others unchanged. Snapshot: [retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json).
-- **Baseline agentic (post-Phase 5, v4.1 prompt):** 3-run variance with gemma-4-26b --real-rag: 13/13, 13/13, 12/13. Gate ≥12/13 met on all runs. Run-3 miss is `phantom_pokemon` (known Gemma hallucination-category quirk — no tools used, not retrieval-induced). Citation validity 100%/100%/80% on the 5 retrieval-tagged tests.
-- **Phase 3 reranker:** dormant code shipped as `cf845dd` — default behavior unchanged (RERANKER unset → RRF + boosts only). Phase 5 fixes the planner × reranker score-merge problem structurally; Phase 3 retry will flip `RERANKER=crossencoder` and re-run gates, expecting 0.87-0.90 overall.
-- **Phase 4 (shipped 2026-04-22):** `lib/rag.ts` 1108 → 288 LOC orchestrator + 5 focused modules under `lib/rag/`. Bit-for-bit identical retrieval eval. Commits `f220160`, `c328256`, `c303d55`.
-- **Phase 5 (shipped 2026-04-23):** two-step ship. Step 1 `409ec84`: extract `rawCandidates()` helper, refactor single-query path (99/100 cases bit-identical; one-case drift on `char-y-teammates` is a pre-existing Supabase tie-break flake). Step 2 `1cd971d`: `executePlan` rewrite — sub-queries contribute RAW candidates, post-merge force-includes + boosts re-apply against original query. Stage 4.6 invariant preserved by construction.
-- **Next move:** **Phase 3 retry** — flip `RERANKER=crossencoder`, re-run 100-case retrieval + 3-run agentic, verify cross-encoder now coexists with boost layer. Expected 0.87-0.90 overall. See [rag-master-plan.md](rag-master-plan.md) Part 4.
+- **Retrieval baseline:** nDCG@10 = **0.853** (post-Phase-5, 2,329 chunks). Per-intent stable: matchup 0.7552, counter 0.6924, adversarial 0.6853 (invariant held). Snapshot: [retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json).
+- **Agentic baseline** (`gemma-4-26b --real-rag`, 3-run): 13/13, 13/13, 12/13 @ ~25k tok/pass, ~44s/test. Run-3 miss is `phantom_pokemon` (Gemma skipped tools). Citation validity 100%/100%/80% on retrieval tests.
+- **Strategic reframe (2026-04-23):** Phases 0-5 moved retrieval from 0.849 → 0.853 over ~2 weeks. The remaining user-value levers are NOT further RAG tuning — they are (1) which LLM drives the agent loop, (2) content freshness, (3) Gemma behavior flakes. **Phase 3 reranker retry downgraded** from "NEXT" to Tier B (reassess after Tier A). See [rag-master-plan.md](rag-master-plan.md) "Strategic reframe (2026-04-23)".
+- **Provider keys available today** (no infra work): OpenRouter (Gemma 4 26B, Gemma 4 31B, GPT-OSS, Gemini 3 Flash), Anthropic (Sonnet 4.6, Opus 4.7), Groq (Llama 3.3 70B), HF Inference (embeddings + cross-encoder). **NOT installed:** Ollama (A2 install task).
+- **Current online default:** `gemma-4-26b` (`google/gemma-4-26b-a4b-it` via OpenRouter, free). Only model ever benchmarked on the 13-test suite with real RAG. Huge untapped option space.
 
-## Per-intent baseline (Jina OFF, Phase 1 clean — 2026-04-22)
+## Next actions (Tier A, in order)
+
+1. **A1 — Groq Llama 3.3 70B eval** (already configured, free): `npx tsx scripts/eval-models.ts --models llama-3.3-70b --real-rag` × 3. If beats Gemma: flip default in [src/lib/llm.ts](../src/lib/llm.ts).
+2. **A2 — Ollama install + local model eval** (qwen2.5-7b + llama3.1-8b at Q4 for the RTX 2070 SUPER 8GB). Quickstart in master-plan. Unlocks free local CLI path.
+3. **A3 — Content enrichment**: singles-meta doc, tier list reconciliation (`meta_snapshot.md` vs AngrySlowbroPlus), fresh Pikalytics + tournament refresh, TheDelybird's 5 template archetypes.
+4. **A4 — Gemma flake fixes**: tighten tool-first directive (phantom_pokemon), update retry nudge to list valid chunk_ids (citation hallucination).
+5. A5 _(optional)_ — Haiku 4.5 / Sonnet 4.6 eval for a measured "premium paid" tier.
+
+Tier B / C + dead code cleanup detail: master-plan.
+
+## Per-intent baseline (post Phase 5, 2026-04-23)
 
 | Intent | n | nDCG@10 | Recall@10 | P@10 | Gate |
 |---|---|---|---|---|---|
-| Overall | 100 | 0.851 | 0.87 | 0.34 | — |
-| matchup | 10 | 0.741 | 1.00 | 0.49 | P@10 0.50 ✗ (structural) |
-| counter | 18 | 0.691 | 0.67 | 0.41 | ✓ |
+| Overall | 100 | 0.853 | 0.87 | 0.34 | — |
+| matchup | 10 | 0.755 | 1.00 | 0.48 | P@10 0.50 ✗ (structural — type_chart not in most expected_contexts) |
+| counter | 18 | 0.692 | 0.67 | 0.41 | ✓ |
 | team | 14 | 0.844 | 1.00 | 0.41 | ✓ |
-| adversarial | 20 | 0.685 | 0.60 | 0.18 | ✓ |
+| adversarial | 20 | 0.685 | 0.60 | 0.18 | ✓ (Stage 4.6 invariant held) |
 | item | 14 | 0.991 | 0.93 | — | ✓ |
 | move | 9 | 0.995 | 0.89 | — | ✓ |
 | usage | 9 | 0.981 | 1.00 | — | ✓ |
 | stat | 26 | 0.839 | 0.81 | — | ✓ |
-
-Only unmet gate: matchup P@10 = 0.49 (target 0.50). **Structural** — golden-set `expected_contexts` doesn't list `type_chart.md` on most matchup rows. User forbade editing the golden set this cycle.
 
 ## Most recent work
 
@@ -107,23 +114,26 @@ Only unmet gate: matchup P@10 = 0.49 (target 0.50). **Structural** — golden-se
 
 ## Working tree
 
-Clean after Phase 5 commits. Default behavior (`RERANKER` unset) remains RRF + boosts only — Phase 5 did not touch rerank paths. The executor now calls `collectForceIncludes(originalQuery, ...)` and `applyBoosts(..., originalQuery, ...)` post-merge, preserving Stage 4.6 invariants under planner decomposition.
+Clean after Phase 5 commits + memory-bank reframe (today). Default behavior (`RERANKER` unset) remains RRF + boosts only. The executor calls `collectForceIncludes(originalQuery, ...)` and `applyBoosts(..., originalQuery, ...)` post-merge, preserving Stage 4.6 invariants.
 
-## Immediately queued
+## Immediately queued — see top-of-doc Tier A list
 
-1. **Phase 3 retry — cross-encoder re-eval** (½ session): NEXT. Flip `RERANKER=crossencoder` (or wire a post-merge reranker step in [lib/query-executor.ts](../lib/query-executor.ts) before `applyBoosts`), re-run 100-case retrieval eval + 3-run agentic variance. Expected nDCG 0.87-0.90 now that sub-queries don't fight the boost layer. Needs design choice: simple RERANKER env flip reuses the passthrough reranker (only on passthrough queries, still useful) vs threading a reranker through `executePlan` to rerank the merged pool against originalQuery (the full structural win). Recommend the latter — it's the Phase 3 retry the master plan pointed at.
-2. **Phase 6 — Gemma behavior flakes:** Phase 5 run-3 showed `phantom_pokemon` still flakes and one retrieval test had invalid chunk_ids after retry. Revisit the prompt tightening for the `phantom_pokemon` adversarial case and dig into the chunk_id hallucination on retrieval tests.
-3. **Phase 7 — subagents + progressive disclosure:** CLAUDE.md split into `team-build` / `team-evaluate` / `team-counter` subagents with restricted tool allowlists. Independent of Phase 3 retry.
-4. **Phase 8-9 — housekeeping splits:** `scripts/eval-models.ts` (1341 LOC) and `lib/chunker.ts` (794 LOC). Can slot anywhere.
+See "Next actions (Tier A, in order)" at the top. Consolidated here for completeness:
 
-Full tasks + gates + rollback triggers for each phase: [rag-master-plan.md](rag-master-plan.md) Part 4.
+1. **A1 — Groq Llama 3.3 70B eval** (already configured, free).
+2. **A2 — Ollama install + local model eval** (qwen2.5-7b + llama3.1-8b, Q4).
+3. **A3 — Content enrichment** (singles-meta doc, tier list reconciliation, tournament refresh).
+4. **A4 — Gemma flake fixes** (phantom_pokemon tool-first directive, citation retry nudge).
+5. A5 — Haiku 4.5 / Sonnet 4.6 eval _(optional)_.
+
+Tier B (Phase 3 retry, subagents) and Tier C (housekeeping refactors, deferred extensions) detail in [rag-master-plan.md](rag-master-plan.md).
 
 ## Hard constraints
 
-- **No paid APIs except OpenRouter Gemma 4 26B.** Jina is permanently OFF; don't propose top-ups. See [memory/project_no_paid_apis.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
+- **Budget:** No paid APIs outside the allowlist (OpenRouter Gemma tier + optional Anthropic). Jina permanently OFF. See [memory/project_no_paid_apis.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
 - **Golden set frozen this cycle** — don't edit `evals/golden-set.jsonl`.
 - **Vercel Lambda 250MB bundle.** `onnxruntime-node` doesn't bundle; HF Inference API is the query-embedding path on prod. See [memory/project_vercel_embedding_constraint.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_vercel_embedding_constraint.md).
-- **Rollback triggers:** any intent > 3% regression, agentic < 12/13 variance, Lambda > 240MB, Gemma rerank > $5/month.
+- **Rollback triggers:** any intent > 3% regression, agentic < 12/13 variance, Lambda > 240MB.
 
 ## Key code pointers
 

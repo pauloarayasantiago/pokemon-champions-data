@@ -2,6 +2,10 @@
 
 ## Process Notes
 
+### Strategic reframe (2026-04-23, post Phase 5 close-out)
+
+After Phase 5 shipped (structural planner × reranker fix, +0.0015 overall nDCG / +0.0138 matchup), the user pushed back on the master plan: Phases 0-5 delivered 0.849 → 0.853 retrieval over ~2 weeks, agentic pass rate flat at 12-13/13. The remaining user-value levers aren't further RAG tuning — they are (1) which LLM drives the agent loop, (2) content freshness, (3) Gemma behavior flakes, (4) offline/local model options via Ollama. **[rag-master-plan.md](rag-master-plan.md) rewritten with Tier A/B/C framing** on 2026-04-23. Phase 3 reranker retry was downgraded from "NEXT" to Tier B (reassess after Tier A). New Tier A phases: A1 Groq Llama 3.3 70B eval (already configured, free, never tested), A2 Ollama install + local model eval (qwen2.5-7b + llama3.1-8b for the RTX 2070 SUPER 8GB), A3 content enrichment (singles meta, tier list reconciliation, fresh tournament data), A4 Gemma flake fixes (phantom_pokemon + chunk_id hallucination). This entry in progress.md is the reframe anchor; the archive of Phases 0-5 below is untouched. Rule going forward: `rag-master-plan.md` is the lean forward plan (target ≤400 lines); this doc is the untouched archive.
+
 ### Phase 0 doc drift (2026-04-21 → 2026-04-22)
 
 Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case retrieval snapshot was still hanging on stdout buffer. The commit landed but the Roadmap status table, activeContext TL;DR, and Phase 0 task boxes were not updated in the same commit, so when the next session opened the docs still read "code written, not yet committed". **Rule going forward:** when shipping a phase, the same commit that lands the code must (1) flip the Roadmap row to SHIPPED with the commit SHA, (2) tick the phase's task + gate boxes, (3) update the activeContext TL;DR. Status and code move together.
