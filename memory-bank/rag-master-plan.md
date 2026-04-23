@@ -7,7 +7,7 @@ _Last revision: 2026-04-22, post Phase 4 SHIPPED. This doc is the canonical forw
 ## 30-second catch-up
 
 - **Current baseline:** retrieval nDCG@10 = **0.851** on the 100-case golden set (Phases 1 + 2 + 4 clean, RRF + boosts only); 13-test agentic eval 12-13/13 at ~25.5k tok/pass for Gemma 4 26B with citation_validity = 100%.
-- **Shipped:** Stages 0–2, 3/4/4.6, 6.1, 6.3 (commit `b056e4c`), Phase 1 cleanup (`7767a0a`), Phase 2 forced-JSON + chunk_id validation (`bc02d11`), Phase 3 dormant reranker code (`cf845dd`), Phase 4 `lib/rag.ts` split (see log, behavior-preserving, bit-for-bit identical).
+- **Shipped:** Stages 0–2, 3/4/4.6, 6.1, 6.3 (commit `b056e4c`), Phase 1 cleanup (`7767a0a`), Phase 2 forced-JSON + chunk_id validation (`bc02d11`), Phase 3 dormant reranker code (`cf845dd`), Phase 4 `lib/rag.ts` split (`f220160`, behavior-preserving, bit-for-bit identical).
 - **BLOCKED:** Phase 3 reranker (code in tree but dormant behind `RERANKER` env var). Both attempts (Gemma pointwise, BGE cross-encoder via HF) regressed matchup nDCG by 15-18%. **Root cause: planner × reranker score-merge problem — structural, addressed by Phase 5.** See Phase 3 section.
 - **Abandoned:** Stage 5 (EmbeddingGemma — Italian not a requirement → rolled back). Stage 3 Contextual Retrieval + 6.2 CRAG dropped (paid APIs).
 - **Key constraint:** no paid APIs **except** OpenRouter Gemma 4 26B + free HF Inference. Jina is permanently OFF. See [memory/project_no_paid_apis.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
@@ -25,7 +25,7 @@ Update this table as each phase moves state. Source of truth for "what's done / 
 | 1 | Cleanup + clean baseline | ½ session | SHIPPED | 2026-04-22 | 2026-04-22 | `7767a0a` | `retrieval-post-stage6.3-clean.json` |
 | 2 | Forced-JSON + chunk_id validation | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | `bc02d11` | n/a (adds `citation_validity_rate` → 100% on v4.1) |
 | 3 | Reranker (Gemma + cross-encoder) | 2 sessions | BLOCKED-pending-Phase-5 | 2026-04-22 | — | — | `retrieval-phase3-{gemma,crossencoder}.json` |
-| 4 | `lib/rag.ts` split | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | (see log) | `retrieval-phase4-refactor.json` (bit-for-bit = baseline) |
+| 4 | `lib/rag.ts` split | 1 session | SHIPPED | 2026-04-22 | 2026-04-22 | `f220160` | `retrieval-phase4-refactor.json` (bit-for-bit = baseline) |
 | 5 | Executor redesign | 1 session | NOT STARTED → unblocks Phase 3 reranker | — | — | — | `retrieval-post-phase5-executor.json` |
 | 6 | Gemma behavior flakes | ½ session | NOT STARTED | — | — | — | agentic 13/13 |
 | 7 | Subagents + progressive disclosure | 1–2 sessions | NOT STARTED | — | — | — | smoke parity |
@@ -307,7 +307,7 @@ Confirming evidence: smoke on a passthrough query ("Protect PP in Champions") mo
 
 ### Phase 4 — `lib/rag.ts` split _(was original Phase 3)_
 
-**Status:** SHIPPED · Started: 2026-04-22 · Shipped: 2026-04-22 · Commit: see log · Snapshot: [retrieval-phase4-refactor.json](../memory-bank/eval-baselines/retrieval-phase4-refactor.json)
+**Status:** SHIPPED · Started: 2026-04-22 · Shipped: 2026-04-22 · Commit: `f220160` · Snapshot: [retrieval-phase4-refactor.json](../memory-bank/eval-baselines/retrieval-phase4-refactor.json)
 
 **Goal.** Prerequisite for Phase 5. Pure refactor, behavior-preserving.
 
@@ -325,7 +325,7 @@ Confirming evidence: smoke on a passthrough query ("Protect PP in Champions") mo
 - [x] Retrieval eval byte-for-byte identical to baseline — `retrieval-phase4-refactor.json` deep-diff vs `retrieval-post-stage6.3-clean.json` returns zero deltas (ignoring timestamp). Overall 0.851386760816444 = baseline. All per-intent and per-case values match.
 - [x] No cyclic imports; `tsc --noEmit` exits 0. Each module compiles in isolation.
 
-**Shipped commit:** `refactor(rag): split lib/rag.ts into focused modules [Phase 4]` (see git log).
+**Shipped commit:** `f220160 refactor(rag): split lib/rag.ts into focused modules [Phase 4]`.
 
 ---
 
