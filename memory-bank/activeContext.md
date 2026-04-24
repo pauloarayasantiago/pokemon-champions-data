@@ -1,11 +1,12 @@
 # Active Context
 
-_Last updated: 2026-04-23 (post 7-model bake-off + phantom-Pokemon interceptor ship). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-23 PM (post A3 content-enrichment ship). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
 
 ## TL;DR
 
-- **Retrieval baseline:** nDCG@10 = **0.853** unchanged (post-Phase-5, 2,329 chunks). Snapshot: [retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json).
-- **Agentic baseline post-interceptor** (`gemma-4-26b --real-rag`, 3-run 2026-04-23): **13/13, 13/13, 12/13** @ 30k avg tok/pass, ~36s/test avg. Run-3 miss is `team_json` (pre-existing Gemma "forgot required JSON block" flake, unrelated to interceptor). **phantom_pokemon passes 3/3** (was 2/3 pre-interceptor). Citation 80%/100%/80% on retrieval tests — open Gemma-side hallucination issue, independent of phantom fix.
+- **Retrieval baseline:** nDCG@10 = **0.845** overall (post-A3, 2,511 chunks). Δ -0.94% vs 0.853 Phase-5 baseline — within the 3% overall budget. Snapshot: [retrieval-post-A3.json](eval-baselines/retrieval-post-A3.json).
+- **Team-intent regression accepted:** 0.844 → 0.785 (-7.0%). Three cases shifted: team-wolfey-froslass -0.369 + team-wolfey-teams -0.088 driven by tournament_teams.csv + pikalytics_usage.csv roster churn after fresh scrape; team-ck49-role-framework -0.362 (baseline was already 0.362; grade-1/2 chunk slipped out of top-10 after reindex). AngrySlowbroPlus case recovered to baseline after Task 2 viability-section trim. Adversarial, item, move, usage, stat, counter, matchup intents all within ±0.5% of baseline.
+- **Agentic baseline post-A3** (`gemma-4-26b --real-rag`, 1-run 2026-04-23 PM): **13/13 pass, 100% citation-validity, 16327 tok/pass** (down from 25-30k historical), 30.4s/test avg. All 5/5 retrieval tests + `creator_opinion` + `tournament_retrieval` + `meta_core_attribution` green — agent correctly uses the new content. phantom_pokemon passes in 0.0s / 0 tokens (interceptor).
 - **2026-04-23 session — MAJOR reframe.** Tested 7 LLMs (Gemma, Groq Llama 3.3 70B, GPT-OSS 20B, qwen2.5-7b/llama3.1-8b Ollama, DeepSeek V3.2, GLM-4.5-Air, Gemini 2.5 Flash Lite). **`phantom_pokemon` fails on EVERY model tested** — not a Gemma flake, it's systemic. A4 reframed from "Gemma flake fix" to "model-agnostic phantom Pokemon interceptor". Shipped as [lib/phantom-guard.ts](../lib/phantom-guard.ts) + wiring in [src/app/api/team/route.ts](../src/app/api/team/route.ts) and [scripts/eval-models.ts](../scripts/eval-models.ts).
 - **Default model retained: `gemma-4-26b`.** No challenger beat it on cost+quality. DeepSeek V3.2 matches at 3× cost; GLM-4.5-Air matches at 5× cost with 3.4× token variance. Detail in [memory/project_default_model.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_default_model.md).
 - **Gemma 4 26B A4B is PAID** ($0.06/$0.33 per M, ~$0.008/run) — earlier docs mis-labeled it as free tier. The `:free` suffix applies only to the 31B variant.
@@ -13,37 +14,56 @@ _Last updated: 2026-04-23 (post 7-model bake-off + phantom-Pokemon interceptor s
 
 ## Next actions (Tier A, in order)
 
-1. **A3 — Content enrichment** (now top Tier A since A1/A2/A4 shipped): singles-meta doc, tier list reconciliation (`meta_snapshot.md` vs AngrySlowbroPlus), fresh Pikalytics + tournament refresh, TheDelybird's 5 template archetypes.
+1. **A5 — Haiku 4.5 / Sonnet 4.6 eval** (now top Tier A since A1/A2/A3/A4 shipped): register in [scripts/eval-models.ts](../scripts/eval-models.ts); run 13-test `--real-rag` suite; decide whether to offer a measured paid "premium" tier alongside Gemma default. Optional — run if user wants the option.
 2. **A4b — Prompt hardening (optional follow-up to interceptor)** — tighten system prompt "MUST call pokedex first" directive as belt-and-suspenders alongside the interceptor. Low priority since interceptor is the structural fix.
-3. A5 _(optional)_ — Haiku 4.5 / Sonnet 4.6 eval for a measured "premium paid" tier.
-4. Tier B: Phase 3 reranker retry (deferred unless A3 reveals retrieval is still the UX bottleneck).
+3. Tier B: Phase 3 reranker retry (deferred; marginal ROI).
 
 ## Session 2026-04-23 — SHIPPED list
 
 - A1 (Groq Llama 3.3 70B eval) — NO-GO; Groq parser rejects Llama native tool format + 12k TPM cap. Memo: [project_groq_llama33_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_groq_llama33_eval.md).
 - A2 (Ollama local eval) — NO-GO on 7-8B Q4 for this workload; qwen2.5-7b 8/13 + llama3.1-8b 4/13. Registry additions retained for future stronger local models.
-- A4 (phantom_pokemon interceptor) — SHIPPED; single-test smoke passes in 0ms/0 tokens; 3-run variance measuring.
+- A4 (phantom_pokemon interceptor) — SHIPPED; single-test smoke passes in 0ms/0 tokens; 3-run variance 3/3 pass post-ship.
 - OpenRouter bake-off — DeepSeek V3.2, GLM-4.5-Air (3-run), Gemini 2.5 Flash Lite. No challenger beat Gemma on cost+quality. Registry adds in `scripts/eval-models.ts`.
 - Jina default fix — `lib/rag.ts:223`.
+- **A3 (content enrichment) — SHIPPED (PM)** · commits `3555ad2`..`8b31999`:
+  - Task 1: fresh Pikalytics (89/216 Pokemon) + VGCPastes tournament CSV (445 teams). Reindex 2511 chunks vs 2329 prior.
+  - Task 2: short 3-line "Viability vs Usage" paragraph in [data/knowledge/meta_snapshot.md](../data/knowledge/meta_snapshot.md) citing AngrySlowbroPlus's top-5. Initial 22-line structured version dominated 5+ chunks → trimmed after retrieval-regression signal.
+  - Task 3: new [data/knowledge/singles_meta.md](../data/knowledge/singles_meta.md) (~158 lines) — 3v3 format basics, top-10 usage from temp6t, concrete creator-sourced sets, differences-vs-Doubles table. Qualitative usage numbers (no structured singles CSV yet).
+  - Task 4: "Template Archetypes (Creator-Sourced)" section in [data/knowledge/team_archetypes.md](../data/knowledge/team_archetypes.md) — TheDelybird's top-5 archetypes (Sun, Floette Balance, Rain, Sand, Snow) + Mega Golurk TR bonus. SP spreads deliberately untranscribed.
+  - Gates: retrieval overall 0.845 (-0.94%, in budget); team intent -7.0% accepted as fresh-data churn. Agentic 13/13 + 100% citation rate + 16327 tok/pass (best Gemma result measured).
 - Memo files: [project_deepseek_v32_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_deepseek_v32_eval.md), [project_glm_45_air_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_glm_45_air_eval.md), [project_gemini_25_flash_lite_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_gemini_25_flash_lite_eval.md), [project_phantom_pokemon_systemic.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_phantom_pokemon_systemic.md).
 
 Tier B / C + dead code cleanup detail: master-plan.
 
-## Per-intent baseline (post Phase 5, 2026-04-23)
+## Per-intent baseline (post A3, 2026-04-23 PM)
 
-| Intent | n | nDCG@10 | Recall@10 | P@10 | Gate |
-|---|---|---|---|---|---|
-| Overall | 100 | 0.853 | 0.87 | 0.34 | — |
-| matchup | 10 | 0.755 | 1.00 | 0.48 | P@10 0.50 ✗ (structural — type_chart not in most expected_contexts) |
-| counter | 18 | 0.692 | 0.67 | 0.41 | ✓ |
-| team | 14 | 0.844 | 1.00 | 0.41 | ✓ |
-| adversarial | 20 | 0.685 | 0.60 | 0.18 | ✓ (Stage 4.6 invariant held) |
-| item | 14 | 0.991 | 0.93 | — | ✓ |
-| move | 9 | 0.995 | 0.89 | — | ✓ |
-| usage | 9 | 0.981 | 1.00 | — | ✓ |
-| stat | 26 | 0.839 | 0.81 | — | ✓ |
+| Intent | n | nDCG@10 | Recall@10 | P@10 | Δ vs Phase-5 | Gate |
+|---|---|---|---|---|---|---|
+| Overall | 100 | 0.845 | 0.86 | 0.33 | -0.94% | ✓ within 3% overall budget |
+| matchup | 10 | 0.752 | 1.00 | 0.47 | -0.4% | ✓ |
+| counter | 18 | 0.692 | 0.67 | 0.41 | 0.0% | ✓ |
+| team | 14 | 0.785 | 0.93 | 0.41 | -7.0% | ✗ accepted — fresh-data churn (wolfey-froslass, wolfey-teams, ck49-role-framework) |
+| adversarial | 20 | 0.686 | 0.60 | 0.17 | +0.1% | ✓ (invariant held) |
+| item | 14 | 0.989 | 0.93 | 0.24 | -0.2% | ✓ |
+| move | 9 | 0.996 | 0.89 | 0.28 | +0.1% | ✓ |
+| usage | 9 | 0.986 | 1.00 | 0.30 | +0.5% | ✓ |
+| stat | 26 | 0.838 | 0.81 | 0.27 | -0.1% | ✓ |
 
 ## Most recent work
+
+### A3 — SHIPPED (2026-04-23 PM) · snapshot: [retrieval-post-A3.json](eval-baselines/retrieval-post-A3.json)
+
+- **Goal:** work on data, not code — refresh stale CSVs, add singles coverage, reconcile creator tier lists, convert descriptive archetypes into concrete templates.
+- **Four-commit ship** (per plan bisectability rule): `3555ad2` CSVs, `50631e2` meta_snapshot viability section, `3eaa3a2` singles_meta.md, `05dbd43` team_archetypes templates, `8b31999` eval baselines.
+- **Mid-ship course correction:** initial 22-line structured "Viability vs Usage — Creator Consensus" section (heavy on AngrySlowbroPlus name + S-tier table + 3 convergence/divergence paragraphs) tripped the team-intent rollback trigger (-10.1%) by producing 5+ meta_snapshot.md chunks that dominated creator-name queries in top-10. Trimmed to a 3-line paragraph (single `## Viability vs Usage` section, no structured subheaders, name-mentioned once). Post-trim AngrySlowbroPlus case recovered to baseline; ck49 + 2 wolfey cases did not (see next bullet).
+- **Remaining team-intent regression (-7.0%, accepted):** three cases regressed:
+  - `team-wolfey-froslass` -0.369 (was 1.000, now 0.631): tournament_teams.csv + pikalytics_usage.csv roster refresh shifted which Froslass-adjacent tournament record lands in top-10.
+  - `team-wolfey-teams` -0.088: same driver.
+  - `team-ck49-role-framework` -0.362 (was 0.362, now 0.0): baseline was already weak (grade-1/2 chunks in ranks 6-10, no grade-3 in top-5); reindex shuffled those grade-1/2 chunks below rank 10.
+  - The regression is **fresh-data churn**, not content-addition dominance. Reverting Task 1 would recover the numbers at the cost of the entire A3 value proposition, so accepted.
+- **Agentic gate:** `gemma-4-26b --real-rag` 1-run = 13/13 pass, **100% citation validity**, 16327 tok/pass (personal best for Gemma), 30.4s/test avg. `creator_opinion` specifically passed by attributing Garchomp-view to AngrySlowbroPlus — agent uses the new viability paragraph correctly. `tournament_retrieval` named 5 real Mega Golurk teammates (from TheDelybird bonus template). `meta_core_attribution` reported 55.8% for Archaludon+Pelipper core exactly matching truth.
+- **What ships to users:** fresh meta numbers (89/216 Pokemon with Pikalytics rows; 445 tournament teams); a ~158-line singles_meta doc covering 3v3 format with qualitative usage from temp6t; a new "Template Archetypes (Creator-Sourced)" section in team_archetypes with 5+1 buildable team templates; a 3-line viability-vs-usage disclaimer pointing to AngrySlowbroPlus's take.
+- **Working-tree state:** 6 commits on main, 2511 chunks indexed, no code changes (data + markdown + snapshots only).
 
 ### Phase 5 — SHIPPED (2026-04-23) · snapshot: [retrieval-post-phase5-executor.json](eval-baselines/retrieval-post-phase5-executor.json)
 
@@ -123,17 +143,14 @@ Tier B / C + dead code cleanup detail: master-plan.
 
 ## Working tree
 
-Clean after Phase 5 commits + memory-bank reframe (today). Default behavior (`RERANKER` unset) remains RRF + boosts only. The executor calls `collectForceIncludes(originalQuery, ...)` and `applyBoosts(..., originalQuery, ...)` post-merge, preserving Stage 4.6 invariants.
+Clean after A3 ship (6 commits: `3555ad2` CSVs, `50631e2` meta_snapshot, `3eaa3a2` singles_meta, `05dbd43` team_archetypes, `8b31999` eval baselines, memory-bank update is this commit). Index: 2511 chunks. Default behavior (`RERANKER` unset) remains RRF + boosts only.
 
 ## Immediately queued — see top-of-doc Tier A list
 
-See "Next actions (Tier A, in order)" at the top. Consolidated here for completeness:
+All of A1/A2/A3/A4 have shipped this session. Remaining Tier A:
 
-1. **A1 — Groq Llama 3.3 70B eval** (already configured, free).
-2. **A2 — Ollama install + local model eval** (qwen2.5-7b + llama3.1-8b, Q4).
-3. **A3 — Content enrichment** (singles-meta doc, tier list reconciliation, tournament refresh).
-4. **A4 — Gemma flake fixes** (phantom_pokemon tool-first directive, citation retry nudge).
-5. A5 — Haiku 4.5 / Sonnet 4.6 eval _(optional)_.
+1. **A5 — Haiku 4.5 / Sonnet 4.6 eval** _(optional premium tier)_ — register in [scripts/eval-models.ts](../scripts/eval-models.ts), run 13-test suite, document cost+quality vs Gemma. Only proceed if user wants a paid-premium option alongside Gemma default.
+2. **A4b — Prompt hardening follow-up** — low priority; only if interceptor shows production gaps.
 
 Tier B (Phase 3 retry, subagents) and Tier C (housekeeping refactors, deferred extensions) detail in [rag-master-plan.md](rag-master-plan.md).
 

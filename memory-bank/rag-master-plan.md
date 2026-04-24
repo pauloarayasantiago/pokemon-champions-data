@@ -48,9 +48,9 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | A2 | Ollama local model eval (qwen2.5-7b + llama3.1-8b) | A | **SHIPPED — NO-GO (2026-04-23)** | 8/13 + 4/13 on Q4 smoke; registry retained for future stronger models |
 | A1-alt | OpenRouter paid bake-off (DeepSeek V3.2, GLM-4.5-Air, Gemini 2.5 Flash Lite, GPT-OSS 20B) | A | **SHIPPED (2026-04-23)** | No challenger beat Gemma on cost+quality. Memos: `project_deepseek_v32_eval.md`, `project_glm_45_air_eval.md`, `project_gemini_25_flash_lite_eval.md` |
 | A4 | Phantom Pokemon interceptor (model-agnostic) | A | **SHIPPED (2026-04-23)** | `lib/phantom-guard.ts` + wiring in route.ts + eval-models.ts. Single-test smoke 1/1 in 0ms |
-| **A3** | **Content enrichment round** | A | **NOT STARTED → NEXT** | Singles meta doc; tier list reconciliation; fresh tournament data |
+| A3 | Content enrichment round | A | **SHIPPED (2026-04-23)** | Fresh Pikalytics + tournament CSVs; singles_meta.md; AngrySlowbroPlus viability section in meta_snapshot; TheDelybird templates in team_archetypes. Accepted team-intent -7.0% regression (fresh-data churn, not stale-doc). Baseline: [retrieval-post-A3.json](eval-baselines/retrieval-post-A3.json) |
 | A4b | Prompt hardening follow-up (optional belt-and-suspenders alongside interceptor) | A | DEFERRED | Tighten system prompt "call pokedex first" — only if interceptor alone shows gaps |
-| A5 | Haiku 4.5 / Sonnet 4.6 eval (paid premium tier) | A | NOT STARTED | Optional — run if user wants a premium option |
+| **A5** | **Haiku 4.5 / Sonnet 4.6 eval (paid premium tier)** | A | **NEXT (optional)** | Register models in eval-models.ts; run 13-test suite; decide if we offer a paid "premium" tier alongside Gemma default |
 | B1 | Phase 3 reranker retry (cross-encoder, post-merge in executor) | B | DEFERRED (reassess after Tier A) | Only if Tier A doesn't close UX gap |
 | B2 | Subagents + progressive disclosure (split CLAUDE.md) | B | DEFERRED | Ergonomics; no user-visible urgency |
 | C1 | eval-models.ts / chunker.ts splits | C | DEFERRED | Housekeeping; ship if actively blocking |
@@ -217,7 +217,7 @@ npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
 | Phase 5 ship (2026-04-23 AM) | 0.853 | 12-13/13 @ Gemma | Executor redesign |
 | A1/A2 bake-off (2026-04-23) | 0.853 | 12-13/13 @ Gemma (retained) | No challenger beat Gemma on cost+quality |
 | **A4 interceptor ship (2026-04-23)** | **0.853 confirmed unchanged** | **13/13, 13/13, 12/13** with phantom_pokemon 3/3 | `team_json` is the new Run-3 flake (pre-existing). phantom_pokemon now short-circuits pre-LLM. Citation still 80-100% (Gemma-side hallucination, separate A4c) |
-| Post A3 (content enrichment) | 0.853-0.86 | — | Users get better answers on current meta; may not move the frozen-golden-set nDCG |
+| A3 ship (2026-04-23 PM) | **0.845** (-0.94%) | **13/13 @ Gemma, 100% cit-rate, 16327 tok/pass** | Team intent -7.0% (fresh-data churn on tournament/pikalytics roster queries — 2 wolfey cases + 1 ck49 structural; AngrySlowbroPlus case recovered via Task 2 trim). Agentic eval strongest-signal PASS. Accepted vs golden-set-frozen-label staleness |
 | Post A4c (citation hallucination fix, if pursued) | 0.853 | 13/13 + citation validity ≥95% | Tightens retry-nudge in lib/validate-citations.ts |
 | If B1 ever ships | 0.87-0.90 est | 12-13/13 | Marginal UX gain vs infra cost |
 
