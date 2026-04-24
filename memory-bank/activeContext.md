@@ -30,7 +30,7 @@ _Last updated: 2026-04-23 evening (post A5 self-eval + A10/A11 cron ship). Purpo
 7. **A4b — Prompt hardening** — unchanged, low priority.
 8. Tier B: Phase 3 reranker retry (deferred; marginal ROI).
 
-**Observational gate on A10-revised/A11 ship:** A10-revised needs the user to run `schtasks /create` (one-liner documented in [techContext.md § Data Pipeline](techContext.md#data-pipeline)). After 2 local task fires (~24h), confirm `data/transcripts/` has new `.md` files and a non-bot commit on `main`. A11 GH Actions path already validated by run 24867630255 (Pikalytics 89 rows + Sheets 445 rows refreshed, reindex green, auto-commit `0a65872` pushed).
+**Observational gate on A10-revised/A11 ship:** scheduled task `pokemon-youtube-scraper` registered on user's box 2026-04-23 evening (`schtasks /create`, 12-hour interval, run-as `paulo`, `/it` interactive-only). First scheduled fire: 2026-04-24 07:57 local. After 2 fires (~24h), confirm `data/transcripts/` has new `.md` files and a non-bot commit on `main`. A11 GH Actions path already validated by run 24867630255 (Pikalytics 89 rows + Sheets 445 rows refreshed, reindex green, auto-commit `0a65872` pushed). Smoke-test local run (manual, 2026-04-23 evening) already landed 22 fresh transcripts as commit `dfc3664` — proves the script itself works end-to-end.
 
 ## Session 2026-04-23 — SHIPPED list
 
