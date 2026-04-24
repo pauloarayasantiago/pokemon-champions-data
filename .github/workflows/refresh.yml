@@ -13,6 +13,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: Production
     permissions:
       contents: write
     steps:
@@ -46,6 +47,9 @@ jobs:
 
       - name: Rebuild vector index
         run: npx tsx scripts/index-data.ts
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET: ${{ secrets.SUPABASE_SECRET }}
 
       - name: Commit and push changes
         run: |
