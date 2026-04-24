@@ -77,3 +77,57 @@ Carries a Trick Room setter but doesn't always need to set it — can win at nor
 Strengths: Extremely flexible in team preview, opponent can't predict the game plan, strong in best-of-3.
 Weaknesses: Master of none — neither mode is as strong as a dedicated archetype.
 Sample core 6: Hatterene, Incineroar, Garchomp, Sinistcha, Torkoal, Mega Clefable.
+
+## Template Archetypes (Creator-Sourced)
+
+The archetypes above are descriptive. The following are concrete top-of-ladder team templates from content creator **TheDelybird** ("The Top 15 Teams in Pokemon Champions", ~1 week post-launch, 14m46s). Each is the creator's ranked top 5 with variants. EV/SP spreads come from the creator's poke pastes (linked from the video description, not transcribed); specific moves are captured here when explicitly stated.
+
+### Template 1 — Sun (Mega Charizard Y + Venusaur) [Creator rank #1]
+**Core 6:** Mega Charizard Y, Venusaur, Garchomp, Sneasler, Incineroar, Basculegion (Choice Scarf).
+**Variants:**
+- *Standard* — Scarf Basculegion as the water type.
+- *Cybertron Sun* — Scarf Garchomp + Rotom-Wash (gives Garchomp a flying partner for Earthquake).
+- *Master Ball rank (creator's own)* — drop Venusaur + water for Aerodactyl (Lum Berry, anti-sleep, Tailwind T1) + Whimsicott (Tailwind, Encore).
+**Mentioned moves:** Charizard — Heat Wave, Dragon Claw, Weather Ball (default) or Scorching Sands + Solar Beam (tech). Venusaur — Growth, Sleep Powder, Solar Beam. Garchomp — Earthquake, Dragon Claw. Sneasler — Close Combat, Dire Claw (vs Mega Floette).
+**Game plan:** Secure Sun over opposing weather via Mega Evolution switch timing, then overwhelm with Heat Wave + Earthquake double-target pressure. Highest-damage team in the format.
+**Alt water options:** Rotom-Wash, Milotic (Competitive answer to Intimidate).
+
+### Template 2 — Floette Balance [Creator rank #2]
+**Core 6:** Mega Floette (Eternal), Incineroar, Sinistcha, Sneasler, Corviknight, Garchomp (holds Mega stone as backup).
+**Variants:** Swap Garchomp's Mega stone onto Charizard Y or Delphox (Mega) for alternate win condition vs. Floette-hard-counter teams (Kingambit, Sneasler, Mega Gengar).
+**Mentioned moves:** Floette — Calm Mind, Moon Blast, Light of Ruin (implied via "fairy attacks" + Fairy Aura). Sinistcha — Rage Powder, Hospitality (redirection + heal). Corviknight — Tailwind (support option).
+**Game plan:** Lead Floette + Fake Out partner (Incineroar or Sneasler); Calm Mind 1-2 times behind redirection from Sinistcha; Floette sweeps with Fairy Aura-boosted Moon Blast.
+**Alt fairy options:** Whimsicott (Tailwind + Fairy Aura boost), Primarina (double fairy core), Talonflame (Tailwind + Fire coverage for steel counters).
+
+### Template 3 — Rain (Pelipper + Archaludon + Basculegion) [Creator rank #3]
+**Core 6:** Pelipper, Archaludon, Basculegion, Incineroar, Sinistcha, + rotating Mega (choose one: Mega Gengar / Mega Dragonite / Mega Meganium). Mega Scizor is an emerging sixth slot.
+**Variants:**
+- *Mega Gengar* — Shadow Tag traps opposing weather setters; runs Icy Wind for speed control.
+- *Mega Dragonite* — Multiscale + perfectly accurate Thunder/Hurricane under rain.
+- *Mega Meganium* — Mega Sol competes with opposing Sun; Grass hits opposing rain/water counters.
+- *Mega Scizor* — Hard-counters Mega Floette with priority Bullet Punch; works under Sinistcha TR.
+**Mentioned moves:** Archaludon — Electro Shot (key move; +1 SpA + no charge in rain), Flash Cannon, Draco Meteor. Basculegion — Last Respects, Wave Crash, Flip Turn, Aqua Jet. Sneasler/supporting — Rock Tomb (tech for Mega Charizard Y).
+**Game plan:** Preserve Pelipper to maintain rain; don't lead Pelipper + Archaludon into Sun teams (they can Mega-steal weather). Damage their weather setter with Basculegion + Sneasler first, then win the weather war.
+
+### Template 4 — Sand (Mega Tyranitar + Excadrill) [Creator rank #4]
+**Core 6:** Mega Tyranitar, Excadrill, Hisuian Arcanine, Sneasler, Milotic, Sinistcha.
+**Variants:**
+- *Dragon-Sand* — Drop Excadrill for Garchomp + Aerodactyl/Rotom/Orthworm. Sand Veil on Garchomp, Shed Tail on Orthworm to set up a sub for Tyranitar.
+- *Choice Scarf TTar* — Drop Mega stone; Scarf Tyranitar with Ice Punch + Low Kick (nails Tyranitar/Garchomp/Dragonite/Kingambit). Mega Gengar becomes the team's Mega; adds Sinistcha and Komo-o.
+**Mentioned moves:** Mega Tyranitar — Rock Slide, Earth Power (implied), Low Kick/Ice Punch (Scarf variant). Hisuian Arcanine — Intimidate, Rock typing for SpD sand boost. Milotic — Competitive + Scald/Icy Wind/Recover/Protect (the creator's explicit Milotic set).
+**Game plan:** Mega Tyranitar is unique in setting Sand twice (switch-in + Mega Evolution) and wins most weather wars via slow-Mega timing. Rock + Ground + Dark + Steel coverage from the duo hits most types; team is weak to Fighting, so Arcanine intimidates and Milotic + Sinistcha handle opposing Intimidate spam.
+
+### Template 5 — Snow (Mega Froslass) [Creator rank #5]
+**Core 6:** Mega Froslass, Palafin, Kingambit, Sneasler, Hisuian Arcanine, Sinistcha.
+**Variants:**
+- *Alolan Ninetales snow* — Drop Froslass, add Alolan Ninetales (Snow Warning + Fairy/Ice coverage). Mega becomes Scizor; Komo-o joins the team as the priority-resistant bulky attacker with omni-boost potential under Aurora Veil.
+**Mentioned moves:** Mega Froslass — Blizzard, Aurora Veil, Destiny Bond (implied). Palafin — Zero → Hero transform damage play. Kingambit — Supreme Overlord endgame + sucker punch priority.
+**Game plan:** Get Aurora Veil up turn 1-2 with Froslass; the bulky attackers (Palafin, Kingambit, Hisuian Arcanine) all have priority, so they absorb hits under Veil then respond with priority to clean weakened Pokemon.
+
+### Bonus Template — Hard Trick Room / Sun Room (Mega Golurk)
+**Source:** TheDelybird bonus segment; team won a recent online tournament.
+**Core 6:** Mega Golurk, Torkoal, Farigiraf, Incineroar, Venusaur, Sneasler.
+**Mentioned moves:** Mega Golurk — Headlong Rush (one-shots most Incineroar even at -1 from Intimidate); ghost typing gives Fake Out immunity. Torkoal — Eruption (TR + Sun = highest-damage move in format). Venusaur — Sleep Powder (helps set up TR). Sneasler — Coaching (power up Golurk before TR).
+**Game plan:** Semi-TR hybrid — set TR with Farigiraf while leveraging Sun from Torkoal (or Mega Sol if Mega Golurk is swapped). Golurk + Torkoal have inverted coverage (Ground resists Fire checks; Fire checks Grass/Bug that resist Ground).
+
+**Source transcript:** [data/transcripts/unknown_thedelybird-the-top-15-teams-in-pokemon-champions-pokemon-pokémonchampions-vgc.md](../transcripts/unknown_thedelybird-the-top-15-teams-in-pokemon-champions-pokemon-pokémonchampions-vgc.md) (14m46s, 2026-04 approx). Note: "15 teams" in the video title counts the 3 variants × 5 archetypes; transcript names 5 archetypes + 1 bonus.
