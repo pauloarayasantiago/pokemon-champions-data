@@ -1,0 +1,291 @@
+
+Chunking 139 files...
+  pokemon_champions.csv: 216 chunks [pokemon]
+  mega_evolutions.csv: 59 chunks [mega]
+  moves.csv: 494 chunks [move]
+  items.csv: 138 chunks [item]
+  updated_attacks.csv: 19 chunks [move]
+  new_abilities.csv: 4 chunks [ability]
+  mega_abilities.csv: 23 chunks [mega]
+  tournament_teams.csv: 445 chunks [team]
+  pikalytics_usage.csv: 89 chunks [usage]
+  matchup_matrix.csv: 275 chunks [matchup]
+  status_conditions.txt: 1 chunks [knowledge]
+  training_mechanics.txt: 1 chunks [knowledge]
+  memory-bank/activeContext.md: 19 chunks [project]
+  memory-bank/errors.md: 1 chunks [project]
+  memory-bank/productContext.md: 9 chunks [project]
+  memory-bank/progress.md: 96 chunks [project]
+  memory-bank/projectbrief.md: 6 chunks [project]
+  memory-bank/rag-master-plan.md: 53 chunks [project]
+  memory-bank/systemPatterns.md: 6 chunks [project]
+  memory-bank/techContext.md: 25 chunks [project]
+  data/knowledge/champions_rules.md: 58 chunks [knowledge]
+  data/knowledge/damage_calc.md: 12 chunks [knowledge]
+  data/knowledge/meta_snapshot.md: 9 chunks [knowledge]
+  data/knowledge/singles_meta.md: 18 chunks [knowledge]
+  data/knowledge/speed_tiers.md: 10 chunks [knowledge]
+  data/knowledge/team_archetypes.md: 17 chunks [knowledge]
+  data/knowledge/team_building_theory.md: 14 chunks [knowledge]
+  data/knowledge/type_chart.md: 37 chunks [knowledge]
+  data/knowledge/validation_notes.md: 7 chunks [knowledge]
+  data/transcripts/unknown_13yoshi37-the-5-best-pokémon-champions-players-and-their-teams.md: 4 chunks [transcript]
+  data/transcripts/unknown_adrive-all-13-new-mega-abilities-for-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_adrive-easy-team-building-guide-for-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_adrive-new-ranking-every-mega-evolution-in-pokémon-champions-day-1-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_angryslowbroplus-the-definitive-pokemon-champions-regulation-a-doubles-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_blunder-6-mega-evolutions-that-got-robbed-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_cam-smash-vgc-ranking-new-mega-evolutions-for-competitive-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_championmads-meta-report-1000-player-tournament-results-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_championmads-the-best-singles-battles-teams-for-ranked-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_championmads-the-best-teams-to-play-for-ranked-battles-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_ck49-the-best-pokemon-for-every-role-in-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_ck49-the-vgc-pros-guide-to-mastering-mega-evolution-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_cybertronvgc-15-strong-teams-to-try-in-pokemon-champions-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_cybertronvgc-counter-the-top-5-pokémon-dominating-pokemon-champions-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_cybertronvgc-mega-charizard-is-dominating-pokemon-champions-top-teams-to-try.md: 4 chunks [transcript]
+  data/transcripts/unknown_false-swipe-gaming-every-new-mega-ability-in-pokemon-champions-explained-in-14-m.md: 4 chunks [transcript]
+  data/transcripts/unknown_false-swipe-gaming-top-5-winners-losers-of-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_gatorex-every-new-mega-evolution-ability-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_haydunn-the-most-diabolical-mega-starmie-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_hoshinjosh-10-new-mega-evolutions-for-pokémon-champions-single-battles.md: 4 chunks [transcript]
+  data/transcripts/unknown_hoshinjosh-best-pokémon-builds-for-pokémon-champions-single-battles-master-rank.md: 4 chunks [transcript]
+  data/transcripts/unknown_hoshinjosh-i-found-the-best-single-battles-team-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_hoshinjosh-pokémon-champions-single-battles-are-harder-than-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_istarlytv-these-are-the-best-pokemon-to-use-in-pokemon-champions-master-ball-ran.md: 4 chunks [transcript]
+  data/transcripts/unknown_jimothy-cool-ranking-every-mega-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_jimothy-cool-rising-stars-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_jimothy-cool-the-pokemon-champions-metagame.md: 4 chunks [transcript]
+  data/transcripts/unknown_joeux9-4-tournament-winning-replica-teams-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_joeux9-how-to-build-teams-like-a-pro-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_joeux9-pro-player-ranks-every-pokémon-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_joeux9-the-best-teams-from-the-10000-pokémon-champions-tournament.md: 4 chunks [transcript]
+  data/transcripts/unknown_justin-tang-mega-meganium-sand-just-won-a-tournament-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_kneeckoh-20-best-pokemon-you-need-to-use-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_kneeckoh-6-best-team-types-you-should-be-using-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_kneeckoh-how-to-use-mega-dragonite-in-champions-ranked-battles-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_konamiplsnerf-the-beginners-guide-to-team-building-for-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_moxie-boosted-ranking-the-top-10-pokemon-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_moxie-boosted-the-pokemon-champions-item-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_moxie-boosted-we-need-to-talk-about-the-new-mega-abilities-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_moxie-boosted-what-are-the-worst-mega-evolutions-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_moxie-boosted-which-pokemon-champion-is-the-strongest-competitively-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_moxie-boosteds-gym-moxie-boosted-ranks-every-mega-evolution-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_mrsteelixyourgirl-30-pokemon-you-need-to-use-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_mrsteelixyourgirl-and-scooteezyvgc-we-ranked-every-new-mega-evolution-in-pokémon.md: 4 chunks [transcript]
+  data/transcripts/unknown_nivag-the-top-pokemon-before-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_nivag-which-pokemon-will-dominate-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_osirus-champions-and-osirus-10-pro-tips-for-pokémon-champions-you-need-to-know.md: 4 chunks [transcript]
+  data/transcripts/unknown_panfro-games-everyone-uses-these-10-pokémon-heres-how-to-beat-them-in-pokémon-ch.md: 4 chunks [transcript]
+  data/transcripts/unknown_panfro-games-new-ranking-every-pokémon-in-pokémon-champions-meta-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_panfro-games-ranking-every-mega-pokémon-in-pokémon-champions-meta-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_panfro-games-ranking-every-pokémon-in-pokémon-champions-full-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_panfro-games-the-best-mega-charizard-x-team-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_panfro-games-this-mega-blastoise-team-destroys-pokemon-champions-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_pimpnite-pokemon-champions-best-team-building-guide-doubles-singles-teams-ranked.md: 4 chunks [transcript]
+  data/transcripts/unknown_pokeaimmd-and-joeux9-top-5-underrated-megas-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_pokeaimmd-huge-competitive-move-buffs-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_pokeaimmd-huge-mega-abilities-confirmed-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_pokeaimmd-huge-news-new-abilities-for-mega-meganium-feraligatr-in-pokemon-champi.md: 4 chunks [transcript]
+  data/transcripts/unknown_pokeprofessorjosh-5-easy-teams-for-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_poplove-gaming-beginners-guide-to-competitive-pokemon-battling-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_puppypown-the-ultimate-pokemon-champions-team-building-guide.md: 4 chunks [transcript]
+  data/transcripts/unknown_ray-rizzo-how-to-start-competitive-pokemon-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_rickstarvgc-i-ranked-all-mega-evolutions-for-pokémon-champions-vgc-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_sableyevgc-pokémon-champions-initial-mega-evolution-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_scooteezyvgc-and-jptk-vgc-we-discussed-and-ranked-all-pokémon-currently-revealed.md: 4 chunks [transcript]
+  data/transcripts/unknown_scooteezyvgc-and-the-0-2-drop-we-ranked-all-the-new-mega-pokémon-in-pokémon-cham.md: 4 chunks [transcript]
+  data/transcripts/unknown_scooteezyvgc-these-are-the-mega-pokémon-you-need-to-use-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_skraw-vgc-are-the-za-megas-good-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_skraw-vgc-choose-your-battle-style-for-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_skraw-vgc-how-to-win-with-your-favorite-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_skraw-vgc-team-building-basics-for-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_skraw-vgc-the-best-mega-gengar-team-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_solemn-pkm-ranking-all-champions-pokémon-shown-so-far.md: 4 chunks [transcript]
+  data/transcripts/unknown_solemn-pkm-world-champion-ranks-all-megas-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_talonvgc-ranking-the-best-pokemon-in-pokemon-champions-competitive-pokemon-tierl.md: 4 chunks [transcript]
+  data/transcripts/unknown_talonvgc-ranking-the-top-megas-of-pokemon-champions-competitive-vgc-tierlist.md: 4 chunks [transcript]
+  data/transcripts/unknown_talonvgc-the-biggest-winners-of-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_talonvgc-these-teams-dominated-a-10000-tour-best-pokemon-champions-teams.md: 4 chunks [transcript]
+  data/transcripts/unknown_temp6t-ranking-all-pokemon-we-know-are-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_temp6t-top-10-pokemon-for-pokemon-champions-beginners-singles.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsaplusone-mega-scizor-team-building-guide-pokemon-champions-vgc-ranked-compe.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsaplusone-pokemon-champions-tier-list-ranking-every-mega-evolution-in-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsaplusone-pokemon-champions-vgc-team-building-guide-for-beginners.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsaplusone-pokemon-champions-vgc-team-building-guide.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsavgc-forget-goals-you-need-to-team-build-like-this-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsavgc-im-begging-you-to-use-your-favorites-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsavgc-pokemon-vgc-mega-evolution-competitive-tier-list-updated-for-pokemon-c.md: 4 chunks [transcript]
+  data/transcripts/unknown_thatsavgc-the-complete-beginners-guide-pokemon-champions-vgc-on-showdown.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-10-cores-you-need-to-try-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-3-teams-i-used-to-get-to-champion-rank-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-a-complete-guide-to-team-building-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-day-1-mega-dragonite-team-goes-hard-pokémon-champions-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-ranking-every-mega-evolution-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-the-best-teams-from-a-10000-pokémon-champions-tournament.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-the-best-teams-from-the-first-pokemon-champions-tournament.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-the-definitive-pokémon-champions-recruitment-tier-list.md: 4 chunks [transcript]
+  data/transcripts/unknown_thebattleroom-the-only-pokémon-champions-vgc-tier-list-you-need.md: 4 chunks [transcript]
+  data/transcripts/unknown_thedelybird-the-top-15-teams-in-pokemon-champions-pokemon-pokémonchampions-vgc.md: 4 chunks [transcript]
+  data/transcripts/unknown_timstuh-best-pokemon-in-pokemon-champions-doubles-edition-tier-list-season-m-1-r.md: 4 chunks [transcript]
+  data/transcripts/unknown_trainerhg-pokémon-champions-doubles-tier-list-build-winning-teams-with-this-guid.md: 4 chunks [transcript]
+  data/transcripts/unknown_trainerhg-the-best-doubles-teams-in-pokémon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_trickrubyvgc-how-to-trick-room-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_verlisify-and-peak-verlisify-pokemon-champions-mega-pokemon-tier-list-best-mega.md: 4 chunks [transcript]
+  data/transcripts/unknown_verlisify-the-best-pokemon-champions-team-building-guide.md: 4 chunks [transcript]
+  data/transcripts/unknown_wolfeyvgc-an-introduction-to-competitive-pokemon.md: 17 chunks [transcript]
+  data/transcripts/unknown_wolfeyvgc-can-you-win-without-spending-in-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_wolfeyvgc-everything-you-need-to-know-about-pokemon-champions.md: 4 chunks [transcript]
+  data/transcripts/unknown_wolfeyvgc-i-tried-to-reach-1-in-the-world-in-pokemon-champions.md: 29 chunks [transcript]
+  data/transcripts/unknown_wolfeyvgc-mega-meganium-is-way-better-than-i-thought.md: 4 chunks [transcript]
+  data/transcripts/unknown_wolfeyvgc-my-first-day-in-pokemon-champions.md: 4 chunks [transcript]
+Total chunks: 2639
+--force: deleting all rows from pc_chunks...
+
+Embedding 2639 chunks...
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+Loading embedding model Xenova/bge-small-en-v1.5 (first run downloads ~130MB)...
+Embedding model loaded.
+[embed] local OK, got 64 vectors
+  Embedded 64/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 128/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 192/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 256/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 320/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 384/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 448/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 512/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 576/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 640/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 704/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 768/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 832/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 896/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 960/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1024/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1088/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1152/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1216/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1280/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1344/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1408/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1472/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1536/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1600/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1664/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1728/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1792/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1856/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1920/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 1984/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2048/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2112/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2176/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2240/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2304/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2368/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2432/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2496/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2560/2639
+[embed] texts=64 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 64 vectors
+  Embedded 2624/2639
+[embed] texts=15 mode=document HF_TOKEN=UNSET
+[embed] local OK, got 15 vectors
+  Embedded 2639/2639
+
+Upserting 2639 chunks to pc_chunks...
+  Upserted 200/2639
+  Upserted 400/2639
+  Upserted 600/2639
+  Upserted 800/2639
+  Upserted 1000/2639
+  Upserted 1200/2639
+  Upserted 1400/2639
+  Upserted 1600/2639
+  Upserted 1800/2639
+  Upserted 2000/2639
+  Upserted 2200/2639
+  Upserted 2400/2639
+  Upserted 2600/2639
+  Upserted 2639/2639
+Index metadata written to pc_index_meta (5 keys).
+Done.

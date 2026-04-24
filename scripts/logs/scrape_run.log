@@ -1,0 +1,229 @@
+Reading Pokemon names from pokemon_champions.csv...
+  216 Pokemon to check
+  Loaded 88 prior English rows as regression fallback
+
+[1/216] Venusaur... usage 11.0%, rank #17, 10 moves, 10 items
+[2/216] Charizard... usage 18.0%, rank #8, 10 moves, 9 items
+[3/216] Blastoise... usage 1.0%, rank #53, 10 moves, 10 items
+[4/216] Beedrill... no data (404)
+[5/216] Pidgeot... no data (404)
+[6/216] Arbok... no data (404)
+[7/216] Pikachu... no data (404)
+[8/216] Raichu... usage 1.0%, rank #64, 10 moves, 10 items
+[9/216] Raichu-Alola... no data (404)
+[10/216] Clefable... usage 4.0%, rank #36, 10 moves, 10 items
+[11/216] Ninetales... no data (404)
+[12/216] Ninetales-Alola... usage 4.0%, rank #35, 10 moves, 10 items
+[13/216] Arcanine... usage 1.0%, rank #56, 10 moves, 10 items
+[14/216] Arcanine-Hisui... usage 3.0%, rank #42, 10 moves, 10 items
+[15/216] Alakazam... no data (404)
+[16/216] Machamp... no data (404)
+[17/216] Victreebel... no data (404)
+[18/216] Slowbro... no data (404)
+[19/216] Slowbro-Galar... no data (404)
+[20/216] Gengar... usage 10.0%, rank #18, 10 moves, 10 items
+[21/216] Kangaskhan... usage 4.0%, rank #38, 10 moves, 3 items
+[22/216] Starmie... usage 2.0%, rank #48, 10 moves, 3 items
+[23/216] Pinsir... no data (404)
+[24/216] Tauros... usage 1.0%, rank #61, 10 moves, 9 items
+[25/216] Tauros-Paldea-Combat... no data (404)
+[26/216] Tauros-Paldea-Blaze... no data (404)
+[27/216] Tauros-Paldea-Aqua... no data (404)
+[28/216] Gyarados... usage 4.0%, rank #40, 10 moves, 10 items
+[29/216] Ditto... no data (404)
+[30/216] Vaporeon... no data (404)
+[31/216] Jolteon... no data (404)
+[32/216] Flareon... no data (404)
+[33/216] Aerodactyl... usage 16.0%, rank #11, 10 moves, 10 items
+[34/216] Snorlax... no data (404)
+[35/216] Dragonite... usage 12.0%, rank #15, 10 moves, 10 items
+[36/216] Meganium... usage 5.0%, rank #29, 10 moves, 5 items
+[37/216] Typhlosion... no data (404)
+[38/216] Typhlosion-Hisui... usage 3.0%, rank #44, 10 moves, 4 items
+[39/216] Feraligatr... usage 1.0%, rank #77, 10 moves, 4 items
+[40/216] Ariados... no data (404)
+[41/216] Ampharos... no data (404)
+[42/216] Azumarill... usage 1.0%, rank #66, 10 moves, 8 items
+[43/216] Politoed... usage 5.0%, rank #33, 10 moves, 10 items
+[44/216] Espeon... no data (404)
+[45/216] Umbreon... no data (404)
+[46/216] Slowking... no data (404)
+[47/216] Slowking-Galar... no data (404)
+[48/216] Forretress... no data (404)
+[49/216] Steelix... no data (404)
+[50/216] Scizor... usage 4.0%, rank #37, 10 moves, 10 items
+[51/216] Heracross... no data (404)
+[52/216] Skarmory... usage 1.0%, rank #75, 10 moves, 3 items
+[53/216] Houndoom... no data (404)
+[54/216] Tyranitar... usage 14.0%, rank #13, 10 moves, 10 items
+[55/216] Pelipper... usage 15.0%, rank #12, 10 moves, 10 items
+[56/216] Gardevoir... [JP retry 1/2] [JP retry 2/2] non-EN after retries — using prior English row
+[57/216] Sableye... usage 2.0%, rank #50, 10 moves, 10 items
+[58/216] Aggron... usage 2.0%, rank #47, 10 moves, 5 items
+[59/216] Medicham... no data (404)
+[60/216] Manectric... usage 1.0%, rank #74, 10 moves, 5 items
+[61/216] Sharpedo... no data (404)
+[62/216] Camerupt... usage 1.0%, rank #76, 10 moves, 4 items
+[63/216] Torkoal... usage 5.0%, rank #31, 10 moves, 9 items
+[64/216] Altaria... usage 1.0%, rank #84, 10 moves, 8 items
+[65/216] Milotic... usage 9.0%, rank #20, 10 moves, 10 items
+[66/216] Castform... no data (404)
+[67/216] Banette... no data (404)
+[68/216] Chimecho... no data (404)
+[69/216] Absol... no data (404)
+[70/216] Glalie... no data (404)
+[71/216] Torterra... no data (404)
+[72/216] Infernape... no data (404)
+[73/216] Empoleon... usage 1.0%, rank #80, 10 moves, 8 items
+[74/216] Luxray... no data (404)
+[75/216] Roserade... no data (404)
+[76/216] Rampardos... no data (404)
+[77/216] Bastiodon... no data (404)
+[78/216] Lopunny... usage 1.0%, rank #70, 10 moves, 1 items
+[79/216] Spiritomb... no data (404)
+[80/216] Garchomp... usage 39.0%, rank #3, 10 moves, 10 items
+[81/216] Lucario... usage 1.0%, rank #54, 10 moves, 10 items
+[82/216] Hippowdon... no data (404)
+[83/216] Toxicroak... no data (404)
+[84/216] Abomasnow... no data (404)
+[85/216] Weavile... usage 1.0%, rank #86, 10 moves, 6 items
+[86/216] Rhyperior... no data (404)
+[87/216] Leafeon... no data (404)
+[88/216] Glaceon... no data (404)
+[89/216] Gliscor... no data (404)
+[90/216] Mamoswine... usage 1.0%, rank #67, 10 moves, 9 items
+[91/216] Gallade... usage 1.0%, rank #62, 10 moves, 10 items
+[92/216] Froslass... usage 10.0%, rank #19, 10 moves, 5 items
+[93/216] Rotom... no data (404)
+[94/216] Rotom-Heat... usage 3.0%, rank #43, 10 moves, 10 items
+[95/216] Rotom-Wash... usage 18.0%, rank #9, 10 moves, 10 items
+[96/216] Rotom-Frost... usage 1.0%, rank #78, 10 moves, 6 items
+[97/216] Rotom-Fan... no data (404)
+[98/216] Rotom-Mow... no data (404)
+[99/216] Serperior... no data (404)
+[100/216] Emboar... no data (404)
+[101/216] Samurott... no data (404)
+[102/216] Samurott-Hisui... no data (404)
+[103/216] Watchog... no data (404)
+[104/216] Liepard... no data (404)
+[105/216] Simisage... no data (404)
+[106/216] Simisear... no data (404)
+[107/216] Simipour... no data (404)
+[108/216] Excadrill... usage 7.0%, rank #23, 10 moves, 10 items
+[109/216] Audino... no data (404)
+[110/216] Conkeldurr... usage 1.0%, rank #72, 10 moves, 8 items
+[111/216] Whimsicott... usage 17.0%, rank #10, 10 moves, 10 items
+[112/216] Krookodile... no data (404)
+[113/216] Cofagrigus... no data (404)
+[114/216] Garbodor... no data (404)
+[115/216] Zoroark... no data (404)
+[116/216] Zoroark-Hisui... usage 1.0%, rank #60, 10 moves, 9 items
+[117/216] Reuniclus... no data (404)
+[118/216] Vanilluxe... no data (404)
+[119/216] Emolga... no data (404)
+[120/216] Chandelure... usage 1.0%, rank #88, 10 moves, 4 items
+[121/216] Beartic... no data (404)
+[122/216] Stunfisk... no data (404)
+[123/216] Stunfisk-Galar... no data (404)
+[124/216] Golurk... usage 2.0%, rank #45, 10 moves, 5 items
+[125/216] Hydreigon... usage 2.0%, rank #49, 10 moves, 10 items
+[126/216] Volcarona... usage 2.0%, rank #46, 10 moves, 10 items
+[127/216] Chesnaught... usage 1.0%, rank #81, 10 moves, 2 items
+[128/216] Delphox... usage 7.0%, rank #24, 10 moves, 4 items
+[129/216] Greninja... usage 1.0%, rank #73, 10 moves, 10 items
+[130/216] Diggersby... no data (404)
+[131/216] Talonflame... usage 7.0%, rank #27, 10 moves, 10 items
+[132/216] Vivillon... usage 1.0%, rank #71, 8 moves, 3 items
+[133/216] Floette... [JP retry 1/2] [JP retry 2/2] non-EN after retries — using prior English row
+[134/216] Floette-Eternal... usage 19.0%, rank #7, 10 moves, 4 items
+[135/216] Florges... no data (404)
+[136/216] Pangoro... no data (404)
+[137/216] Furfrou... no data (404)
+[138/216] Meowstic... usage 1.0%, rank #79, 10 moves, 8 items
+[139/216] Meowstic-F... no data (404)
+[140/216] Aegislash... usage 7.0%, rank #26, 10 moves, 10 items
+[141/216] Aegislash-Blade... no data (404)
+[142/216] Aromatisse... no data (404)
+[143/216] Slurpuff... no data (404)
+[144/216] Clawitzer... no data (404)
+[145/216] Heliolisk... no data (404)
+[146/216] Tyrantrum... no data (404)
+[147/216] Aurorus... no data (404)
+[148/216] Sylveon... usage 4.0%, rank #39, 10 moves, 10 items
+[149/216] Hawlucha... usage 1.0%, rank #83, 10 moves, 6 items
+[150/216] Dedenne... no data (404)
+[151/216] Goodra... no data (404)
+[152/216] Goodra-Hisui... no data (404)
+[153/216] Klefki... no data (404)
+[154/216] Trevenant... no data (404)
+[155/216] Gourgeist... no data (404)
+[156/216] Gourgeist-Small... no data (404)
+[157/216] Gourgeist-Large... no data (404)
+[158/216] Gourgeist-Jumbo... no data (404)
+[159/216] Avalugg... no data (404)
+[160/216] Avalugg-Hisui... no data (404)
+[161/216] Noivern... no data (404)
+[162/216] Decidueye... no data (404)
+[163/216] Decidueye-Hisui... no data (404)
+[164/216] Incineroar... usage 51.0%, rank #1, 10 moves, 10 items
+[165/216] Primarina... usage 5.0%, rank #30, 10 moves, 10 items
+[166/216] Toucannon... no data (404)
+[167/216] Crabominable... usage 1.0%, rank #57, 10 moves, 3 items
+[168/216] Lycanroc... no data (404)
+[169/216] Lycanroc-Midnight... no data (404)
+[170/216] Lycanroc-Dusk... no data (404)
+[171/216] Toxapex... no data (404)
+[172/216] Mudsdale... no data (404)
+[173/216] Araquanid... usage 1.0%, rank #82, 10 moves, 5 items
+[174/216] Salazzle... no data (404)
+[175/216] Tsareena... usage 1.0%, rank #69, 10 moves, 10 items
+[176/216] Oranguru... usage 1.0%, rank #65, 10 moves, 8 items
+[177/216] Passimian... no data (404)
+[178/216] Mimikyu... usage 1.0%, rank #58, 10 moves, 10 items
+[179/216] Drampa... usage 1.0%, rank #63, 10 moves, 8 items
+[180/216] Kommo-o... usage 6.0%, rank #28, 10 moves, 10 items
+[181/216] Corviknight... usage 7.0%, rank #22, 10 moves, 10 items
+[182/216] Flapple... no data (404)
+[183/216] Appletun... no data (404)
+[184/216] Sandaconda... no data (404)
+[185/216] Polteageist... no data (404)
+[186/216] Hatterene... usage 1.0%, rank #59, 10 moves, 10 items
+[187/216] Mr. Rime... skip (no Pikalytics page)
+[188/216] Runerigus... no data (404)
+[189/216] Alcremie... no data (404)
+[190/216] Morpeko... no data (404)
+[191/216] Dragapult... usage 3.0%, rank #41, 10 moves, 10 items
+[192/216] Wyrdeer... no data (404)
+[193/216] Kleavor... no data (404)
+[194/216] Basculegion... usage 25.0%, rank #6, 10 moves, 10 items
+[195/216] Basculegion-F... no data (404)
+[196/216] Sneasler... usage 48.0%, rank #2, 10 moves, 10 items
+[197/216] Meowscarada... usage 1.0%, rank #55, 10 moves, 10 items
+[198/216] Skeledirge... no data (404)
+[199/216] Quaquaval... no data (404)
+[200/216] Maushold... usage 9.0%, rank #21, 10 moves, 10 items
+[201/216] Garganacl... usage 1.0%, rank #87, 10 moves, 5 items
+[202/216] Armarouge... no data (404)
+[203/216] Ceruledge... usage 1.0%, rank #85, 10 moves, 10 items
+[204/216] Bellibolt... no data (404)
+[205/216] Scovillain... usage 2.0%, rank #51, 10 moves, 3 items
+[206/216] Espathra... no data (404)
+[207/216] Tinkaton... usage 1.0%, rank #68, 10 moves, 10 items
+[208/216] Palafin... usage 5.0%, rank #32, 10 moves, 7 items
+[209/216] Palafin-Hero... no data (404)
+[210/216] Orthworm... usage 2.0%, rank #52, 9 moves, 6 items
+[211/216] Glimmora... usage 4.0%, rank #34, 10 moves, 8 items
+[212/216] Farigiraf... usage 11.0%, rank #16, 10 moves, 10 items
+[213/216] Kingambit... usage 29.0%, rank #5, 10 moves, 10 items
+[214/216] Sinistcha... usage 31.0%, rank #4, 10 moves, 10 items
+[215/216] Archaludon... usage 12.0%, rank #14, 10 moves, 10 items
+[216/216] Hydrapple... no data (404)
+  Saved 89 rows to pikalytics_usage.csv
+
+==================================================
+Pokemon with data: 89
+Skipped (no data): 127
+No failures.
+Fresh scrape regressed to non-EN; kept prior English for 2: Gardevoir, Floette
+
+Language check: all rows English.
