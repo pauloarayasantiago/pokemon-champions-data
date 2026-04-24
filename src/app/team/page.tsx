@@ -637,7 +637,7 @@ function stageColor(name: string): string {
       return "#3b82f6";
     case "rpc":
       return "#8b5cf6";
-    case "rerank":
+    case "boost":
       return "#10b981";
     case "structured":
       return "#f59e0b";

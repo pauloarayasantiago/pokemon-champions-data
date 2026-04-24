@@ -2,11 +2,6 @@ import { resolve, dirname } from "node:path";
 import { statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { embed } from "./embed.js";
-import {
-  rerankCandidates,
-  rerankWithCrossEncoder,
-  rerankWithGemma,
-} from "./rerank.js";
 import { supabaseServer } from "./supabase.js";
 import { planQuery } from "./query-planner.js";
 import { executePlan } from "./query-executor.js";
@@ -217,7 +212,7 @@ export type ProgressStage =
   | "rpc_end"
   | "structured_end"
   | "rules_end"
-  | "rerank_end"
+  | "boost_end"
   | "plan_start"
   | "plan_end";
 
@@ -310,7 +305,6 @@ export async function query(
         supabase,
         async (q, fetchK) => (await rawCandidates(q, fetchK, onProgress)).raw,
         onProgress,
-        1, // boostMul — Phase 3 retry will plumb reranker-aware value through
       );
     }
   }
@@ -334,49 +328,6 @@ export async function query(
 
   const { raw, intent, route } = await rawCandidates(question, fetchK, onProgress);
   const supabase = supabaseServer();
-
-  // Reranker (cross-encoder / Gemma / Jina, configurable via RERANKER env).
-  // Score the top-40 RPC candidates. When active, scores live in [0, 1] —
-  // boostMul=20 keeps existing additive boosts (calibrated to RRF's
-  // ~0.02-0.035 scale) meaningful on top of that.
-  //
-  // RERANKER values:
-  //   crossencoder — BAAI/bge-reranker-base via HF Inference (default if HF_TOKEN set)
-  //   gemma        — Gemma 4 26B pointwise via OpenRouter (deprecated — see retrieval-2026-04-22T03-52-48-886Z)
-  //   jina         — Jina v2 (paid, currently no balance)
-  //   none         — RRF + boosts only (back-compat default)
-  // Legacy: GEMMA_RERANK_ENABLED=true still selects gemma.
-  const rerankT0 = Date.now();
-  const rerankerChoice =
-    (process.env.RERANKER ?? "").toLowerCase() ||
-    (process.env.GEMMA_RERANK_ENABLED === "true" ? "gemma" : "none");
-  const candidatesForRerank = raw.map((r) => ({
-    id: r.id as string,
-    text: r.text as string,
-  }));
-  let rerankerScores: Map<string, number> | null = null;
-  if (rerankerChoice === "crossencoder") {
-    rerankerScores = await rerankWithCrossEncoder(question, candidatesForRerank);
-  } else if (rerankerChoice === "gemma") {
-    rerankerScores = await rerankWithGemma(question, candidatesForRerank);
-  } else if (rerankerChoice === "jina") {
-    rerankerScores = await rerankCandidates(question, candidatesForRerank);
-  }
-  const rerankerActive = rerankerScores !== null && rerankerScores.size > 0;
-  const boostMul = rerankerActive ? 20 : 1;
-  if (rerankerActive) {
-    for (const r of raw) {
-      const s = rerankerScores!.get(r.id as string);
-      // Items outside the reranked pool keep a small baseline so the boost
-      // layer can still promote them (exact-name, structured, rules).
-      r.rrf_score = typeof s === "number" ? s : 0.05;
-    }
-    if (process.env.RAG_DEBUG) {
-      console.error(
-        `[DEBUG] ${rerankerChoice} reranked ${rerankerScores!.size}/${raw.length} in ${Date.now() - rerankT0}ms`,
-      );
-    }
-  }
 
   let structuredResults: Record<string, unknown>[] = [];
   if (intent.isStructured) {
@@ -441,11 +392,11 @@ export async function query(
     };
   });
 
-  const boosted = applyBoosts(parsed, intent, route, question, boostMul);
+  const boosted = applyBoosts(parsed, intent, route, question);
 
   boosted.sort((a, b) => b.score - a.score);
   const kept = boosted.slice(0, topK);
-  onProgress?.("rerank_end", {
+  onProgress?.("boost_end", {
     candidatePool: boosted.length,
     kept: kept.length,
     topSource: kept[0]?.source ?? null,

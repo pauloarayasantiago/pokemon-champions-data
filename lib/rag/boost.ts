@@ -1,16 +1,21 @@
 // Domain-specific boost layer. Applies additive score adjustments to the
-// candidate pool, calibrated to RRF's ~0.02-0.035 scale. When a reranker is
-// active, candidate scores sit in [0, 1] — the orchestrator passes
-// boostMul=20 so these additive boosts remain meaningful on top.
+// candidate pool, calibrated to RRF's ~0.02-0.035 scale.
 //
-// Fourteen boost categories: tier baselines (knowledge/team/usage/
+// Fifteen boost categories: tier baselines (knowledge/team/usage/
 // transcript/matchup/older-reference), structured-result priority, usage-
 // intent, exact entity (pokemon/move/item/mega), matchup-data for counter/
 // matchup intents, knowledge-doc for strategic intents, rules-doc mechanic
 // lift, adversarial banned-item rank-1 lift, theory-route, archetype match,
 // vsPair primary + type_chart, phantom-section, phantom-evolved co-surface,
-// speed-tiers doc, item-intent, team-intent usage/team lift, project-doc
-// penalty.
+// speed-tiers doc, core-WR NL (A7), item-intent, team-intent usage/team
+// lift, project-doc penalty.
+//
+// Note: a `boostMul` multiplier previously lived here to scale additive
+// boosts when an active reranker pushed candidate scores into [0, 1]. The
+// three reranker clients (Jina, Gemma pointwise, BGE cross-encoder) were
+// permanently retired after Phase 3's marginal-ROI verdict; the multiplier
+// and all reranker plumbing were dropped. If re-introducing a reranker
+// later, plumb `boostMul` back through applyBoosts().
 
 import type { QueryIntent } from "./classify.js";
 import type { QueryRoute } from "./route.js";
@@ -31,7 +36,6 @@ export function applyBoosts(
   intent: QueryIntent,
   route: QueryRoute,
   question: string,
-  boostMul: number,
 ): BoostCandidate[] {
   return candidates.map((r) => {
     let boost = 0;
@@ -271,6 +275,6 @@ export function applyBoosts(
       boost -= 0.08;
     }
 
-    return { ...r, score: r.score + boost * boostMul };
+    return { ...r, score: r.score + boost };
   });
 }

@@ -37,7 +37,6 @@ export async function executePlan(
   supabase: SupabaseClient,
   rawFn: RawFn,
   onProgress?: ProgressCallback,
-  boostMul: number = 1,
 ): Promise<Result[]> {
   const planT0 = Date.now();
   onProgress?.("plan_start", {
@@ -139,11 +138,11 @@ export async function executePlan(
     };
   });
 
-  // Boost against ORIGINAL query/intent/route. boostMul=1 under Phase 5
-  // (no reranker). Phase 3 retry will plumb a reranker-aware boostMul
-  // through this parameter once a post-merge reranker step is added
-  // before the applyBoosts call.
-  const boosted = applyBoosts(parsed, originalIntent, originalRoute, plan.originalQuery, boostMul);
+  // Boost against ORIGINAL query/intent/route. If a reranker is ever
+  // re-introduced, wire it in between collectForceIncludes and applyBoosts
+  // (scoring the merged pool against plan.originalQuery) and plumb a
+  // boostMul back through applyBoosts().
+  const boosted = applyBoosts(parsed, originalIntent, originalRoute, plan.originalQuery);
   boosted.sort((a, b) => b.score - a.score);
   const kept = boosted.slice(0, topK);
 
