@@ -32,7 +32,8 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 - **Verification:**
   - `git diff .github/workflows/refresh.yml` shows only the YouTube step block + `yt-dlp` word removed.
   - YAML parses cleanly (9 steps, original order minus YouTube).
-  - Local smoke test of the .bat: `(will annotate after first clean run)`.
+  - **Local smoke test PASSED (2026-04-23 19:49 CST):** .bat completed in ~4m 36s, full 21-query sweep checked 277 unique videos, saved **22 new transcripts** to `data/transcripts/`, committed as `dfc3664` (author `paulo`, not `github-actions[bot]`), pushed cleanly to `main`. The 146 "No transcript available" rejections are mix of no-caption videos + YouTube soft throttling — expected; scraper continued. Proves the residential-IP hypothesis cleanly: same scraper + same 21 queries that returned `Saved: 0` on Azure (run 24867630255) returned 22 transcripts from the user's machine.
+  - **Minor .bat hardening (same commit cycle):** `git pull --rebase` → `git pull --rebase --autostash`. Smoke test surfaced a non-critical log line where the rebase step failed because unstaged/unrelated files were dirty (`.claude/scheduled_tasks.lock` + team_outputs). Push still succeeded because no upstream drift happened during the scrape run, but autostash hardens the case where GH Actions cron pushed between scheduled fires.
   - GH Actions infra path already validated by run 24867630255 ending in green (Pikalytics 89 rows + Sheets 445 rows + reindex + auto-commit `0a65872`).
 - **Observational gate (A10 revised):** after 2 scheduled task fires (~24h), confirm:
   - `data/transcripts/` contains new `.md` files with dates ≥ 2026-04-23.

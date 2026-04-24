@@ -21,7 +21,7 @@ git add data/transcripts >> "%LOG%" 2>&1
 git diff --cached --quiet
 if errorlevel 1 (
   git commit -m "refresh: local youtube scrape" >> "%LOG%" 2>&1
-  git pull --rebase origin main >> "%LOG%" 2>&1
+  git pull --rebase --autostash origin main >> "%LOG%" 2>&1
   git push >> "%LOG%" 2>&1
 ) else (
   echo No new transcripts staged. >> "%LOG%"
