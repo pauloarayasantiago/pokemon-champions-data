@@ -1,0 +1,56 @@
+name: Refresh Serebii game data (weekly)
+
+on:
+  schedule:
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-serebii
+  cancel-in-progress: false
+
+jobs:
+  refresh-serebii:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: Production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Node dependencies (root)
+        run: npm ci
+
+      - name: Install Python dependencies
+        run: pip install requests beautifulsoup4 lxml
+
+      - name: Scrape Serebii
+        run: python scraper.py
+        continue-on-error: true
+
+      - name: Rebuild vector index
+        run: npx tsx scripts/index-data.ts
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET: ${{ secrets.SUPABASE_SECRET }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "refresh: weekly serebii scrape"
+            git push
+          fi

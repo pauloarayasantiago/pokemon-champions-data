@@ -57,7 +57,7 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | A9 | Harder eval tests (adversarial retrieval) | A | OPTIONAL | Current 13-test suite saturates at Gemma 10/10 + Claude 10/10 — can't differentiate premium models. Add misleading-top-1, multi-hop, longer-synthesis cases |
 | A10 | YouTube scraper on 2×/day cadence (cloud-ban-aware hybrid arch) | A | **SHIPPED (2026-04-23 evening, revised + scheduled)** | Initial ship added the step to [refresh.yml](../.github/workflows/refresh.yml); manual workflow_dispatch returned `Saved: 0 transcripts` (YouTube IP-bans cloud providers — see [errors.md](errors.md)). Reverted workflow step + `yt-dlp` pip dep. Final ship: [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat) invoked via Windows Task Scheduler on user's residential IP; commits+pushes new transcripts for GH Actions cron to reindex. `schtasks /create` executed same evening — task `pokemon-youtube-scraper` Ready, next fire 2026-04-24 07:57 local, 12h interval |
 | A11 | Increase Pikalytics + Sheets cron frequency | A | **SHIPPED (2026-04-23 evening)** | Bundled with A10 — same cron edit. Both sources now fire 2×/day instead of every 3 days |
-| **A12** | **Add Serebii scraper to cron (weekly / bi-weekly)** | A | NEXT (low urgency) | Static game data, but patches happen. Today it's manual-only — a patch would silently leave `pokemon_champions.csv` stale |
+| A12 | Add Serebii scraper to cron (weekly) | A | **SHIPPED (2026-04-23 late evening)** | New workflow [.github/workflows/refresh-serebii.yml](../.github/workflows/refresh-serebii.yml); cron `0 4 * * 0` (Sunday 04:00 UTC); `continue-on-error: true` on the scrape step given known Serebii fragilities (Mega X/Y, FORM_VARIANTS, Floette-Eternal); reindex follows with Supabase env wiring; auto-commit "refresh: weekly serebii scrape". Two-week observation gate (2026-04-28, 2026-05-05) still pending |
 | A13 | Surface "last refreshed" staleness telemetry | A | **SHIPPED (2026-04-23 evening, commit `740ef9b`)** | New `getStaleness()` + `StalenessInfo` types in [lib/rag.ts](../lib/rag.ts) (5 source buckets, 60s cache, fs-drift detection); SSE event in [src/app/api/team/route.ts](../src/app/api/team/route.ts); staleness field in [src/app/api/team/health/route.ts](../src/app/api/team/health/route.ts) response; `<StalenessFooter>` expand-on-click grid in [src/app/team/page.tsx](../src/app/team/page.tsx); one-liner print in [scripts/search.ts](../scripts/search.ts) |
 | Haiku-eval | Register + eval Haiku 4.5 / Sonnet 4.6 as web-agent providers | A | DEFERRED | Originally A5's scope before user reframed — only pursue if A9 delivers a differentiating test set |
 | B1 | Phase 3 reranker retry (cross-encoder, post-merge in executor) | B | DEFERRED (reassess after Tier A) | Only if Tier A doesn't close UX gap |
@@ -244,18 +244,31 @@ schtasks /create /tn "pokemon-youtube-scraper" \
 - [ ] No 429/403 from either source across 5 consecutive runs.
 - [ ] Chunk count in `pc_index_meta` grows on at least one run per week (sanity: data IS churning).
 
-### A12 — Serebii scraper in cron (weekly / bi-weekly, low urgency)
+### A12 — Serebii scraper in cron · SHIPPED (2026-04-23 late evening)
 
-**Rationale.** Serebii is static game data — Pokémon rosters, moves, items, abilities. It only drifts when Nintendo patches Champions. Today `scraper.py` is manual-only; a patch drops and `pokemon_champions.csv` / `mega_evolutions.csv` / `moves.csv` silently go stale until someone notices.
+**Rationale.** Serebii is static game data — Pokémon rosters, moves, items, abilities. It only drifts when Nintendo patches Champions. Prior to A12 `scraper.py` was manual-only; a patch would silently leave `pokemon_champions.csv` / `mega_evolutions.csv` / `moves.csv` stale until someone noticed.
 
-**Tasks.**
-- [ ] Add a weekly cron `0 4 * * 0` (Sunday @ 04:00 UTC) that runs `scraper.py` + reindex. Separate workflow file or extra job in `refresh.yml` — doesn't need to co-run with the high-frequency scrapers.
-- [ ] `continue-on-error: true` — Serebii is Cloudflare-fronted; occasional 503s are routine.
-- [ ] Log diff of row-counts per CSV — if `pokemon_champions.csv` suddenly gains 2 rows, that's a patch signal worth a channel notification (not in scope; flag as C-tier).
+**Shipped.** New isolated workflow [.github/workflows/refresh-serebii.yml](../.github/workflows/refresh-serebii.yml):
+- Cron `0 4 * * 0` — Sunday 04:00 UTC (23:00 CST Saturday), after the weekend tournament window; offset from the 00:00/12:00 UTC Pikalytics+Sheets cron so logs don't interleave.
+- `concurrency.group: refresh-serebii` isolates it from the existing `refresh` group.
+- `timeout-minutes: 15` — Serebii scrape ~3min (186 pages × 1s polite delay) + reindex ~1min.
+- `environment: Production` scopes `SUPABASE_SECRET` + `NEXT_PUBLIC_SUPABASE_URL`.
+- `permissions: contents: write` for the auto-commit step.
+- Steps mirror refresh.yml: checkout → setup-node@v4 (node 22) → setup-python@v5 (python 3.12) → `npm ci` → `pip install requests beautifulsoup4 lxml` → `python scraper.py` (`continue-on-error: true` justified by known fragilities: Mega X/Y name ambiguity, 21 FORM_VARIANTS hardcoded paths, Floette-Eternal layout edge case — see [errors.md](errors.md) rows 15–18, 36–37) → `npx tsx scripts/index-data.ts` with supabase env → auto-commit "refresh: weekly serebii scrape".
+- `workflow_dispatch` included for manual one-off patch checks.
 
-**Gate.**
-- [ ] Weekly run completes cleanly for 2 consecutive weeks.
-- [ ] Row-count of each output CSV stable (no unintended data loss).
+**Architecture choice.** Separate workflow file over extending refresh.yml or adding a second gated job — clean separation of cadence (weekly vs 2×/day), distinct failure profile, and independent disable/debug. One extra file, zero coupling.
+
+**Explicitly out of scope (flagged C-tier):**
+- Row-count diff logging / patch-detection notification.
+- Retry logic for transient 429/503 (weekly cadence + `continue-on-error: true` handles this).
+- Shared setup-python pip-cache across workflows.
+
+**Gate pending.**
+- [x] YAML parse + file structure validated.
+- [ ] Sunday 2026-04-28: first scheduled fire. Verify green check + auto-commit (or clean no-op) in `gh run list --workflow=refresh-serebii.yml`.
+- [ ] Sunday 2026-05-05: second scheduled fire. Same verification.
+- [ ] Row-count of each output CSV stable across both runs (no unintended data loss).
 
 ### A13 — Surface "last refreshed" staleness telemetry · SHIPPED (2026-04-23 evening, commit `740ef9b`)
 
@@ -355,7 +368,7 @@ npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
 | **A10/A11 ship (2026-04-23 evening)** | expected ≥0.845 drifting up as new transcripts land | 13/13 @ Gemma (unchanged at ship; gains accrue as cron lands fresh data) | Freshness — YouTube + Pikalytics + Sheets all now 2×/day; lag 72h → 12h max. Next scheduled run will be the first validation |
 | **A13 ship (2026-04-23 evening)** | unchanged (read-only side-channel) | unchanged | UX transparency — staleness now visible on webapp footer + `/lookup` CLI; closes feedback loop on A10/A11 |
 | **A6 ship (2026-04-23 late evening)** | unchanged at ship; expected pure-win on retrieval over time as previously-multilingual rows settle to English | 13/13 @ Gemma (unchanged at ship; pikalytics chunks now uniformly English so cleaner clustering) | Scope reframe from "JP→EN 14 rows" to "multilingual locale flips" (7 locales observed); structural fix self-heals across cron runs |
-| Post A12 (Serebii in cron) | expected ≥0.845 | 13/13 @ Gemma | Patch safety; no quality delta under steady state |
+| **A12 ship (2026-04-23 late evening)** | unchanged (new workflow; no retrieval impact until Nintendo patches Champions) | 13/13 @ Gemma (unchanged at ship) | Patch safety — Serebii CSVs now refresh weekly; two-scheduled-fire observation gate (2026-04-28, 2026-05-05) still pending |
 | Post A4c (citation hallucination fix, if pursued) | 0.853 | 13/13 + citation validity ≥95% | Tightens retry-nudge in lib/validate-citations.ts |
 | If B1 ever ships | 0.87-0.90 est | 12-13/13 | Marginal UX gain vs infra cost |
 

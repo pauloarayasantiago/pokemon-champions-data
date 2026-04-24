@@ -23,16 +23,16 @@ _Last updated: 2026-04-23 late evening (post A6 multilingual fix + A13 staleness
 
 ## Next actions (Tier A, in order)
 
-1. **A12 — Add Serebii scraper to cron** (low urgency): weekly/bi-weekly. Patch-safety net.
-2. **A8 — CLI harness wrapper** (optional): instrument `/lookup` + Read into `toolCallLog` so the 3 N/A tests become applicable to Claude-via-CLI. Makes the eval comparison complete.
-3. **A9 — Harder eval tests** (optional): the 13-test suite saturates at 10/10 for both Gemma and Claude Opus. To differentiate premium models (Sonnet 4.6, Opus 4.7), add adversarial retrieval tests.
-4. **A4b — Prompt hardening** — unchanged, low priority.
-5. Tier B: Phase 3 reranker retry (deferred; marginal ROI).
+1. **A8 — CLI harness wrapper** (optional): instrument `/lookup` + Read into `toolCallLog` so the 3 N/A tests become applicable to Claude-via-CLI. Makes the eval comparison complete.
+2. **A9 — Harder eval tests** (optional): the 13-test suite saturates at 10/10 for both Gemma and Claude Opus. To differentiate premium models (Sonnet 4.6, Opus 4.7), add adversarial retrieval tests.
+3. **A4b — Prompt hardening** — unchanged, low priority.
+4. Tier B: Phase 3 reranker retry (deferred; marginal ROI).
 
 **Observational gate on A10-revised/A11 ship:** scheduled task `pokemon-youtube-scraper` registered on user's box 2026-04-23 evening (`schtasks /create`, 12-hour interval, run-as `paulo`, `/it` interactive-only). First scheduled fire: 2026-04-24 07:57 local. After 2 fires (~24h), confirm `data/transcripts/` has new `.md` files and a non-bot commit on `main`. A11 GH Actions path already validated by run 24867630255 (Pikalytics 89 rows + Sheets 445 rows refreshed, reindex green, auto-commit `0a65872` pushed). Smoke-test local run (manual, 2026-04-23 evening) already landed 22 fresh transcripts as commit `dfc3664` — proves the script itself works end-to-end.
 
 ## Session 2026-04-23 — SHIPPED list
 
+- **A12 (Serebii weekly cron) — SHIPPED.** New isolated workflow [.github/workflows/refresh-serebii.yml](../.github/workflows/refresh-serebii.yml): cron `0 4 * * 0` (Sunday 04:00 UTC), concurrency group `refresh-serebii`, `timeout-minutes: 15`, `environment: Production`, `permissions: contents: write`. Steps mirror refresh.yml — checkout → setup-node@v4 (22) → setup-python@v5 (3.12) → `npm ci` → `pip install requests beautifulsoup4 lxml` → `python scraper.py` (`continue-on-error: true` justified by known fragilities in [errors.md](errors.md) rows 15-18, 36-37) → `npx tsx scripts/index-data.ts` with supabase env → auto-commit "refresh: weekly serebii scrape". `workflow_dispatch` included for manual patch checks. Separate workflow file chosen over extending refresh.yml because cadences + failure profiles are distinct. Observation gate pending: first fire 2026-04-28, second 2026-05-05.
 - **A7 (NL "X+Y core WR" retrieval hardening) — SHIPPED.** Two-layer fix: (1) content tweak in [data/knowledge/meta_snapshot.md](../data/knowledge/meta_snapshot.md) — new `### Core Win Rates (Natural Phrasing)` subsection after the top-cores table with dense per-core sentences using both "+" and "and" phrasings tightly coupling both Pokemon names with WR%; (2) boost tweak in [lib/rag/boost.ts](../lib/rag/boost.ts) — +0.08 for `meta_snapshot.md` chunks when query matches `\bcore\b` AND `\b(win rate|winrate|wr)\b` (calibrated to clear the ~+0.07 theory+archetype+tier stack team_archetypes.md accumulates on rain-core queries). Gate met: `/lookup "Archaludon Pelipper rain core win rate" 3` now returns meta_snapshot's "Top Cores by Win Rate" section at rank 3 (ranks 1-3 all meta_snapshot); 55.8% Archaludon+Pelipper figure present. tsc clean; 25-test RAG eval identical to baseline (22/25, same 3 pre-existing fails in mechanic/item-lookup/stat-filter — unrelated categories).
 - **A6 (multilingual locale flips in pikalytics scrape) — SHIPPED (late evening).** Originally framed as "JP→EN cleanup for 14 rows"; investigation showed contamination is multilingual (JP/CN-trad/CN-simp/ES/DE/FR/KR observed across 3 consecutive scrapes; affected set drifts per run). Root cause: Pikalytics' Cloudflare layer caches per-URL and ignores `Accept-Language`. Fix in [scraper_pikalytics.py](../scraper_pikalytics.py): cache-bust query param + `Cache-Control: no-cache` + post-parse non-ASCII detection + retry loop + `load_prior_english_rows()` fallback when retries exhausted + `sys.exit(1)` if no EN fallback available + manual seed for Floette-Eternal (permanently stuck). Detection regex widened to `[^\x00-\x7f]` (any non-ASCII) — moves.csv + items.csv verified 100% ASCII so no false positives. Final CSV: 0 non-ASCII rows; reindex green; spot-check Delphox/Tauros/Floette-Eternal returns English. See [errors.md](errors.md) row 47.
 - **A13 (staleness telemetry UX) — SHIPPED (evening).** New `getStaleness()` + `StalenessInfo` types in [lib/rag.ts](../lib/rag.ts) (5 source buckets — youtube, pikalytics, sheets, serebii, knowledge — 60s in-process cache, per-source max-mtime + fs-drift detection skipped on Vercel). [src/app/api/team/route.ts](../src/app/api/team/route.ts) emits `{type: "staleness", data: info}` SSE event once per request. [src/app/api/team/health/route.ts](../src/app/api/team/health/route.ts) GET now includes `staleness` so the webapp footer renders on mount. [src/app/team/page.tsx](../src/app/team/page.tsx) `<StalenessFooter>` below input: "Data refreshed Nh ago" with amber styling at >72h, expand-on-click per-source grid with drift flags. [scripts/search.ts](../scripts/search.ts) prints one-liner before results. tsc clean; CLI smoke confirms.
@@ -165,12 +165,11 @@ Post A10-revised/A11: workflow commits on main `5d3de04` (initial A10 + A11), `b
 
 ## Immediately queued — see top-of-doc Tier A list
 
-A1/A2/A3/A4/A5/A6/A7/A10/A11/A13 all shipped this session. Remaining Tier A (in priority order):
+A1/A2/A3/A4/A5/A6/A7/A10/A11/A12/A13 all shipped this session. Remaining Tier A (in priority order):
 
-1. **A12 — Add Serebii to cron weekly** — patch-safety, low urgency.
-2. **A8 — CLI harness wrapper** _(optional)_ — promote 3 N/A tests to applicable for Claude-via-CLI.
-3. **A9 — Harder eval tests** _(optional)_ — current suite saturates; needs adversarial retrieval to differentiate Sonnet/Opus.
-4. **A4b — Prompt hardening follow-up** — low priority.
+1. **A8 — CLI harness wrapper** _(optional)_ — promote 3 N/A tests to applicable for Claude-via-CLI.
+2. **A9 — Harder eval tests** _(optional)_ — current suite saturates; needs adversarial retrieval to differentiate Sonnet/Opus.
+3. **A4b — Prompt hardening follow-up** — low priority.
 
 Tier B (Phase 3 retry, subagents) and Tier C (housekeeping refactors, deferred extensions) detail in [rag-master-plan.md](rag-master-plan.md).
 
