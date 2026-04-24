@@ -19,7 +19,7 @@
 ├── lib/
 │   ├── chunker.ts              Text chunking (CSV→NL, markdown→sections w/ overlap)
 │   ├── embed.ts                BGE-small-en-v1.5 (384-dim, fp32, CLS pool, BGE query prefix, batch 64)
-│   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking dispatch (RERANKER env: crossencoder|gemma|jina|none) + staleness
+│   ├── rag.ts                  Hybrid search (pc_hybrid_search RPC) + intent classification + structured queries + re-ranking dispatch (RERANKER env: crossencoder|gemma|jina|none) + staleness (A13, 2026-04-23: getStaleness() returning StalenessInfo — per-source mtime ages surfaced via SSE in route.ts, health endpoint, search.ts CLI line)
 │   ├── rerank.ts               Three reranker clients (Phase 3, BLOCKED-pending-Phase-5): rerankCandidates (Jina, dormant), rerankWithGemma (OpenRouter pointwise, 10-slot worker pool), rerankWithCrossEncoder (BAAI/bge-reranker-base via HF Inference, batched). All return null on failure → caller falls through to RRF + boosts (boostMul=1). Default RERANKER is "none" since 2026-04-23 (was silently "jina" before, wasting 300-500ms/call on 403s)
 │   ├── phantom-guard.ts        Pre-flight agent-layer interceptor (Phase A4, 2026-04-23): detectPhantomPokemon() scans user message for pre-evos (PRE_EVO_MAP, 23 entries) + explicit roster-excluded names (EXPLICIT_PHANTOMS — Amoonguss; extensible). formatPhantomRefusal() emits user-facing redirect text. Used by src/app/api/team/route.ts POST handler + scripts/eval-models.ts runAgent() to short-circuit the agent loop before LLM call
 │   ├── supabase.ts             Supabase client factory (supabaseServer / supabaseAnon) with root .env loader
@@ -87,7 +87,7 @@
 - `mega_evolutions.csv` → links to base Pokémon in `pokemon_champions.csv` by base name
 - `items.csv` Mega Stones → correspond to Pokémon with Mega Evolutions
 - `updated_attacks.csv` → shows what changed from S/V for moves in `moves.csv`
-- `pikalytics_usage.csv` → scraped with `Accept-Language: en-US,en;q=0.9` header so names arrive English-only (no post-hoc translation layer)
+- `pikalytics_usage.csv` → scraped with `Accept-Language` + Cloudflare cache-bust query param + post-parse non-ASCII detection + retry + prior-EN fallback (A6, 2026-04-23) — Pikalytics' Cloudflare layer occasionally serves non-English variants per-URL (JP/CN/ES/DE/FR/KR all observed); scraper self-heals by falling back to prior English row when fresh scrape regresses
 - `matchup_matrix.csv` → computed from pokemon_champions.csv + mega_evolutions.csv + moves.csv + pikalytics_usage.csv via `lib/calc/matchup.ts`
 - `efficiency_matrix.csv` → extends matchup_matrix with 6 sub-scores via `lib/calc/efficiency.ts`, also uses pikalytics_usage.csv for meta weights
 - `data/transcripts/*.md` → content creator opinions, indexed as markdown chunks
@@ -97,7 +97,7 @@
 - `scraper.py`: `fetch(url)` → BeautifulSoup, per-page parsers, CSV output, 1s delay
   - `FORM_VARIANTS` dict (21 base → 30 variants) + `parse_section_moves()` / `parse_section_stats()` helpers extract alt-form rows from the same base page (regional, Rotom appliances, Paldean Tauros, Floette-Eternal, Aegislash-Blade, Lycanroc poses, Gourgeist sizes, etc.)
   - Duplicate mega name disambiguation: when Serebii labels X/Y megas identically (e.g., Charizard), emit loop appends " X" / " Y" in page-order
-- `scraper_pikalytics.py`: `Accept-Language: en` header, per-Pokemon page scraping, pipe-delimited output. Iterates `pokemon_champions.csv` names directly — form variants auto-covered when present in CSV
+- `scraper_pikalytics.py`: `Accept-Language: en` header, per-Pokemon page scraping, pipe-delimited output. Iterates `pokemon_champions.csv` names directly — form variants auto-covered when present in CSV. **A6 (2026-04-23):** cache-bust query param `?_r=<random>` + `Cache-Control: no-cache` defeats Cloudflare per-URL cache; post-parse non-ASCII regex `[^\x00-\x7f]` + retry loop (`MAX_LANG_RETRIES=2`) + `load_prior_english_rows()` fallback + `sys.exit(1)` final assertion ensure CSV stays English across cron runs even when Pikalytics rotates locales
 - `scraper_sheets.py`: Google Visualization API, single HTTP request, CSV output
 - `scraper_youtube.py`: yt-dlp search → youtube-transcript-api fetch → markdown output, 1s delay
   - Date filter: only videos from April 8, 2026 (release day) onward
@@ -106,7 +106,7 @@
 
 ## RAG Pipeline (Post-Supabase Migration)
 1. **Discover** — `scripts/index-data.ts` uses glob patterns to auto-discover markdown files in `data/knowledge/`, `research/`, `data/transcripts/`, `memory-bank/`. CSVs/text files remain hardcoded (have specific chunker functions)
-2. **Chunk** — `lib/chunker.ts` converts each data type to NL text chunks with `data_category` tags. Pikalytics chunks translated IT→EN. Markdown chunks get trailing-paragraph overlap
+2. **Chunk** — `lib/chunker.ts` converts each data type to NL text chunks with `data_category` tags. Pikalytics chunks pass through raw — scrape-side `Accept-Language` header + cache-bust + non-ASCII detection + prior-EN fallback (A6, 2026-04-23) keep source data English; the chunk-time IT→EN translation layer was removed in Phase 1 (commit `7767a0a`). Markdown chunks get trailing-paragraph overlap
 3. **Embed** — `lib/embed.ts` uses BGE-small-en-v1.5 (384-dim, fp32, batch size 64). CLS pooling + L2 normalize; BGE query prefix applied on `mode='query'`, raw text on `mode='doc'`
 4. **Store** — Supabase `pc_chunks`: id (PK), text, embedding VECTOR(384), source, source_type, data_category, metadata JSONB, pokemon_name, col_type1/2, stat_hp/attack/defense/sp_atk/sp_def/speed/bst (null for non-Pokemon), text_tsv TSVECTOR GENERATED
 5. **Index** — HNSW on embedding (`vector_cosine_ops`), GIN on text_tsv, btree on data_category + pokemon_name
@@ -118,7 +118,7 @@
 11. **Force-include** — `collectForceIncludes()` in [lib/rag/force-includes.ts](../lib/rag/force-includes.ts): 7 blocks (rules, phantom, phantom-evolved, vsPair, type-chart, exact-entity, banned-item) returning `Map<id, ForcedChunk>` with first-wins insert.
 12. **Merge + Re-rank** — Dedup hybrid + structured + forced results, then `applyBoosts()` in [lib/rag/boost.ts](../lib/rag/boost.ts) applies 14 boost categories (structured +0.1, usage +0.1/0.05, exact Pokemon/move/item +0.04, counter knowledge +0.04, adversarial banned-item +0.15, vsPair primaries +0.12, phantom/phantomEvolved +0.12/+0.14, theory-route +0.025, archetype +0.025, speed-tiers +0.035, item intent +0.03, team-chunk penalty -0.015 on non-team, project -0.08). Sort by score, return topK.
 12a. **Planner-decomposed branch (Stage 6.3 + Phase 5)** — when `planQuery()` in [lib/query-planner.ts](../lib/query-planner.ts) returns multiple sub-queries (vspair / counter-archetype / team-archetype), [lib/query-executor.ts](../lib/query-executor.ts) `executePlan()` runs a parallel flow instead of steps 9-12: sub-queries fan out via `rawCandidates` (embed + RPC only) → `Promise.all` merge with max rrf_score by id → `collectForceIncludes(plan.originalQuery, originalIntent, originalRoute, supabase)` → `runStructuredFilter` (if `originalIntent.isStructured`) → parse → `applyBoosts(..., plan.originalQuery, boostMul=1)` → sort + slice. Force-includes and boosts key off the USER's ORIGINAL wording, not each sub-query — Stage 4.6 invariant holds by construction. `perStep` floor raised to 160 on theory/counter/matchup routes.
-13. **Staleness** — `checkStaleness()` in [lib/rag.ts](../lib/rag.ts) runs once per process, reads `pc_index_meta.file_mtimes`, compares against disk, warns on stderr
+13. **Staleness** — `checkStaleness()` in [lib/rag.ts](../lib/rag.ts) runs once per process, reads `pc_index_meta.file_mtimes`, compares against disk, warns on stderr. **A13 (2026-04-23)** added sibling `getStaleness(): Promise<StalenessInfo | null>` — per-source mtime ages (youtube/pikalytics/sheets/serebii/knowledge) + global `indexedAt` + fs-drift flags (skipped on Vercel). 60s in-process cache. Surfaced to users via SSE `{type:"staleness"}` in route.ts (once per request after `meta`), `staleness` field in health-endpoint GET response (powers webapp footer on mount), and one-liner print in search.ts CLI
 14. **Eval** — 25 test cases: `npx tsx scripts/eval.ts` → 100% pass, MRR 1.000
 15. **Incremental** — index-data.ts paginates `SELECT id FROM pc_chunks` into a Set, skips already-indexed chunks (--force wipes pc_chunks before re-upsert)
 16. **Full test suite** — 251 tests via `npm test`: calc (41), integration (74), eval (25), stress (111)

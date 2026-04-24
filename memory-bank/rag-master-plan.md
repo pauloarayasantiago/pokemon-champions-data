@@ -58,7 +58,7 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | A10 | YouTube scraper on 2×/day cadence (cloud-ban-aware hybrid arch) | A | **SHIPPED (2026-04-23 evening, revised + scheduled)** | Initial ship added the step to [refresh.yml](../.github/workflows/refresh.yml); manual workflow_dispatch returned `Saved: 0 transcripts` (YouTube IP-bans cloud providers — see [errors.md](errors.md)). Reverted workflow step + `yt-dlp` pip dep. Final ship: [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat) invoked via Windows Task Scheduler on user's residential IP; commits+pushes new transcripts for GH Actions cron to reindex. `schtasks /create` executed same evening — task `pokemon-youtube-scraper` Ready, next fire 2026-04-24 07:57 local, 12h interval |
 | A11 | Increase Pikalytics + Sheets cron frequency | A | **SHIPPED (2026-04-23 evening)** | Bundled with A10 — same cron edit. Both sources now fire 2×/day instead of every 3 days |
 | **A12** | **Add Serebii scraper to cron (weekly / bi-weekly)** | A | NEXT (low urgency) | Static game data, but patches happen. Today it's manual-only — a patch would silently leave `pokemon_champions.csv` stale |
-| A13 | Surface "last refreshed" staleness telemetry | A | NEXT (UX) | `pc_index_meta.file_mtimes` exists + `checkStaleness()` reads it — not surfaced to users. Expose on `/lookup` progress + webapp footer so users can see data age |
+| A13 | Surface "last refreshed" staleness telemetry | A | **SHIPPED (2026-04-23 evening, commit `740ef9b`)** | New `getStaleness()` + `StalenessInfo` types in [lib/rag.ts](../lib/rag.ts) (5 source buckets, 60s cache, fs-drift detection); SSE event in [src/app/api/team/route.ts](../src/app/api/team/route.ts); staleness field in [src/app/api/team/health/route.ts](../src/app/api/team/health/route.ts) response; `<StalenessFooter>` expand-on-click grid in [src/app/team/page.tsx](../src/app/team/page.tsx); one-liner print in [scripts/search.ts](../scripts/search.ts) |
 | Haiku-eval | Register + eval Haiku 4.5 / Sonnet 4.6 as web-agent providers | A | DEFERRED | Originally A5's scope before user reframed — only pursue if A9 delivers a differentiating test set |
 | B1 | Phase 3 reranker retry (cross-encoder, post-merge in executor) | B | DEFERRED (reassess after Tier A) | Only if Tier A doesn't close UX gap |
 | B2 | Subagents + progressive disclosure (split CLAUDE.md) | B | DEFERRED | Ergonomics; no user-visible urgency |
@@ -258,19 +258,17 @@ schtasks /create /tn "pokemon-youtube-scraper" \
 - [ ] Weekly run completes cleanly for 2 consecutive weeks.
 - [ ] Row-count of each output CSV stable (no unintended data loss).
 
-### A13 — Surface "last refreshed" staleness telemetry (UX)
+### A13 — Surface "last refreshed" staleness telemetry · SHIPPED (2026-04-23 evening, commit `740ef9b`)
 
-**Rationale.** Staleness plumbing already exists: [lib/rag.ts](../lib/rag.ts) `checkStaleness()` reads `pc_index_meta.file_mtimes` at query time and warns on stderr. Users never see this. If the pipeline is occasionally down (rate-limit, cron failure), users would benefit from knowing "this answer is based on data refreshed 4 days ago."
+**What shipped.** Sibling `getStaleness(): Promise<StalenessInfo | null>` next to `checkStaleness()` in [lib/rag.ts](../lib/rag.ts). Returns `{indexedAt, hoursSinceIndex, sources: StalenessSource[], hasFsDrift}` where each source is `{name, fileCount, mostRecentMtime, hoursSinceMostRecent, hasFsDrift}`. Source buckets: `data/transcripts/*`→youtube, `pikalytics_usage.csv`→pikalytics, `tournament_teams.csv`→sheets, `data/knowledge/*`→knowledge, everything else→serebii. 60s in-process cache (`STALENESS_TTL_MS`) amortizes one DB hit across multiple `query()` calls per request. Vercel skips fs-drift detection (Lambda mtimes are build-time).
 
-**Tasks.**
-- [ ] Emit a `staleness` field in the `/lookup` progress stream + the webapp API response — include `{last_refresh_utc, hours_since}` per source.
-- [ ] Add a small footer on the webapp `/team` page: "Data refreshed N hours ago."
-- [ ] Consider a hard-banner when any source is > 72h stale (would have caught the "YouTube scraper not in cron" gap proactively).
+**Surfaces:**
+- [src/app/api/team/route.ts](../src/app/api/team/route.ts) emits `send({type: "staleness", data: info})` once per request right after the `meta` event via non-blocking `getStaleness().then(...)`.
+- [src/app/api/team/health/route.ts](../src/app/api/team/health/route.ts) GET response includes `staleness` so the webapp footer renders on mount (before any query).
+- [src/app/team/page.tsx](../src/app/team/page.tsx) `<StalenessFooter>` below input form — single-line button "Data refreshed Nh ago" (amber-styled at >72h max source age), expand-on-click 3-column grid showing per-source name/age/file-count + drift flag. Updates from both health probe (mount) and SSE event (per request).
+- [scripts/search.ts](../scripts/search.ts) prints `Data refreshed Nh ago · sources: youtube=Nh, pikalytics=Nm*, ... (* = local fs drift)` before results; `[STALE >72h]` prefix when over threshold.
 
-**Gate.**
-- [ ] Webapp footer renders with current age on every page load.
-- [ ] `/lookup` progress stream includes `staleness` field on at least one stage.
-- [ ] Test: manually bump a file's mtime and confirm the UI reflects the new age.
+**Verification:** tsc clean across all 4 touched .ts files; CLI smoke on "Protect PP in Champions" returns expected top-3 (moves.csv rank 1, champions_rules.md rank 2, damage_calc.md rank 3 — Phase 4 baseline preserved); natural fs drift surfaces on pikalytics + sheets (recent CI scrape mtime ahead of local index mtime). Read-only side-channel — no retrieval impact.
 
 **Note.** Implementation is 1–2 hours of plumbing. Low technical risk, clear user value. Schedule after A10 (which prevents the most common "stale" scenario from occurring in the first place).
 
@@ -354,11 +352,11 @@ npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
 | A4 interceptor ship (2026-04-23) | 0.853 confirmed unchanged | 13/13, 13/13, 12/13 with phantom_pokemon 3/3 | `team_json` is the Run-3 flake; phantom_pokemon short-circuits pre-LLM |
 | A3 ship (2026-04-23 PM) | 0.845 (-0.94%) | 13/13 @ Gemma, 100% cit-rate, 16327 tok/pass | Team intent -7.0% (fresh-data churn accepted) |
 | **A5 ship (2026-04-23 evening)** | unchanged | **Claude Opus 10/10 applicable, 3 N/A** | CLI surface ties Gemma on ceiling; eval saturation identified → A9 backlog |
-| Post A6 (Japanese cleanup) | expected ≥0.845 | 13/13 @ Gemma | Data hygiene; improves retrieval on 14 affected mons |
 | Post A7 (NL "X+Y WR" hardening) | expected ≥0.845 | 13/13 @ Gemma | Closes the top-cores NL-query gap |
 | **A10/A11 ship (2026-04-23 evening)** | expected ≥0.845 drifting up as new transcripts land | 13/13 @ Gemma (unchanged at ship; gains accrue as cron lands fresh data) | Freshness — YouTube + Pikalytics + Sheets all now 2×/day; lag 72h → 12h max. Next scheduled run will be the first validation |
+| **A13 ship (2026-04-23 evening)** | unchanged (read-only side-channel) | unchanged | UX transparency — staleness now visible on webapp footer + `/lookup` CLI; closes feedback loop on A10/A11 |
+| **A6 ship (2026-04-23 late evening)** | unchanged at ship; expected pure-win on retrieval over time as previously-multilingual rows settle to English | 13/13 @ Gemma (unchanged at ship; pikalytics chunks now uniformly English so cleaner clustering) | Scope reframe from "JP→EN 14 rows" to "multilingual locale flips" (7 locales observed); structural fix self-heals across cron runs |
 | Post A12 (Serebii in cron) | expected ≥0.845 | 13/13 @ Gemma | Patch safety; no quality delta under steady state |
-| Post A13 (staleness telemetry) | unchanged | unchanged | UX transparency only |
 | Post A4c (citation hallucination fix, if pursued) | 0.853 | 13/13 + citation validity ≥95% | Tightens retry-nudge in lib/validate-citations.ts |
 | If B1 ever ships | 0.87-0.90 est | 12-13/13 | Marginal UX gain vs infra cost |
 
