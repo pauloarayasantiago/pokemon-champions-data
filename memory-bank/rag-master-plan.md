@@ -51,7 +51,7 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | A3 | Content enrichment round | A | **SHIPPED (2026-04-23)** | Fresh Pikalytics + tournament CSVs; singles_meta.md; AngrySlowbroPlus viability section in meta_snapshot; TheDelybird templates in team_archetypes. Accepted team-intent -7.0% regression (fresh-data churn, not stale-doc). Baseline: [retrieval-post-A3.json](eval-baselines/retrieval-post-A3.json) |
 | A4b | Prompt hardening follow-up (optional belt-and-suspenders alongside interceptor) | A | DEFERRED | Tighten system prompt "call pokedex first" — only if interceptor alone shows gaps |
 | A5 | Claude Opus 4.7 self-eval on 13-test suite (CLI surface) | A | **SHIPPED (2026-04-23)** | 10/10 applicable, 3 N/A (programmatic tool-call predicates). Ties Gemma at ceiling. Report: [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md) |
-| **A6** | **Japanese→English cleanup for 14 pikalytics rows** | A | **NEXT** | Archaludon/Charizard/Gyarados/Venusaur/Whimsicott/Gengar/Sylveon/Aegislash/Arcanine-Hisui/Corviknight/Froslass/Palafin/Talonflame/Gallade/Typhlosion-Hisui have raw Japanese in `top_moves`/`top_items`. Re-scrape with stricter language enforcement OR add dictionary translation at chunk-time |
+| A6 | Multilingual locale flips in pikalytics scrape (originally framed as "JP→EN cleanup for 14 rows") | A | **SHIPPED (2026-04-23 evening)** | Scope proved wider than framed — Pikalytics intermittently serves JP/CN (trad+simp)/ES/DE/FR/KR depending on URL cache. Fix: cache-bust query param + retry + prior-EN fallback + non-ASCII detection + manual English seed for Floette-Eternal (permanently stuck). `scraper_pikalytics.py` self-heals across cron runs. See [errors.md](errors.md) row 47 for detail |
 | **A7** | **Retrieval hardening for "X+Y core WR" NL queries** | A | NEXT | Inline NL restatement of `meta_snapshot.md` top-cores table (e.g., "The Archaludon+Pelipper rain core has a 55.8% win rate"), OR add WR-pattern boost to `lib/rag/boost.ts` |
 | A8 | CLI harness wrapper for eval parity | A | OPTIONAL | Capture `/lookup` + Read into `toolCallLog` shape so 3 N/A tests become applicable to Claude-via-CLI |
 | A9 | Harder eval tests (adversarial retrieval) | A | OPTIONAL | Current 13-test suite saturates at Gemma 10/10 + Claude 10/10 — can't differentiate premium models. Add misleading-top-1, multi-hop, longer-synthesis cases |
@@ -145,18 +145,21 @@ Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-
 
 **Three new-task findings** — see A6/A7/A8 below.
 
-### A6 — Japanese→English cleanup for 14 pikalytics rows (NEXT)
+### A6 — Multilingual locale flips in pikalytics scrape · SHIPPED (2026-04-23 evening)
 
-**Rationale.** `awk` scan of [pikalytics_usage.csv](../pikalytics_usage.csv) finds 14/89 Pokemon with raw Japanese text in `top_moves` and/or `top_items` columns: Archaludon, Charizard, Gyarados, Venusaur, Whimsicott, Gengar, Sylveon, Aegislash, Arcanine-Hisui, Corviknight, Froslass, Palafin, Talonflame (both columns), plus Gallade (items only) and Typhlosion-Hisui (moves only). Example from Archaludon: `top_items=たべのこし:52.893|じしゃく:11.157|しろいハーブ:9.091|ヨプのみ:6.749|オボンのみ:4.270|...`. The Phase 8 `Accept-Language: en-US` header fix ([errors.md](errors.md) row 20) caught Italian but missed these — probably because Pikalytics served Japanese when the scraper ran for these particular mons, or the header didn't stick on cached entries.
+**Framing shift.** Originally scoped as "JP→EN cleanup for 14 rows" based on the A5 self-eval `awk` scan. Investigation showed the actual contamination is multilingual and the affected set drifts per scrape: three consecutive scrapes hit 3 / 4 / 17 different Pokemon with seven distinct locales observed (Japanese, Traditional Chinese, Simplified Chinese, Spanish, German, French, Korean). Root cause: Pikalytics' Cloudflare layer caches per-URL and ignores the `Accept-Language` header; each URL gets whichever locale its cache-entry was last warmed with.
 
-**User-visible impact.** Any LLM asked about these 14 mons' items/moves will either regurgitate Japanese directly (bad UX), translate on the fly (token cost + mistranslation risk), or misuse the data (e.g., "Archaludon uses じしゃく" in a response). Also hurts retrieval — embedding a mixed-language chunk doesn't cluster well against English queries.
+**Fix shipped** (see [errors.md](errors.md) row 47 for the consolidated bug entry):
+- Cache-bust query param `?_r=<random>` + `Cache-Control: no-cache` + `Pragma: no-cache` — forces Cloudflare to miss its cache, typically returns EN from origin.
+- Post-parse non-ASCII detection + retry loop (`MAX_LANG_RETRIES=2`) — each retry uses a fresh random cache-bust; catches in-scrape regressions.
+- `load_prior_english_rows()` at scrape-start — when fresh retry-exhausted scrape still returns non-EN, preserves the prior English row from the existing CSV. Self-heals across cron runs.
+- Final assertion + `sys.exit(1)` if any row remains non-EN with no EN fallback available — GH Actions surfaces failure instead of silently publishing non-English data.
+- Manual English seed for Floette-Eternal from commit `3555ad2` — Pikalytics appears permanently non-EN for that URL; every scrape will regress, fallback logic preserves the seed.
+- Detection regex widened from `[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]` (JP/CJK-only) to `[^\x00-\x7f]` (any non-ASCII) after Spanish/German/French/Korean slipped through the narrower version. `moves.csv` + `items.csv` verified 100% ASCII so no false positives.
 
-**Tasks.**
-- [ ] Option A (re-scrape): re-run `/refresh pikalytics` targeted at the 14 affected Pokemon. Verify the `Accept-Language` header + a cache-busting parameter actually produces English output.
-- [ ] Option B (translation layer): add a small Japanese→English item/move dictionary in the scraper (~30-50 items, 50-80 moves worth of coverage for these mons). Apply at scrape-time, not chunk-time (we ripped out chunk-time translation in Phase 1).
-- [ ] Either option: `/reindex` after; verify with `npx tsx scripts/search.ts "Archaludon best items" 3` returning English names.
+**What ships to users:** `pikalytics_usage.csv` with zero non-ASCII rows + a scraper that keeps it that way on every cron run, regardless of which locales Pikalytics rotates next.
 
-**Gate.** Zero Japanese characters in `top_moves` or `top_items` columns post-fix. Retrieval eval no intent regression.
+**Gate:** zero non-ASCII in `top_moves`/`top_items` post-fix (verified). Retrieval spot-check on the previously affected rows returns English names in top-3. No retrieval-eval regression expected since content went from mixed-language to purely English (pure-win).
 
 ### A7 — Retrieval hardening for "X+Y core WR" NL queries (NEXT)
 
