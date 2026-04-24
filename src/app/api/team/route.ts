@@ -10,6 +10,7 @@ import {
 import { TOOL_DEFINITIONS, executeTool } from "@/lib/tools";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@/lib/system-prompt";
 import { detectPhantomPokemon, formatPhantomRefusal } from "@core/phantom-guard";
+import { getStaleness } from "@core/rag";
 import {
   extractClaimsBlock,
   validateCitations,
@@ -91,6 +92,17 @@ export async function POST(request: NextRequest) {
           systemPromptVersion: SYSTEM_PROMPT_VERSION,
         });
         log(`start model=${body.model} provider=${providerInfo.provider}`);
+
+        // A13 — emit staleness telemetry once per request. Cached 60s in
+        // getStaleness() so this adds ~0ms on warm cache, ~50ms cold.
+        getStaleness()
+          .then((info) => {
+            if (info) send({ type: "staleness", data: info });
+          })
+          .catch(() => {
+            // DB unavailable / first-run — silently skip; UI falls back to
+            // "refresh age unknown".
+          });
 
         // Pre-flight phantom-Pokemon interceptor — short-circuits the agent loop
         // when the user names a Pokemon outside the 186-roster (pre-evo or removed).

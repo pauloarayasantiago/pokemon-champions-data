@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Send,
   Wrench,
@@ -25,6 +25,7 @@ interface HealthResponse {
   supabase: { status: Status; ms?: number; error?: string; detail?: Record<string, unknown> };
   embed: { status: Status; ms?: number; error?: string; detail?: Record<string, unknown> };
   providers: Record<ModelId, Status>;
+  staleness: StalenessInfo | null;
   env: { vercel: boolean; hfTokenSet: boolean };
   ts: number;
 }
@@ -85,6 +86,28 @@ interface ChatMessage {
   toolIds?: string[];
 }
 
+type StalenessSourceName =
+  | "youtube"
+  | "pikalytics"
+  | "sheets"
+  | "serebii"
+  | "knowledge";
+
+interface StalenessSource {
+  name: StalenessSourceName;
+  fileCount: number;
+  mostRecentMtime: string;
+  hoursSinceMostRecent: number;
+  hasFsDrift: boolean;
+}
+
+interface StalenessInfo {
+  indexedAt: string;
+  hoursSinceIndex: number;
+  sources: StalenessSource[];
+  hasFsDrift: boolean;
+}
+
 function newId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -100,6 +123,7 @@ export default function TeamPage() {
   const [run, setRun] = useState<RunState | null>(null);
   const [runs, setRuns] = useState<RunState[]>([]);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [staleness, setStaleness] = useState<StalenessInfo | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -122,6 +146,7 @@ export default function TeamPage() {
       const res = await fetch("/api/team/health", { cache: "no-store" });
       const json = (await res.json()) as HealthResponse;
       setHealth(json);
+      if (json.staleness) setStaleness(json.staleness);
     } catch (e) {
       setHealth(null);
       console.error("health probe failed", e);
@@ -194,6 +219,9 @@ export default function TeamPage() {
           try {
             const evt = JSON.parse(payload) as Record<string, unknown>;
             applyEvent(assistantMsg.id, evt, setMessages, setRun);
+            if (evt.type === "staleness" && evt.data) {
+              setStaleness(evt.data as StalenessInfo);
+            }
           } catch {
             /* ignore */
           }
@@ -277,6 +305,7 @@ export default function TeamPage() {
             <Send className="h-4 w-4" />
           </Button>
         </form>
+        <StalenessFooter staleness={staleness} />
       </div>
 
       {/* Debug sidebar */}
@@ -701,6 +730,60 @@ function RawEventLog({ run }: { run: RunState | null }) {
 function formatMs(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function formatHoursAgo(hours: number): string {
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  if (hours < 48) return `${Math.round(hours)}h`;
+  return `${Math.round(hours / 24)}d`;
+}
+
+const STALENESS_WARN_HOURS = 72;
+
+function StalenessFooter({ staleness }: { staleness: StalenessInfo | null }) {
+  const [open, setOpen] = useState(false);
+  if (!staleness) return null;
+  const maxSourceAge = staleness.sources.reduce(
+    (acc, s) => Math.max(acc, s.hoursSinceMostRecent),
+    0,
+  );
+  const warn = maxSourceAge > STALENESS_WARN_HOURS;
+  const driftCount = staleness.sources.filter((s) => s.hasFsDrift).length;
+  return (
+    <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 hover:text-foreground transition-colors ${
+          warn ? "text-amber-600 dark:text-amber-500" : ""
+        }`}
+      >
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <span>
+          Data refreshed {formatHoursAgo(maxSourceAge)} ago
+          {warn && " (stale — pipeline may be down)"}
+          {driftCount > 0 && ` · ${driftCount} local drift`}
+        </span>
+      </button>
+      {open && (
+        <div className="ml-4 grid grid-cols-[auto_auto_auto] gap-x-3 gap-y-0.5 font-mono text-[10px]">
+          {staleness.sources.map((s) => (
+            <React.Fragment key={s.name}>
+              <span className="text-foreground">{s.name}</span>
+              <span>{formatHoursAgo(s.hoursSinceMostRecent)} ago</span>
+              <span className={s.hasFsDrift ? "text-amber-600" : ""}>
+                {s.fileCount} file{s.fileCount === 1 ? "" : "s"}
+                {s.hasFsDrift && " · drift"}
+              </span>
+            </React.Fragment>
+          ))}
+          <span className="text-foreground">index</span>
+          <span>{formatHoursAgo(staleness.hoursSinceIndex)} ago</span>
+          <span />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function applyEvent(

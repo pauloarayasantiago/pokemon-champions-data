@@ -72,6 +72,134 @@ async function checkStaleness(): Promise<void> {
   }
 }
 
+// A13 — user-visible staleness telemetry. Groups indexed files by logical
+// source (youtube transcripts, pikalytics, sheets-sourced tournament data,
+// serebii-scraped game data, hand-written knowledge docs) and reports the
+// most recent file mtime + hours elapsed per source. Also reports the
+// global `indexed_at` (last reindex run). `hasFsDrift` flips true on local
+// dev when an indexed file's current fs mtime beats the stored mtime —
+// always false on Vercel (Lambda fs mtimes are build-time, not reindex-time).
+export type StalenessSourceName =
+  | "youtube"
+  | "pikalytics"
+  | "sheets"
+  | "serebii"
+  | "knowledge";
+
+export interface StalenessSource {
+  name: StalenessSourceName;
+  fileCount: number;
+  mostRecentMtime: string;
+  hoursSinceMostRecent: number;
+  hasFsDrift: boolean;
+}
+
+export interface StalenessInfo {
+  indexedAt: string;
+  hoursSinceIndex: number;
+  sources: StalenessSource[];
+  hasFsDrift: boolean;
+}
+
+const SOURCE_MAP: Array<{
+  test: (path: string) => boolean;
+  name: StalenessSourceName | "internal";
+}> = [
+  { test: (p) => p.startsWith("data/transcripts/"), name: "youtube" },
+  { test: (p) => p === "pikalytics_usage.csv", name: "pikalytics" },
+  { test: (p) => p === "tournament_teams.csv", name: "sheets" },
+  { test: (p) => p.startsWith("data/knowledge/"), name: "knowledge" },
+  { test: (p) => p.startsWith("memory-bank/"), name: "internal" },
+];
+
+function sourceOfPath(path: string): StalenessSourceName | "internal" {
+  for (const entry of SOURCE_MAP) {
+    if (entry.test(path)) return entry.name;
+  }
+  return "serebii";
+}
+
+let _stalenessCache: { info: StalenessInfo | null; fetchedAt: number } | null = null;
+const STALENESS_TTL_MS = 60_000;
+
+export async function getStaleness(): Promise<StalenessInfo | null> {
+  const now = Date.now();
+  if (_stalenessCache && now - _stalenessCache.fetchedAt < STALENESS_TTL_MS) {
+    return _stalenessCache.info;
+  }
+  const info = await _fetchStaleness();
+  _stalenessCache = { info, fetchedAt: now };
+  return info;
+}
+
+async function _fetchStaleness(): Promise<StalenessInfo | null> {
+  try {
+    const { data: rows, error } = await supabaseServer()
+      .from("pc_index_meta")
+      .select("key, value")
+      .in("key", ["file_mtimes", "indexed_at"]);
+    if (error || !rows) return null;
+
+    const byKey = new Map(rows.map((r) => [r.key as string, r.value]));
+    const indexedAtValue = byKey.get("indexed_at");
+    const indexedAtIso = typeof indexedAtValue === "string" ? indexedAtValue : null;
+    const mtimes = (byKey.get("file_mtimes") ?? {}) as Record<string, string>;
+    if (!indexedAtIso) return null;
+
+    const now = new Date();
+    const hoursSinceIndex =
+      (now.getTime() - new Date(indexedAtIso).getTime()) / 3_600_000;
+
+    const onVercel = !!process.env.VERCEL;
+    const bySource = new Map<
+      StalenessSourceName,
+      { mtimes: string[]; driftPaths: string[] }
+    >();
+
+    for (const [relPath, mtimeIso] of Object.entries(mtimes)) {
+      const name = sourceOfPath(relPath);
+      if (name === "internal") continue;
+      const bucket = bySource.get(name) ?? { mtimes: [], driftPaths: [] };
+      bucket.mtimes.push(mtimeIso);
+      if (!onVercel) {
+        try {
+          const absPath = resolve(PROJECT_ROOT, relPath);
+          const currentMtime = statSync(absPath).mtime.toISOString();
+          if (currentMtime > mtimeIso) bucket.driftPaths.push(relPath);
+        } catch {
+          bucket.driftPaths.push(relPath);
+        }
+      }
+      bySource.set(name, bucket);
+    }
+
+    const sources: StalenessSource[] = [];
+    for (const [name, bucket] of bySource) {
+      if (bucket.mtimes.length === 0) continue;
+      bucket.mtimes.sort();
+      const mostRecent = bucket.mtimes[bucket.mtimes.length - 1];
+      const hours = (now.getTime() - new Date(mostRecent).getTime()) / 3_600_000;
+      sources.push({
+        name,
+        fileCount: bucket.mtimes.length,
+        mostRecentMtime: mostRecent,
+        hoursSinceMostRecent: hours,
+        hasFsDrift: bucket.driftPaths.length > 0,
+      });
+    }
+    sources.sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      indexedAt: indexedAtIso,
+      hoursSinceIndex,
+      sources,
+      hasFsDrift: sources.some((s) => s.hasFsDrift),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface Result {
   id: string;
   text: string;
@@ -82,6 +210,7 @@ export interface Result {
 }
 
 export type ProgressStage =
+  | "staleness"
   | "embed_start"
   | "embed_end"
   | "rpc_start"

@@ -1,5 +1,6 @@
 import { supabaseServer } from "@core/supabase";
 import { embed } from "@core/embed";
+import { getStaleness } from "@core/rag";
 import { MODEL_REGISTRY, type ModelId, type Provider } from "@/lib/llm";
 
 export const runtime = "nodejs";
@@ -65,12 +66,17 @@ function checkProviders(): Record<ModelId, Status> {
 }
 
 export async function GET() {
-  const [supabase, embedCheck] = await Promise.all([checkSupabase(), checkEmbed()]);
+  const [supabase, embedCheck, staleness] = await Promise.all([
+    checkSupabase(),
+    checkEmbed(),
+    getStaleness().catch(() => null),
+  ]);
   const providers = checkProviders();
   return Response.json({
     supabase,
     embed: embedCheck,
     providers,
+    staleness,
     env: {
       vercel: !!process.env.VERCEL,
       hfTokenSet: !!process.env.HF_TOKEN,
