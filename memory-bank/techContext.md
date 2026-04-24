@@ -197,24 +197,38 @@ _This section is the single source of truth for "how data gets into the RAG inde
 | 1 | **Serebii** (`serebii.net/pokemonchampions/`) | `scraper.py` | `pokemon_champions.csv` (216 rows incl. forms), `mega_evolutions.csv` (59), `moves.csv` (494), `items.csv` (138), `mega_abilities.csv` (23), `new_abilities.csv` (4), `updated_attacks.csv` (21), `status_conditions.txt`, `training_mechanics.txt` | No auth; self-imposed 1s delay per Pokémon page. No documented rate-limit ceiling. | **MANUAL ONLY** — not in cron | `python scraper.py` (via `/refresh` or shell) |
 | 2 | **Pikalytics** (`pikalytics.com/pokedex/championstournaments`) | `scraper_pikalytics.py` | `pikalytics_usage.csv` (89/216 mons have tournament data; 125 return 404 for form variants) | No auth; `Accept-Language: en-US,en;q=0.9` header prevents Italian. No documented ceiling; behaves politely | **GH Actions cron `0 0,12 * * *`** (2×/day @ 00:00 + 12:00 UTC) | `python scraper_pikalytics.py` |
 | 3 | **VGCPastes Google Sheets** (public Google Vis API) | `scraper_sheets.py` | `tournament_teams.csv` (current: 445 teams from 118+ players, post-A3) | No auth (public sheet); single HTTP request | **GH Actions cron `0 0,12 * * *`** (2×/day) | `python scraper_sheets.py` |
-| 4 | **YouTube Transcripts** (creator videos via yt-dlp + `youtube-transcript-api`) | `scraper_youtube.py` | `data/transcripts/unknown_<channel>_<slug>.md` (86 accumulative .md files today; YAML frontmatter + transcript body) | No auth required, but **YouTubeTranscriptApi IP-throttles after ~24 sequential requests with 1–24h cooldown** (no documented API ceiling — community reports vary). `DELAY_SECONDS=1` polite delay between fetches. 21 search queries × dateafter=20260408. Dedupes against existing transcript filenames | **GH Actions cron `0 0,12 * * *`** (2×/day, shipped A10 2026-04-23 evening). `continue-on-error: true` so IP-throttles don't drop Pikalytics/Sheets | `python scraper_youtube.py` |
+| 4 | **YouTube Transcripts** (creator videos via yt-dlp + `youtube-transcript-api`) | `scraper_youtube.py` (via [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat)) | `data/transcripts/unknown_<channel>_<slug>.md` (YAML frontmatter + transcript body) | No auth required, but **`youtube-transcript-api` is IP-banned on cloud providers (AWS/Azure/GCP)** — must run from residential IP. Also throttles after ~24 sequential requests with 1–24h cooldown. `DELAY_SECONDS=1` polite delay between fetches. 21 search queries × dateafter=20260408. Dedupes against existing transcript filenames | **Local Windows Task Scheduler, 2×/day** (residential IP required — see [errors.md](errors.md) "YouTube cloud-IP ban"). NOT in GH Actions cron | `scripts/scrape-youtube-local.bat` (wraps scrape + commit/push) or direct `python scraper_youtube.py` |
 | 5 | **Research docs + creator knowledge** (manually curated) | n/a (human edit) | `data/knowledge/*.md` (meta_snapshot, team_archetypes, speed_tiers, champions_rules, singles_meta, team_building_theory, damage_calc, type_chart), `research/*.md` | n/a | Manual commit when user ships analysis | Direct `Edit`/`Write` |
 
 ### Reindex step (always runs after any scrape)
 
 - `npx tsx scripts/index-data.ts` — embeds all CSVs + knowledge .md + transcripts into Supabase `pc_chunks` (HNSW + text_tsv). Post-A3 baseline: **2,511 chunks**. This step IS in the GH Actions workflow (runs after the two scrapers that are in cron).
 
-### Current automation state (as of 2026-04-23 evening — post A10/A11)
+### Current automation state (as of 2026-04-23 evening — post A10-revised/A11)
 
-- **In cron (`.github/workflows/refresh.yml`):** Pikalytics + VGCPastes Sheets + **YouTube transcripts** + reindex + git commit/push. Runs **2×/day @ 00:00 + 12:00 UTC**. All three scrape steps have `continue-on-error: true` so a single-source failure (typical: YouTube IP-throttle) doesn't drop the others.
+- **In GH Actions cron (`.github/workflows/refresh.yml`, `0 0,12 * * *`):** Pikalytics + VGCPastes Sheets + reindex + git commit/push. Runs **2×/day @ 00:00 + 12:00 UTC** from the `Production` environment (supabase secrets scoped there). Both scrape steps have `continue-on-error: true`. Reindex step has `env:` block passing `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SECRET` from env-level secrets.
+- **On local Windows Task Scheduler (user's residential IP):** `scripts/scrape-youtube-local.bat` wrapping `python scraper_youtube.py`. Cannot run in GH Actions because `youtube-transcript-api` blocks all cloud-provider IPs (Azure, AWS, GCP). Scrape-only — the GH Actions cron handles reindex on its next fire once local pushes a new transcript commit to main. See [errors.md](errors.md) "YouTube cloud-IP ban" for evidence.
 - **NOT in cron:** Serebii (mostly-static game data — only drifts on patches; tracked as A12, low urgency).
 - **User-triggered `/refresh` skill** (`.claude/commands/refresh.md`): can run any scraper on demand. Invoked by conversational `/refresh pikalytics|sheets|all`.
+
+### Registering the local YouTube task (one-time setup)
+
+```bash
+schtasks /create /tn "pokemon-youtube-scraper" \
+  /tr "C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\scripts\scrape-youtube-local.bat" \
+  /sc hourly /mo 12 /ru paulo /it
+```
+
+- `/mo 12` → every 12 hours. Matches the GH Actions cadence.
+- `/ru paulo /it` → run as the logged-in user, interactive-only (no password prompt; fires only when the user is logged on — fine for a desktop box).
+- Logs land in `scripts/logs/youtube-YYYY-MM-DD.log`.
+- To remove: `schtasks /delete /tn "pokemon-youtube-scraper" /f`.
 
 ### Freshness SLOs (target state — see A10/A11/A12 for rollout)
 
 | Source | Volatility | Target cadence | Current cadence | Gap |
 |--------|-----------|----------------|-----------------|-----|
-| YouTube transcripts | **HIGH** — creators drop videos daily post-release | ≥ 2×/day (or max the API allows without 24h cooldown) | 2×/day (A10 shipped 2026-04-23) | CLOSED |
+| YouTube transcripts | **HIGH** — creators drop videos daily post-release | ≥ 2×/day (or max the API allows without 24h cooldown) | 2×/day via local Windows Task Scheduler (A10 revised 2026-04-23 after cloud-IP ban discovered) | CLOSED (local-IP dependent) |
 | Pikalytics usage | MEDIUM — tournament stats shift weekly | Every 1–2 days | 2×/day (A11 shipped 2026-04-23) | CLOSED |
 | VGCPastes Sheets | MEDIUM — new teams as tournaments happen | Every 1–2 days | 2×/day (A11 shipped 2026-04-23) | CLOSED |
 | Serebii (static game data) | LOW — changes only on patches | Weekly or bi-weekly | Manual only | A12 (low priority) |
@@ -253,6 +267,7 @@ _This section is the single source of truth for "how data gets into the RAG inde
 - Output: `data/transcripts/{date}_{channel}_{slug}.md` with YAML frontmatter
 - Deduplication: reads existing transcripts to skip re-downloads
 - 21 search queries covering competitive topics, specific creators, and mechanics
+- **Must run from residential IP.** `youtube-transcript-api` hard-blocks AWS/Azure/GCP. GH Actions runners are Azure → step returned `Saved: 0 transcripts` when initially wired in A10 (2026-04-23). Scraper itself works identically on any network; only the API it calls rejects cloud IPs. Local wrapper at [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat) handles scheduling via Windows Task Scheduler + commits/pushes new transcripts to main for the GH Actions cron to reindex.
 
 ### scraper_sheets.py (VGCPastes)
 - Google Visualization API — single HTTP request

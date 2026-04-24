@@ -31,7 +31,7 @@ jobs:
         run: npm ci
 
       - name: Install Python dependencies
-        run: pip install requests beautifulsoup4 lxml youtube-transcript-api yt-dlp
+        run: pip install requests beautifulsoup4 lxml
 
       - name: Scrape Pikalytics
         run: python scraper_pikalytics.py
@@ -39,10 +39,6 @@ jobs:
 
       - name: Scrape Google Sheets tournament teams
         run: python scraper_sheets.py
-        continue-on-error: true
-
-      - name: Scrape YouTube transcripts
-        run: python scraper_youtube.py
         continue-on-error: true
 
       - name: Rebuild vector index

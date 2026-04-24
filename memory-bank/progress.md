@@ -12,7 +12,36 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
-### A10 + A11 — YouTube / Pikalytics / Sheets cron cadence bump — SHIPPED (2026-04-23 evening) · single workflow edit
+### A10 revised — YouTube scrape moved to local Windows Task Scheduler — SHIPPED (2026-04-23 evening, same day as initial A10)
+
+- **Status:** SHIPPED (revision). Initial A10 (YouTube step wired into `.github/workflows/refresh.yml`) returned `Saved: 0 transcripts` on the first manual `workflow_dispatch` (run 24867630255). Every fetch failed with `YouTube is blocking requests from your IP. [...] most IPs from cloud providers are blocked by YouTube` — GH Actions runs on Azure. `continue-on-error: true` hid the symptom as a green step. Root-cause: `youtube-transcript-api` hard-blocks cloud-provider IPs; it's not a rate-limit, it's categorical.
+- **Revised scope:**
+  - Reverted `Scrape YouTube transcripts` step from [refresh.yml](../.github/workflows/refresh.yml).
+  - Reverted `yt-dlp` from the pip install line (only the scraper shelled to it; with the step gone, the dep is unused in CI).
+  - Kept everything else from the initial A10/A11 ship (cron `0 0,12 * * *`, `environment: Production` scoping, reindex-step `env:` block wiring `SUPABASE_SECRET` + `NEXT_PUBLIC_SUPABASE_URL`).
+  - Added [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat): `cd /d "%~dp0.."` → logs to `scripts/logs/youtube-YYYY-MM-DD.log` → runs `python scraper_youtube.py` → stages `data/transcripts/` only → commits + `git pull --rebase` + pushes if any new transcripts. Exits 0 unconditionally so Windows Task Scheduler doesn't mark failures on empty runs.
+  - Documented `schtasks /create /tn "pokemon-youtube-scraper" /tr <path> /sc hourly /mo 12 /ru paulo /it` one-liner in [techContext.md § Data Pipeline](techContext.md#data-pipeline). User runs registration themselves — not auto-registered by this task.
+- **Why local schtasks and not a Claude-product scheduled task:**
+  - Claude Code `/loop` and Desktop Scheduled Tasks require the app to be open, unsuitable for unattended 12h cadence.
+  - Claude Code Cloud Routines run on Anthropic's infra → same cloud-IP ban problem (plus daily run caps).
+  - Windows Task Scheduler runs natively with residential IP, zero app dependency, no plan caps. Clearly the correct tool.
+- **What this preserves:**
+  - GH Actions cron still fires 2×/day for Pikalytics + Sheets + reindex — those scrape fine from Azure. The reindex re-embeds any transcript files the local task has pushed since the last run, so data lands in Supabase without a second indexer path.
+  - `scraper_youtube.py` itself is unchanged. Its IP-scope dependency isn't a scraper bug; the scraper works identically on any network, just the API it calls rejects cloud IPs.
+  - A11 (cadence bump for Pikalytics + Sheets) is unaffected by the A10 revision.
+- **Verification:**
+  - `git diff .github/workflows/refresh.yml` shows only the YouTube step block + `yt-dlp` word removed.
+  - YAML parses cleanly (9 steps, original order minus YouTube).
+  - Local smoke test of the .bat: `(will annotate after first clean run)`.
+  - GH Actions infra path already validated by run 24867630255 ending in green (Pikalytics 89 rows + Sheets 445 rows + reindex + auto-commit `0a65872`).
+- **Observational gate (A10 revised):** after 2 scheduled task fires (~24h), confirm:
+  - `data/transcripts/` contains new `.md` files with dates ≥ 2026-04-23.
+  - Main has a `refresh: local youtube scrape` commit authored by `paulo` (not `github-actions[bot]`).
+  - The subsequent GH Actions cron pushed a reindex commit that included those new transcript chunks.
+- **Rollback:** revert the .bat + workflow changes. Scraper itself stays. No data loss — transcripts accumulate additively.
+- **Risk remaining:** user's machine must be awake when schtasks fires. Windows Task Scheduler supports `/it` (interactive — fires only when logged on) which fits the desktop use case. Wake-timer option is available but not configured by default.
+
+### A11 + A10-initial — cron cadence bump — SHIPPED (2026-04-23 evening) · single workflow edit (partially superseded by A10 revision above)
 
 - **Status:** SHIPPED. Single-file diff against [.github/workflows/refresh.yml](../.github/workflows/refresh.yml): cron `0 6 */3 * *` → `0 0,12 * * *` (every 3 days → 2×/day @ 00:00 + 12:00 UTC); added `Scrape YouTube transcripts` step between Sheets scrape and reindex with `continue-on-error: true`; added `yt-dlp` to the pip install line (scraper shells out via `python -m yt_dlp` — `youtube-transcript-api` alone wasn't enough).
 - **Why bundled:** A10 and A11 share the same cron file; A11 is zero-effort once the cron is already changing for A10 (the existing Pikalytics + Sheets steps just start firing 2×/day automatically). Splitting into two commits would be pure ceremony.
