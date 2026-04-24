@@ -135,7 +135,7 @@ Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-
 
 **A4b (deferred):** Prompt hardening as belt-and-suspenders alongside the interceptor — tighten [src/lib/system-prompt.ts](../src/lib/system-prompt.ts) "MUST call pokedex first" clause. Low priority since the interceptor is the structural fix; revisit only if the interceptor shows gaps in production.
 
-**Citation hallucination (separate from phantom_pokemon):** still open as a Gemma-side issue. Gemma occasionally fabricates chunk_ids even after the Phase 2 auto-retry nudge. Fix not shipped this session — the retry nudge in [lib/validate-citations.ts](../lib/validate-citations.ts) could be tightened to explicitly list the valid chunk_ids from the search result set. Fold into A3 or a future A4c if it proves user-visible.
+**Citation hallucination (separate from phantom_pokemon) — A4c SHIPPED (2026-04-23 late evening).** Gemma's baseline citation validity ran 80/100/80 across 3 runs — ~1/3 of prod responses shipped with a phantom chunk_id. Fix: `formatValidationNudge(invalidIds, seenChunkIds)` in [lib/validate-citations.ts](../lib/validate-citations.ts) now explicitly enumerates the valid chunk_ids from the search result set (capped at 50 ≈ 1k tokens) so the retry nudge closes the guess loop instead of leaving the model to remember which IDs it got. Callers updated in [src/app/api/team/route.ts](../src/app/api/team/route.ts) and [scripts/eval-models.ts](../scripts/eval-models.ts). 3-run gate: 100/100/100 citation validity, 12-13/13 pass, 25-30k tok/pass (best Gemma result measured). Snapshots under `snapshots/model-eval-2026-04-24T04-*.json`.
 
 ### A5 — Claude Opus 4.7 self-eval · SHIPPED (2026-04-23)
 
@@ -369,7 +369,7 @@ npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
 | **A13 ship (2026-04-23 evening)** | unchanged (read-only side-channel) | unchanged | UX transparency — staleness now visible on webapp footer + `/lookup` CLI; closes feedback loop on A10/A11 |
 | **A6 ship (2026-04-23 late evening)** | unchanged at ship; expected pure-win on retrieval over time as previously-multilingual rows settle to English | 13/13 @ Gemma (unchanged at ship; pikalytics chunks now uniformly English so cleaner clustering) | Scope reframe from "JP→EN 14 rows" to "multilingual locale flips" (7 locales observed); structural fix self-heals across cron runs |
 | **A12 ship (2026-04-23 late evening)** | unchanged (new workflow; no retrieval impact until Nintendo patches Champions) | 13/13 @ Gemma (unchanged at ship) | Patch safety — Serebii CSVs now refresh weekly; two-scheduled-fire observation gate (2026-04-28, 2026-05-05) still pending |
-| Post A4c (citation hallucination fix, if pursued) | 0.853 | 13/13 + citation validity ≥95% | Tightens retry-nudge in lib/validate-citations.ts |
+| **A4c ship (2026-04-23 late evening)** | unchanged (agent-layer change, no retrieval impact) | **12-13/13 @ Gemma, citation validity 100/100/100** (up from 80/100/80 baseline), ~27k avg tok/pass | Retry nudge now enumerates valid chunk_ids; closes the guess loop that was letting the model re-hallucinate after the first invalid-ID nudge |
 | If B1 ever ships | 0.87-0.90 est | 12-13/13 | Marginal UX gain vs infra cost |
 
 ---

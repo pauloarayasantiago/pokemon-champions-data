@@ -124,13 +124,31 @@ export function validateCitations(
   return { valid, invalidIds, totalCited, validCited };
 }
 
-export function formatValidationNudge(invalidIds: string[]): string {
+// Cap the valid-id enumeration to avoid context bloat on long sessions; 50
+// IDs × ~20 chars each ≈ 1k tokens. Typical turns see 10-25 results.
+const MAX_VALID_IDS_IN_NUDGE = 50;
+
+function formatValidIdsList(seenChunkIds: Set<string>): string {
+  const all = Array.from(seenChunkIds);
+  if (all.length === 0) return "(none — no `search` tool calls have returned results yet)";
+  const shown = all.slice(0, MAX_VALID_IDS_IN_NUDGE).map((id) => `\`${id}\``).join(", ");
+  const tail = all.length > MAX_VALID_IDS_IN_NUDGE
+    ? ` (+${all.length - MAX_VALID_IDS_IN_NUDGE} more)`
+    : "";
+  return shown + tail;
+}
+
+export function formatValidationNudge(
+  invalidIds: string[],
+  seenChunkIds: Set<string>,
+): string {
+  const validList = formatValidIdsList(seenChunkIds);
   if (invalidIds.length === 0) {
-    return "Your response is missing a `claims-json` block, or its `claims` array is empty. Look at your prose above: any statement of fact you drew from a `search` tool result (usage %, win rates, teammates, rosters, tier-list rankings, mechanics citations, creator opinions) MUST appear as a claim with the chunk_id(s) from the search results that supported it. Re-emit your full response with a trailing ```claims-json fenced block that includes every search-backed factual claim. An empty `claims` array is only appropriate when you genuinely made no search-backed claims (e.g. a pure stylistic reply).";
+    return `Your response is missing a \`claims-json\` block, or its \`claims\` array is empty. Look at your prose above: any statement of fact you drew from a \`search\` tool result (usage %, win rates, teammates, rosters, tier-list rankings, mechanics citations, creator opinions) MUST appear as a claim with the chunk_id(s) from the search results that supported it. Re-emit your full response with a trailing \`\`\`claims-json fenced block that includes every search-backed factual claim. An empty \`claims\` array is only appropriate when you genuinely made no search-backed claims (e.g. a pure stylistic reply).\n\n**Valid chunk_ids you received this conversation — you MUST pick from this set:** ${validList}`;
   }
   const preview = invalidIds.slice(0, 5).map((id) => `\`${id}\``).join(", ");
-  const tail = invalidIds.length > 5 ? ` (+${invalidIds.length - 5} more)` : "";
-  return `Your claims-json cites chunk_id(s) ${preview}${tail} that were NOT returned by any \`search\` tool call in this conversation. Replace each invalid chunk_id with one you actually received from a search tool result, or rewrite the claim to match a chunk_id you do have. Re-emit your full response with an updated claims-json block. Do not invent chunk_ids. Do not collapse to \`{"claims": []}\` just to avoid the validator — ground the claim properly.`;
+  const invalidTail = invalidIds.length > 5 ? ` (+${invalidIds.length - 5} more)` : "";
+  return `Your claims-json cites chunk_id(s) ${preview}${invalidTail} that were NOT returned by any \`search\` tool call in this conversation. Replace each invalid chunk_id with one you actually received, or rewrite the claim to match a chunk_id you do have. Re-emit your full response with an updated claims-json block. Do not invent chunk_ids. Do not collapse to \`{"claims": []}\` just to avoid the validator — ground the claim properly.\n\n**Valid chunk_ids you received this conversation — you MUST pick from this set:** ${validList}`;
 }
 
 /**

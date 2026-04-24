@@ -950,7 +950,7 @@ async function runAgent(
     if (!citationValid && !citationRetryFired) {
       citationRetryFired = true;
       nudgeCount++;
-      messages.push({ role: "user", content: formatValidationNudge(citationInvalidIds) });
+      messages.push({ role: "user", content: formatValidationNudge(citationInvalidIds, seenChunkIds) });
       // Retry with tools:[] — forces pure text output. The model can rewrite
       // claims using chunk_ids already in seenChunkIds, or emit `{"claims":[]}`
       // if no search-grounded claim survives. Matches the force-completion

@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
 
             if (!v.valid && !citationRetryFired) {
               citationRetryFired = true;
-              const nudge = formatValidationNudge(v.invalidIds);
+              const nudge = formatValidationNudge(v.invalidIds, seenChunkIds);
               messages.push({ role: "user", content: nudge });
               send({
                 type: "citation_retry",
