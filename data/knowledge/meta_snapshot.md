@@ -81,3 +81,7 @@ The most used Pokemon deserves special analysis:
 - SP spread: Max HP, rest into Def/SpD
 - Top teammates: Sinistcha (38%), Sneasler (36%), Garchomp (35%)
 - Overcentralizing: Every team either runs Incineroar or has a clear plan to beat it
+
+## Viability vs Usage
+
+The usage table above is Pikalytics ladder data (how often a Pokemon is picked); viability is how strong a Pokemon is when played well. Per content creator AngrySlowbroPlus's Regulation A Doubles tier list, top 5 by viability are Sinistcha, Mega Dragonite, Mega Gengar, Incineroar, Archaludon — note usage-first Incineroar is 4th by viability while lower-usage Sinistcha is #1 as the only Rage Powder user. High-viability-but-lower-usage picks the creator highlights: Milotic (Competitive), Mega Gardevoir (Pixilate), Lucario, Mega Delphox, Farigiraf (hard-TR setter). Creator source transcript is under data/transcripts/.
