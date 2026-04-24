@@ -34,6 +34,15 @@ These Pokemon have the best win rates, often lower usage but extremely effective
 | Pelipper + Basculegion | 55.2% | 21.4% | Rain (Swift Swim) |
 | Torkoal + Farigiraf | 55.2% | 8.6% | Trick Room Sun |
 
+### Core Win Rates (Natural Phrasing)
+
+- **Torkoal + Venusaur** sun core win rate: 56.8% at 6.2% usage. Torkoal Venusaur posts the highest core WR in the meta.
+- **Tyranitar + Excadrill** sand rush core win rate: 56.2% at 15.8% usage. Tyranitar Excadrill is the top sand archetype core.
+- **Archaludon + Pelipper** rain core win rate: 55.8% at 20.8% usage. Archaludon Pelipper rain core fires Electro Shot instantly under Drizzle.
+- **Charizard + Venusaur** sun core win rate: 55.4% at 12.8% usage. Charizard Venusaur is a classic sun pairing with Drought Mega Charizard Y.
+- **Pelipper + Basculegion** rain core win rate: 55.2% at 21.4% usage. Pelipper Basculegion rain core leverages Swift Swim for speed control.
+- **Torkoal + Farigiraf** trick room sun core win rate: 55.2% at 8.6% usage. Torkoal Farigiraf anchors trick room sun with Eruption under Sun.
+
 ## Archetype Meta Share
 - Standard Goodstuffs: ~22% (most popular, flexible)
 - Tailwind Offense: ~20% (Whimsicott-led fast offense)

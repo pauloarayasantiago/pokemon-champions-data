@@ -244,6 +244,16 @@ export function applyBoosts(
       boost += 0.035;
     }
 
+    // A7 — "X + Y core win rate" NL queries. Meta_snapshot owns the top-cores
+    // table but loses to team_archetypes under theory-route + archetype boosts
+    // (~+0.05 differential). Lift meta_snapshot over archetype docs when the
+    // query is explicitly asking about core win rates. Calibrated to clear the
+    // theory+archetype+tier stack (~+0.07) and land in top-3.
+    const isMetaSnapshot = r.source === "data/knowledge/meta_snapshot.md";
+    if (isMetaSnapshot && /\bcore\b/i.test(question) && /\b(win rate|winrate|wr)\b/i.test(question)) {
+      boost += 0.08;
+    }
+
     // Item chunk boost when query has item intent
     if (r.dataCategory === "item" && intent.hasItemKeyword) {
       boost += 0.03;
