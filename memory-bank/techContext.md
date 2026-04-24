@@ -211,7 +211,11 @@ _This section is the single source of truth for "how data gets into the RAG inde
 - **NOT in cron:** Serebii (mostly-static game data — only drifts on patches; tracked as A12, low urgency).
 - **User-triggered `/refresh` skill** (`.claude/commands/refresh.md`): can run any scraper on demand. Invoked by conversational `/refresh pikalytics|sheets|all`.
 
-### Registering the local YouTube task (one-time setup)
+### Local YouTube task — registered 2026-04-23 evening
+
+**Status:** `pokemon-youtube-scraper` is live on the user's desktop. `schtasks /query /tn "pokemon-youtube-scraper"` reports Status=Ready, Schedule=Every 12 Hours, Run As User=paulo, Next Run=2026-04-24 07:57 local.
+
+**Registration command** (already executed; kept here for re-registration / second-machine setup):
 
 ```bash
 schtasks /create /tn "pokemon-youtube-scraper" \
@@ -222,7 +226,9 @@ schtasks /create /tn "pokemon-youtube-scraper" \
 - `/mo 12` → every 12 hours. Matches the GH Actions cadence.
 - `/ru paulo /it` → run as the logged-in user, interactive-only (no password prompt; fires only when the user is logged on — fine for a desktop box).
 - Logs land in `scripts/logs/youtube-YYYY-MM-DD.log`.
-- To remove: `schtasks /delete /tn "pokemon-youtube-scraper" /f`.
+- Inspect: `schtasks /query /tn "pokemon-youtube-scraper" /fo LIST /v`.
+- Trigger on demand: `schtasks /run /tn "pokemon-youtube-scraper"`.
+- Remove: `schtasks /delete /tn "pokemon-youtube-scraper" /f`.
 
 ### Freshness SLOs (target state — see A10/A11/A12 for rollout)
 

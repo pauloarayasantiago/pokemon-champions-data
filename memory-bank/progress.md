@@ -20,7 +20,7 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
   - Reverted `yt-dlp` from the pip install line (only the scraper shelled to it; with the step gone, the dep is unused in CI).
   - Kept everything else from the initial A10/A11 ship (cron `0 0,12 * * *`, `environment: Production` scoping, reindex-step `env:` block wiring `SUPABASE_SECRET` + `NEXT_PUBLIC_SUPABASE_URL`).
   - Added [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat): `cd /d "%~dp0.."` → logs to `scripts/logs/youtube-YYYY-MM-DD.log` → runs `python scraper_youtube.py` → stages `data/transcripts/` only → commits + `git pull --rebase` + pushes if any new transcripts. Exits 0 unconditionally so Windows Task Scheduler doesn't mark failures on empty runs.
-  - Documented `schtasks /create /tn "pokemon-youtube-scraper" /tr <path> /sc hourly /mo 12 /ru paulo /it` one-liner in [techContext.md § Data Pipeline](techContext.md#data-pipeline). User runs registration themselves — not auto-registered by this task.
+  - Documented `schtasks /create /tn "pokemon-youtube-scraper" /tr <path> /sc hourly /mo 12 /ru paulo /it` one-liner in [techContext.md § Data Pipeline](techContext.md#data-pipeline). User ran registration same evening on go-ahead from Claude — see dedicated "Scheduled task registered" bullet below.
 - **Why local schtasks and not a Claude-product scheduled task:**
   - Claude Code `/loop` and Desktop Scheduled Tasks require the app to be open, unsuitable for unattended 12h cadence.
   - Claude Code Cloud Routines run on Anthropic's infra → same cloud-IP ban problem (plus daily run caps).

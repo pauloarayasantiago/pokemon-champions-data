@@ -55,7 +55,7 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | **A7** | **Retrieval hardening for "X+Y core WR" NL queries** | A | NEXT | Inline NL restatement of `meta_snapshot.md` top-cores table (e.g., "The Archaludon+Pelipper rain core has a 55.8% win rate"), OR add WR-pattern boost to `lib/rag/boost.ts` |
 | A8 | CLI harness wrapper for eval parity | A | OPTIONAL | Capture `/lookup` + Read into `toolCallLog` shape so 3 N/A tests become applicable to Claude-via-CLI |
 | A9 | Harder eval tests (adversarial retrieval) | A | OPTIONAL | Current 13-test suite saturates at Gemma 10/10 + Claude 10/10 — can't differentiate premium models. Add misleading-top-1, multi-hop, longer-synthesis cases |
-| A10 | YouTube scraper on 2×/day cadence (cloud-ban-aware hybrid arch) | A | **SHIPPED (2026-04-23 evening, revised)** | Initial ship added the step to [refresh.yml](../.github/workflows/refresh.yml); manual workflow_dispatch returned `Saved: 0 transcripts` (YouTube IP-bans cloud providers — see [errors.md](errors.md)). Reverted workflow step + `yt-dlp` pip dep. Final ship: [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat) invoked via Windows Task Scheduler on user's residential IP; commits+pushes new transcripts for GH Actions cron to reindex |
+| A10 | YouTube scraper on 2×/day cadence (cloud-ban-aware hybrid arch) | A | **SHIPPED (2026-04-23 evening, revised + scheduled)** | Initial ship added the step to [refresh.yml](../.github/workflows/refresh.yml); manual workflow_dispatch returned `Saved: 0 transcripts` (YouTube IP-bans cloud providers — see [errors.md](errors.md)). Reverted workflow step + `yt-dlp` pip dep. Final ship: [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat) invoked via Windows Task Scheduler on user's residential IP; commits+pushes new transcripts for GH Actions cron to reindex. `schtasks /create` executed same evening — task `pokemon-youtube-scraper` Ready, next fire 2026-04-24 07:57 local, 12h interval |
 | A11 | Increase Pikalytics + Sheets cron frequency | A | **SHIPPED (2026-04-23 evening)** | Bundled with A10 — same cron edit. Both sources now fire 2×/day instead of every 3 days |
 | **A12** | **Add Serebii scraper to cron (weekly / bi-weekly)** | A | NEXT (low urgency) | Static game data, but patches happen. Today it's manual-only — a patch would silently leave `pokemon_champions.csv` stale |
 | A13 | Surface "last refreshed" staleness telemetry | A | NEXT (UX) | `pc_index_meta.file_mtimes` exists + `checkStaleness()` reads it — not surfaced to users. Expose on `/lookup` progress + webapp footer so users can see data age |
@@ -199,25 +199,40 @@ Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-
 
 **Note.** Only pursue if user actually wants a premium-tier option. Today there's no clear demand.
 
-### A10 — YouTube scraper in GH Actions cron (2×/day) · SHIPPED (2026-04-23 evening)
-
-**What shipped.** [.github/workflows/refresh.yml](../.github/workflows/refresh.yml) gained a `Scrape YouTube transcripts` step (between Sheets scrape and reindex; `continue-on-error: true`). Cron schedule changed `0 6 */3 * *` → `0 0,12 * * *` (2×/day @ 00:00 + 12:00 UTC). `yt-dlp` added to the pip install line (the scraper shells out via `python -m yt_dlp` — `youtube-transcript-api` alone wasn't enough).
+### A10 — YouTube scraper on 2×/day cadence (hybrid local+cron) · SHIPPED (2026-04-23 evening, revised + scheduled)
 
 **User-specific ask (2026-04-23):** "we need to scrape from the youtube transcripts at least twice a day or however often the api allows for because it has very short limits and a lot of content is coming out."
 
-**Constraints respected.**
-- `YouTubeTranscriptApi` IP-throttles after ~24 sequential transcript requests; `continue-on-error: true` swallows any 429 so Pikalytics/Sheets still run. `scraper_youtube.py` already has `DELAY_SECONDS=1` + filename-based dedup against `data/transcripts/`.
-- GitHub Actions runner IP is shared — if we hit blocks over time, defensive options are: (a) cut back to 1×/day, (b) reduce `SEARCH_QUERIES` count, (c) residential proxy (no budget today). Monitor via workflow logs.
+**Initial attempt (reverted same session).** [.github/workflows/refresh.yml](../.github/workflows/refresh.yml) got a `Scrape YouTube transcripts` step between Sheets and reindex; `yt-dlp` added to pip install. Manual `workflow_dispatch` (run 24867630255) returned green but `Saved: 0 transcripts` — every fetch failed with `YouTube is blocking requests from your IP. [...] most IPs from cloud providers are blocked by YouTube`. `continue-on-error: true` hid it. Root cause: `youtube-transcript-api` categorically blocks cloud provider IPs (GH Actions runs on Azure). Not a rate-limit — a blanket IP-range ban. Step + `yt-dlp` dep reverted. Logged in [errors.md](errors.md) "YouTube cloud-IP ban".
 
-**Deferred to follow-up (not blocking).**
-- Dated log artifact showing per-run # new transcripts fetched / title-rejected / rate-limit hits — useful for tuning cadence but plain workflow stdout suffices for now.
+**Final architecture (hybrid).**
+- **Cloud (GH Actions, 2×/day):** Pikalytics + Sheets scrape + reindex. Cron `0 0,12 * * *` (unchanged from initial A10/A11 ship — still correct).
+- **Local (Windows Task Scheduler, 2×/day):** [scripts/scrape-youtube-local.bat](../scripts/scrape-youtube-local.bat) wraps `python scraper_youtube.py`, logs to `scripts/logs/youtube-YYYY-MM-DD.log`, commits `data/transcripts/` only, then `git pull --rebase --autostash origin main` + push. Runs on user's residential IP which YouTube doesn't block. Scrape-only — reindex is picked up by the next GH Actions cron fire.
+
+**Scheduled task.** Registered 2026-04-23 evening:
+```bash
+schtasks /create /tn "pokemon-youtube-scraper" \
+  /tr "C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\scripts\scrape-youtube-local.bat" \
+  /sc hourly /mo 12 /ru paulo /it
+```
+`schtasks /query` reports Status=Ready, Schedule=Every 12 Hours, Run As=paulo, Next Run=2026-04-24 07:57 local. `/it` fits the desktop use case (fires only when logged on, no stored password).
+
+**Why not a Claude-product scheduler.** Investigated all three tiers: `/loop` and Desktop Scheduled Tasks require Claude Code / Desktop to be open (unsuitable for unattended 12h cadence); Cloud Routines run on Anthropic infra → same cloud-IP ban + daily caps. Windows Task Scheduler is the correct tool — native residential IP, zero app dependency, no caps.
+
+**Constraints respected.**
+- `scraper_youtube.py` unchanged. `DELAY_SECONDS=1` + filename-based dedup against `data/transcripts/` already present.
+- `git pull --rebase --autostash` hardens the script against GH Actions cron pushing between scheduled fires (smoke test revealed the edge case where `.claude/scheduled_tasks.lock` + unstaged team_outputs broke a plain rebase).
+- `.bat` exits 0 unconditionally so Windows Task Scheduler doesn't flag empty runs as failures.
 
 **Gate.**
-- [ ] First scheduled run (next 00:00 UTC) completes cleanly — Pikalytics + Sheets + YouTube steps all exit 0 or are swallowed by `continue-on-error`.
-- [ ] No systemic IP-throttle errors over 2 weeks of the new cadence.
-- [ ] Reindex produces non-zero chunk delta on any run that fetched new transcripts.
+- [x] YAML still parses; `.bat` runs cleanly on the user's machine (smoke test 2026-04-23 19:49 CST: 22 new transcripts saved, commit `dfc3664` pushed to main as author `paulo`).
+- [x] Scheduled task registered + verified via `schtasks /query`.
+- [ ] After 2 scheduled fires (~24h), `data/transcripts/` has new `.md` files dated ≥ 2026-04-24 and a `refresh: local youtube scrape` commit by `paulo` on main (NOT `github-actions[bot]`).
+- [ ] Subsequent GH Actions cron reindex commit includes chunks from those new transcripts.
 
-**Rollback.** `git revert` the cron change. All data stays — the scraper is additive-only.
+**Rollback.** `schtasks /delete /tn "pokemon-youtube-scraper" /f` + `git revert` the .bat. Transcripts stay — they accumulate additively.
+
+**Risk remaining.** User's machine must be logged on when schtasks fires. Desktop use case makes this fine; if it becomes a gap, options are (a) drop `/it` and store password for unattended runs, (b) add `/wake` flag, (c) migrate to a residential-IP proxy in GH Actions (no budget today).
 
 ### A11 — Increase Pikalytics + Sheets cron frequency · SHIPPED (2026-04-23 evening)
 
