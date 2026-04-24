@@ -12,6 +12,48 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### A10 + A11 — YouTube / Pikalytics / Sheets cron cadence bump — SHIPPED (2026-04-23 evening) · single workflow edit
+
+- **Status:** SHIPPED. Single-file diff against [.github/workflows/refresh.yml](../.github/workflows/refresh.yml): cron `0 6 */3 * *` → `0 0,12 * * *` (every 3 days → 2×/day @ 00:00 + 12:00 UTC); added `Scrape YouTube transcripts` step between Sheets scrape and reindex with `continue-on-error: true`; added `yt-dlp` to the pip install line (scraper shells out via `python -m yt_dlp` — `youtube-transcript-api` alone wasn't enough).
+- **Why bundled:** A10 and A11 share the same cron file; A11 is zero-effort once the cron is already changing for A10 (the existing Pikalytics + Sheets steps just start firing 2×/day automatically). Splitting into two commits would be pure ceremony.
+- **User-specific ask (2026-04-23 evening):** "we need to scrape from the youtube transcripts at least twice a day or however often the api allows for because it has very short limits and a lot of content is coming out." Informed the choice of `0 0,12 * * *` over more aggressive options like `0 */8 * * *` (3×/day) — start conservative, bump up if two weeks of runs show no IP-throttle.
+- **Gap closed:** data-pipeline audit earlier the same day found YouTube was the most volatile source with zero automation — `scraper_youtube.py` ran manual-only, and `youtube-transcript-api` was already in the pip step but the script was never invoked. Classic "the last 5% would take 5 minutes but nobody wrote it down" situation.
+- **Constraints respected.**
+  - `continue-on-error: true` on the new step swallows any YouTube IP-throttle 429 so a blocked runner doesn't drop Pikalytics/Sheets on the same run.
+  - `scraper_youtube.py` already dedupes against `data/transcripts/` filenames and rate-limits itself at `DELAY_SECONDS=1`, so 2×/day stays well below the ~24-request community-reported IP-throttle ceiling under steady-state (most runs will fetch 0–10 new transcripts).
+  - Concurrency group `refresh` + `cancel-in-progress: false` (unchanged from prior) prevents runs from overlapping if one takes longer than 12h.
+- **Verification.**
+  - `python -c "import yaml; ..."` parses the workflow cleanly; 10 steps in the expected Pikalytics → Sheets → YouTube → reindex → commit order; cron string `0 0,12 * * *` survives YAML round-trip.
+  - `git diff --stat`: 1 workflow file + 4 memory-bank docs changed (activeContext, techContext, rag-master-plan, progress).
+  - Runtime validation deferred to the first scheduled run (next 00:00 UTC).
+- **Gate (observational, not blocking ship):**
+  - First scheduled run completes cleanly — Pikalytics + Sheets + YouTube steps all exit 0 or are swallowed by `continue-on-error`.
+  - No systemic IP-throttle errors across 2 weeks at the new cadence.
+  - `pc_index_meta.file_mtimes` shows YouTube transcripts refreshed within the last 12h once the cron has been running.
+- **Rollback.** Revert the single commit; `scraper_youtube.py` stays as-is (additive-only; writes new .md files, never deletes).
+- **Remaining Tier-A in priority order:** A13 (staleness UX), A6 (pikalytics Japanese cleanup), A7 (NL "X+Y core WR" retrieval), A12 (Serebii weekly cron, low urgency), A8/A9 optional, A4b low priority.
+- **Memory-bank hygiene:** A10/A11 roadmap rows flipped from NEXT to SHIPPED in [rag-master-plan.md](rag-master-plan.md); [techContext.md § Data Pipeline](techContext.md#data-pipeline) table updated to `0 0,12 * * *` cadence for all three automated scrapers; [activeContext.md](activeContext.md) "Next actions" list re-ordered to put A13 first.
+
+### A5 — Claude Opus 4.7 self-eval on 13-test agentic suite — SHIPPED (2026-04-23 evening) · report `team_outputs/claude-opus-self-eval-2026-04-23.md`
+
+- **Status:** SHIPPED. Deliverables: [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md) (full report) + [team_outputs/dragonite-items-eval-2026-04-23.md](../team_outputs/dragonite-items-eval-2026-04-23.md) (test 5 answer) + [team_outputs/rain-team-mega-feraligatr-eval-2026-04-23.md](../team_outputs/rain-team-mega-feraligatr-eval-2026-04-23.md) (test 2 answer) + memo at [memory/project_claude_opus_selfeval.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_claude_opus_selfeval.md). No code changes.
+- **Goal:** measure how the "local CLI" delivery surface (Claude Opus 4.7 via this CLI + `/lookup` + direct CSV reads) scores on the exact same 13-test agentic suite that benchmarks Gemma/DeepSeek/GLM/etc. User clarification ruled out the original A5 scope (registering Haiku/Sonnet as programmatic providers in eval-models.ts) — instead, I run the tests manually as the RAG client, score myself against the same predicates, and produce a cross-surface comparison.
+- **Outcome:**
+  - **10/10 on applicable tests.** PASS: tests 2, 5, 6, 7, 8, 9, 10, 11, 12, 13.
+  - **3 tests N/A.** Tests 1 (tool_workflow), 3 (validate_loop), 4 (pokedex_dedup) all score programmatic `pokedex` / `validate_set` tool-call patterns from `toolCallLog`. Claude-via-CLI uses `/lookup` + Read — same semantic work, different tool names, no `toolCallLog` equivalent. Marked as structurally inapplicable rather than forced through.
+  - **Comparison vs Gemma 4 26B baseline (13/13, 16327 tok/pass):** ties at 10/10 on the apples-to-apples 10-test subset. Claude averages ~5000 tok/test vs Gemma's ~16000/test. Neither model differentiates on this test set — eval saturates at this model tier.
+- **Execution protocol** (one pass, no retries, read-only except `team_outputs/` + memo):
+  - Each applicable test: run 1-3 `/lookup` queries mirroring Gemma's `search` tool, read ground-truth CSV rows when scorer needs numeric matching, write final answer matching the scorer's regex requirements, save team-producing outputs to `team_outputs/*.md` per CLAUDE.md rule, self-score by re-reading scoring predicate in [scripts/eval-models.ts:998-1281](../scripts/eval-models.ts).
+  - Rough token instrumentation per test for comparison context.
+- **Three new-task findings surfaced** (added to master plan as A6, A7, A8/A9):
+  - **Japanese text in 14/89 pikalytics rows.** `awk` scan of [pikalytics_usage.csv](../pikalytics_usage.csv) shows raw Japanese (たべのこし, じしゃく etc.) in `top_moves` and/or `top_items` columns for: Archaludon, Charizard, Gyarados, Venusaur, Whimsicott, Gengar, Sylveon, Aegislash, Arcanine-Hisui, Corviknight, Froslass, Palafin, Talonflame (both columns), Gallade (items), Typhlosion-Hisui (moves). Phase 8 Accept-Language fix ([errors.md](errors.md) row 20) caught Italian but missed these. User-visible: LLM answers about these mons' items/moves regurgitate Japanese. → A6.
+  - **Retrieval gap on NL "X+Y core WR" queries.** `/lookup "Archaludon Pelipper rain core win rate"` returned top-5 at 0.11 similarity — all `team_archetypes.md` chunks, NOT the `meta_snapshot.md:32` top-cores table containing the actual 55.8%. Reformulating to "top cores win rate ..." surfaced it at rank 3 / 0.078. Gemma's planner decomposition works around this; manual CLI users don't benefit. → A7.
+  - **Eval ceiling saturation.** Both Gemma and Claude Opus score 10/10 on applicable tests. If we want to justify a premium paid tier (Sonnet 4.6 / Opus 4.7 as web-agent providers), we need harder tests — adversarial retrieval, multi-hop, longer synthesis. Currently planned as A9. → defers the "register Haiku/Sonnet as providers" work.
+  - **CLI surface has no harness parity.** 3 N/A tests could be promoted to applicable with a small wrapper that captures `/lookup` + Read into `toolCallLog` shape. → A8.
+- **Strategic finding:** the originally-planned A5 scope (Haiku/Sonnet as providers) would not have produced a differentiating comparison on the current test set. Deferred under `Haiku-eval` row in the master plan roadmap table. Pursue only after A9 delivers a set where Gemma measurably falls short of the premium tier.
+- **Per-test scoring detail:** full table + prompts + ground truths + self-score verdicts live in [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md). Not duplicated here.
+- **Working-tree state:** unchanged (no code edits, only team_outputs + memo writes).
+
 ### Phase 5 — Stage 6.3 executor redesign — SHIPPED (2026-04-23) · commits `409ec84` + `1cd971d` · snapshot `retrieval-post-phase5-executor.json`
 
 - **Status:** SHIPPED. Two-step ship (mirrors Phase 4's refactor-first pattern): Step 1 `409ec84 refactor(rag): extract rawCandidates helper; single-query path unchanged` (behavior-preserving refactor, 99/100 cases bit-identical); Step 2 `1cd971d feat(rag): Stage 6.3 executor redesign — sub-queries compete with post-merge force-includes [Phase 5]` (the actual behavior change).

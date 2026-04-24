@@ -1,6 +1,6 @@
 # Pokemon Champions RAG — Master Plan (Canonical)
 
-_Last revision: 2026-04-23 (post 7-model bake-off + phantom-Pokemon interceptor ship). This doc is the canonical forward plan. History is archived in [progress.md](progress.md); right-now state in [activeContext.md](activeContext.md)._
+_Last revision: 2026-04-23 evening (post A5 + data-pipeline audit; A6/A7/A8/A9 from A5 findings, A10/A11/A12/A13 from data-freshness audit). This doc is the canonical forward plan. History is archived in [progress.md](progress.md); right-now state in [activeContext.md](activeContext.md); data-pipeline source-of-truth in [techContext.md](techContext.md#data-pipeline)._
 
 ---
 
@@ -50,7 +50,16 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | A4 | Phantom Pokemon interceptor (model-agnostic) | A | **SHIPPED (2026-04-23)** | `lib/phantom-guard.ts` + wiring in route.ts + eval-models.ts. Single-test smoke 1/1 in 0ms |
 | A3 | Content enrichment round | A | **SHIPPED (2026-04-23)** | Fresh Pikalytics + tournament CSVs; singles_meta.md; AngrySlowbroPlus viability section in meta_snapshot; TheDelybird templates in team_archetypes. Accepted team-intent -7.0% regression (fresh-data churn, not stale-doc). Baseline: [retrieval-post-A3.json](eval-baselines/retrieval-post-A3.json) |
 | A4b | Prompt hardening follow-up (optional belt-and-suspenders alongside interceptor) | A | DEFERRED | Tighten system prompt "call pokedex first" — only if interceptor alone shows gaps |
-| **A5** | **Haiku 4.5 / Sonnet 4.6 eval (paid premium tier)** | A | **NEXT (optional)** | Register models in eval-models.ts; run 13-test suite; decide if we offer a paid "premium" tier alongside Gemma default |
+| A5 | Claude Opus 4.7 self-eval on 13-test suite (CLI surface) | A | **SHIPPED (2026-04-23)** | 10/10 applicable, 3 N/A (programmatic tool-call predicates). Ties Gemma at ceiling. Report: [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md) |
+| **A6** | **Japanese→English cleanup for 14 pikalytics rows** | A | **NEXT** | Archaludon/Charizard/Gyarados/Venusaur/Whimsicott/Gengar/Sylveon/Aegislash/Arcanine-Hisui/Corviknight/Froslass/Palafin/Talonflame/Gallade/Typhlosion-Hisui have raw Japanese in `top_moves`/`top_items`. Re-scrape with stricter language enforcement OR add dictionary translation at chunk-time |
+| **A7** | **Retrieval hardening for "X+Y core WR" NL queries** | A | NEXT | Inline NL restatement of `meta_snapshot.md` top-cores table (e.g., "The Archaludon+Pelipper rain core has a 55.8% win rate"), OR add WR-pattern boost to `lib/rag/boost.ts` |
+| A8 | CLI harness wrapper for eval parity | A | OPTIONAL | Capture `/lookup` + Read into `toolCallLog` shape so 3 N/A tests become applicable to Claude-via-CLI |
+| A9 | Harder eval tests (adversarial retrieval) | A | OPTIONAL | Current 13-test suite saturates at Gemma 10/10 + Claude 10/10 — can't differentiate premium models. Add misleading-top-1, multi-hop, longer-synthesis cases |
+| A10 | YouTube scraper in GH Actions cron (2×/day) | A | **SHIPPED (2026-04-23 evening)** | [refresh.yml](../.github/workflows/refresh.yml) cron bumped to `0 0,12 * * *`; new `Scrape YouTube transcripts` step with `continue-on-error: true`; `yt-dlp` added to pip install line |
+| A11 | Increase Pikalytics + Sheets cron frequency | A | **SHIPPED (2026-04-23 evening)** | Bundled with A10 — same cron edit. Both sources now fire 2×/day instead of every 3 days |
+| **A12** | **Add Serebii scraper to cron (weekly / bi-weekly)** | A | NEXT (low urgency) | Static game data, but patches happen. Today it's manual-only — a patch would silently leave `pokemon_champions.csv` stale |
+| A13 | Surface "last refreshed" staleness telemetry | A | NEXT (UX) | `pc_index_meta.file_mtimes` exists + `checkStaleness()` reads it — not surfaced to users. Expose on `/lookup` progress + webapp footer so users can see data age |
+| Haiku-eval | Register + eval Haiku 4.5 / Sonnet 4.6 as web-agent providers | A | DEFERRED | Originally A5's scope before user reframed — only pursue if A9 delivers a differentiating test set |
 | B1 | Phase 3 reranker retry (cross-encoder, post-merge in executor) | B | DEFERRED (reassess after Tier A) | Only if Tier A doesn't close UX gap |
 | B2 | Subagents + progressive disclosure (split CLAUDE.md) | B | DEFERRED | Ergonomics; no user-visible urgency |
 | C1 | eval-models.ts / chunker.ts splits | C | DEFERRED | Housekeeping; ship if actively blocking |
@@ -128,16 +137,124 @@ Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-
 
 **Citation hallucination (separate from phantom_pokemon):** still open as a Gemma-side issue. Gemma occasionally fabricates chunk_ids even after the Phase 2 auto-retry nudge. Fix not shipped this session — the retry nudge in [lib/validate-citations.ts](../lib/validate-citations.ts) could be tightened to explicitly list the valid chunk_ids from the search result set. Fold into A3 or a future A4c if it proves user-visible.
 
-### A5 — Haiku 4.5 / Sonnet 4.6 eval _(optional premium tier)_
+### A5 — Claude Opus 4.7 self-eval · SHIPPED (2026-04-23)
 
-**Rationale.** If the user wants a "best-quality, pay a bit more" path for complex queries (full team audits, large counter-team requests), Anthropic models are available. Worth a quick eval so the option is measurable.
+**Outcome.** 10/10 on applicable tests. 3 tests marked N/A because they score programmatic `pokedex` / `validate_set` tool-call patterns that don't exist in the CLI surface. On the apples-to-apples 10-test subset, Claude-via-CLI ties Gemma 4 26B at 100%. Report: [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md). Memo: [memory/project_claude_opus_selfeval.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_claude_opus_selfeval.md).
+
+**Strategic finding:** The 13-test eval saturates at this model tier. Both Gemma 4 26B and Claude Opus 4.7 score 10/10 on applicable tests — registering Sonnet 4.6 / Opus 4.7 as web-agent providers (the original A5 scope) won't produce a differentiating result on this test set. Differentiation requires harder tests (see A9) — deferred that work under `Haiku-eval` row.
+
+**Three new-task findings** — see A6/A7/A8 below.
+
+### A6 — Japanese→English cleanup for 14 pikalytics rows (NEXT)
+
+**Rationale.** `awk` scan of [pikalytics_usage.csv](../pikalytics_usage.csv) finds 14/89 Pokemon with raw Japanese text in `top_moves` and/or `top_items` columns: Archaludon, Charizard, Gyarados, Venusaur, Whimsicott, Gengar, Sylveon, Aegislash, Arcanine-Hisui, Corviknight, Froslass, Palafin, Talonflame (both columns), plus Gallade (items only) and Typhlosion-Hisui (moves only). Example from Archaludon: `top_items=たべのこし:52.893|じしゃく:11.157|しろいハーブ:9.091|ヨプのみ:6.749|オボンのみ:4.270|...`. The Phase 8 `Accept-Language: en-US` header fix ([errors.md](errors.md) row 20) caught Italian but missed these — probably because Pikalytics served Japanese when the scraper ran for these particular mons, or the header didn't stick on cached entries.
+
+**User-visible impact.** Any LLM asked about these 14 mons' items/moves will either regurgitate Japanese directly (bad UX), translate on the fly (token cost + mistranslation risk), or misuse the data (e.g., "Archaludon uses じしゃく" in a response). Also hurts retrieval — embedding a mixed-language chunk doesn't cluster well against English queries.
 
 **Tasks.**
-- [ ] `npx tsx scripts/eval-models.ts --models haiku-4-5 --real-rag` × 1 (if registered; if not, skip — model needs registry entry).
-- [ ] `npx tsx scripts/eval-models.ts --models sonnet-4-6 --real-rag` × 1.
-- [ ] Document: pass rate, tok/pass, estimated $/test.
+- [ ] Option A (re-scrape): re-run `/refresh pikalytics` targeted at the 14 affected Pokemon. Verify the `Accept-Language` header + a cache-busting parameter actually produces English output.
+- [ ] Option B (translation layer): add a small Japanese→English item/move dictionary in the scraper (~30-50 items, 50-80 moves worth of coverage for these mons). Apply at scrape-time, not chunk-time (we ripped out chunk-time translation in Phase 1).
+- [ ] Either option: `/reindex` after; verify with `npx tsx scripts/search.ts "Archaludon best items" 3` returning English names.
 
-**Decision.** If Sonnet 4.6 hits 13/13 at <$0.10/query for a team-building call, document as the "premium" option but leave default as Gemma 4 26B or Llama 3.3 70B (whichever wins A1).
+**Gate.** Zero Japanese characters in `top_moves` or `top_items` columns post-fix. Retrieval eval no intent regression.
+
+### A7 — Retrieval hardening for "X+Y core WR" NL queries (NEXT)
+
+**Rationale.** A5 test 13 (meta_core_attribution — "Archaludon+Pelipper rain core WR") exposed a gap: `/lookup "Archaludon Pelipper rain core win rate"` returned top-5 at similarity 0.11 — all `team_archetypes.md` chunks, NOT the `meta_snapshot.md:32` top-cores table where the actual 55.8% lives. Reformulating to "top cores win rate Archaludon Pelipper Electro Shot" surfaced it at rank 3 / 0.078 similarity (still low). Gemma's agent works around this via query-planner decomposition (fans "Archaludon+Pelipper rain WR" into multiple sub-queries), but a direct `/lookup` user (CLI, or a less-capable agent) hits the bare gap.
+
+**Root cause.** The top-cores table is rendered as a markdown table with cells like `| Archaludon + Pelipper | 55.8% | 20.8% | Rain (Electro Shot) |`. The chunker produces a single chunk covering the whole table; the embedding gets dominated by the table-level words ("Top Cores by Win Rate") and loses the row-specific semantics.
+
+**Tasks.**
+- [ ] Option A (content tweak): add a short prose paragraph to [data/knowledge/meta_snapshot.md](../data/knowledge/meta_snapshot.md) after the top-cores table, like "The Archaludon+Pelipper rain core posts a 55.8% win rate (20.8% usage) driven by Electro Shot's instant fire in rain. Torkoal+Venusaur sun core 56.8%; Tyranitar+Excadrill sand rush core 56.2%." Natural-language phrasings retrieve better than table cells.
+- [ ] Option B (boost tuning): add a "core WR" query-pattern detector to [lib/rag/boost.ts](../lib/rag/boost.ts) that boosts `meta_snapshot.md` chunks when the query contains `<PokemonA> + <PokemonB>` / `<PokemonA> and <PokemonB>` / "core" / "win rate" keywords co-occurring.
+- [ ] Option A is cheaper and doesn't touch code. Do Option A first; only add Option B if Option A doesn't close the gap.
+
+**Gate.** `/lookup "Archaludon Pelipper rain core win rate" 3` returns `meta_snapshot.md` chunk containing 55.8% in top-3. Retrieval eval no intent regression.
+
+### A8 — CLI harness wrapper _(optional)_
+
+**Rationale.** Master plan Mission names "Local CLI (this conversation)" as a first-class delivery surface. But A5 revealed 3/13 eval tests are structurally inapplicable to the CLI surface because they score programmatic `pokedex` / `validate_set` call patterns from `toolCallLog`. Claude-via-CLI uses `/lookup` + direct Read instead — same semantic work, different tool names.
+
+**Tasks.**
+- [ ] Build a thin wrapper around `runAgent()` in [scripts/eval-models.ts](../scripts/eval-models.ts) that, when invoked with a Claude-CLI-backed provider, maps `/lookup` calls to `{name: "pokedex", args: {name: <query>}}` entries in `toolCallLog` and Read calls on `mega_evolutions.csv` / `pokemon_champions.csv` to `{name: "validate_set", args: {name: <row>}}`.
+- [ ] Register an "anthropic-cli" provider in the model registry with this shim.
+- [ ] Re-run 13-test suite with the shim — score should move from 10/10 applicable → 13/13 full.
+
+**Note.** Not urgent — A5's report already documents the N/A commentary. Only pursue if we want to sell the CLI path as a first-class eval target.
+
+### A9 — Harder eval tests _(optional)_
+
+**Rationale.** Current 13-test suite saturates: Gemma 4 26B = 13/13, Claude Opus 4.7 = 10/10 applicable. At this ceiling the eval can't differentiate premium models. If we want to justify a paid-premium tier (Sonnet 4.6 / Opus 4.7 as web-agent providers), we need tests where a bigger model actually scores higher.
+
+**Candidate test types.**
+- **Misleading top-1 chunk:** construct a query where the top-retrieved chunk is *almost* right but contradicted by a better chunk at rank 3-5. Score on whether the agent uses the better source.
+- **Multi-hop:** "What held item does the top-used Pokemon on rain teams use?" — requires querying rain archetype → identifying the top user → then looking up that user's items. Single-shot retrieval won't satisfy.
+- **Longer synthesis:** "Compare the Torkoal+Venusaur sun core vs the Archaludon+Pelipper rain core — which would you bring into a timer-pressure tournament and why?" Score on fact coverage from both sides + defensible argument.
+- **Intentional pre-evo / banned-item traps beyond the current phantom test:** probe whether model actually reads CLAUDE.md banned-items list or just memorizes that Life Orb is missing.
+
+**Tasks.**
+- [ ] Draft 5-10 new test cases in the style of existing eval-models.ts tests.
+- [ ] Validate with Gemma baseline first: if Gemma still hits 10/10, tests aren't differentiating. Tune difficulty until Gemma sits at 6/10-8/10.
+- [ ] Then run Sonnet 4.6 / Opus 4.7 against the harder set to justify "premium tier" if the delta is >2 tests.
+
+**Note.** Only pursue if user actually wants a premium-tier option. Today there's no clear demand.
+
+### A10 — YouTube scraper in GH Actions cron (2×/day) · SHIPPED (2026-04-23 evening)
+
+**What shipped.** [.github/workflows/refresh.yml](../.github/workflows/refresh.yml) gained a `Scrape YouTube transcripts` step (between Sheets scrape and reindex; `continue-on-error: true`). Cron schedule changed `0 6 */3 * *` → `0 0,12 * * *` (2×/day @ 00:00 + 12:00 UTC). `yt-dlp` added to the pip install line (the scraper shells out via `python -m yt_dlp` — `youtube-transcript-api` alone wasn't enough).
+
+**User-specific ask (2026-04-23):** "we need to scrape from the youtube transcripts at least twice a day or however often the api allows for because it has very short limits and a lot of content is coming out."
+
+**Constraints respected.**
+- `YouTubeTranscriptApi` IP-throttles after ~24 sequential transcript requests; `continue-on-error: true` swallows any 429 so Pikalytics/Sheets still run. `scraper_youtube.py` already has `DELAY_SECONDS=1` + filename-based dedup against `data/transcripts/`.
+- GitHub Actions runner IP is shared — if we hit blocks over time, defensive options are: (a) cut back to 1×/day, (b) reduce `SEARCH_QUERIES` count, (c) residential proxy (no budget today). Monitor via workflow logs.
+
+**Deferred to follow-up (not blocking).**
+- Dated log artifact showing per-run # new transcripts fetched / title-rejected / rate-limit hits — useful for tuning cadence but plain workflow stdout suffices for now.
+
+**Gate.**
+- [ ] First scheduled run (next 00:00 UTC) completes cleanly — Pikalytics + Sheets + YouTube steps all exit 0 or are swallowed by `continue-on-error`.
+- [ ] No systemic IP-throttle errors over 2 weeks of the new cadence.
+- [ ] Reindex produces non-zero chunk delta on any run that fetched new transcripts.
+
+**Rollback.** `git revert` the cron change. All data stays — the scraper is additive-only.
+
+### A11 — Increase Pikalytics + Sheets cron frequency · SHIPPED (2026-04-23 evening)
+
+**What shipped.** Bundled into A10's cron edit. Both scrapers now fire 2×/day (`0 0,12 * * *`) instead of every 3 days. Zero extra lines — the existing Pikalytics + Sheets steps stay in place, they just fire more often.
+
+**Gate.**
+- [ ] No 429/403 from either source across 5 consecutive runs.
+- [ ] Chunk count in `pc_index_meta` grows on at least one run per week (sanity: data IS churning).
+
+### A12 — Serebii scraper in cron (weekly / bi-weekly, low urgency)
+
+**Rationale.** Serebii is static game data — Pokémon rosters, moves, items, abilities. It only drifts when Nintendo patches Champions. Today `scraper.py` is manual-only; a patch drops and `pokemon_champions.csv` / `mega_evolutions.csv` / `moves.csv` silently go stale until someone notices.
+
+**Tasks.**
+- [ ] Add a weekly cron `0 4 * * 0` (Sunday @ 04:00 UTC) that runs `scraper.py` + reindex. Separate workflow file or extra job in `refresh.yml` — doesn't need to co-run with the high-frequency scrapers.
+- [ ] `continue-on-error: true` — Serebii is Cloudflare-fronted; occasional 503s are routine.
+- [ ] Log diff of row-counts per CSV — if `pokemon_champions.csv` suddenly gains 2 rows, that's a patch signal worth a channel notification (not in scope; flag as C-tier).
+
+**Gate.**
+- [ ] Weekly run completes cleanly for 2 consecutive weeks.
+- [ ] Row-count of each output CSV stable (no unintended data loss).
+
+### A13 — Surface "last refreshed" staleness telemetry (UX)
+
+**Rationale.** Staleness plumbing already exists: [lib/rag.ts](../lib/rag.ts) `checkStaleness()` reads `pc_index_meta.file_mtimes` at query time and warns on stderr. Users never see this. If the pipeline is occasionally down (rate-limit, cron failure), users would benefit from knowing "this answer is based on data refreshed 4 days ago."
+
+**Tasks.**
+- [ ] Emit a `staleness` field in the `/lookup` progress stream + the webapp API response — include `{last_refresh_utc, hours_since}` per source.
+- [ ] Add a small footer on the webapp `/team` page: "Data refreshed N hours ago."
+- [ ] Consider a hard-banner when any source is > 72h stale (would have caught the "YouTube scraper not in cron" gap proactively).
+
+**Gate.**
+- [ ] Webapp footer renders with current age on every page load.
+- [ ] `/lookup` progress stream includes `staleness` field on at least one stage.
+- [ ] Test: manually bump a file's mtime and confirm the UI reflects the new age.
+
+**Note.** Implementation is 1–2 hours of plumbing. Low technical risk, clear user value. Schedule after A10 (which prevents the most common "stale" scenario from occurring in the first place).
 
 ---
 
@@ -216,8 +333,14 @@ npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
 | Pre-Phase-5 | 0.849 | 12/13 | Prior baseline |
 | Phase 5 ship (2026-04-23 AM) | 0.853 | 12-13/13 @ Gemma | Executor redesign |
 | A1/A2 bake-off (2026-04-23) | 0.853 | 12-13/13 @ Gemma (retained) | No challenger beat Gemma on cost+quality |
-| **A4 interceptor ship (2026-04-23)** | **0.853 confirmed unchanged** | **13/13, 13/13, 12/13** with phantom_pokemon 3/3 | `team_json` is the new Run-3 flake (pre-existing). phantom_pokemon now short-circuits pre-LLM. Citation still 80-100% (Gemma-side hallucination, separate A4c) |
-| A3 ship (2026-04-23 PM) | **0.845** (-0.94%) | **13/13 @ Gemma, 100% cit-rate, 16327 tok/pass** | Team intent -7.0% (fresh-data churn on tournament/pikalytics roster queries — 2 wolfey cases + 1 ck49 structural; AngrySlowbroPlus case recovered via Task 2 trim). Agentic eval strongest-signal PASS. Accepted vs golden-set-frozen-label staleness |
+| A4 interceptor ship (2026-04-23) | 0.853 confirmed unchanged | 13/13, 13/13, 12/13 with phantom_pokemon 3/3 | `team_json` is the Run-3 flake; phantom_pokemon short-circuits pre-LLM |
+| A3 ship (2026-04-23 PM) | 0.845 (-0.94%) | 13/13 @ Gemma, 100% cit-rate, 16327 tok/pass | Team intent -7.0% (fresh-data churn accepted) |
+| **A5 ship (2026-04-23 evening)** | unchanged | **Claude Opus 10/10 applicable, 3 N/A** | CLI surface ties Gemma on ceiling; eval saturation identified → A9 backlog |
+| Post A6 (Japanese cleanup) | expected ≥0.845 | 13/13 @ Gemma | Data hygiene; improves retrieval on 14 affected mons |
+| Post A7 (NL "X+Y WR" hardening) | expected ≥0.845 | 13/13 @ Gemma | Closes the top-cores NL-query gap |
+| **A10/A11 ship (2026-04-23 evening)** | expected ≥0.845 drifting up as new transcripts land | 13/13 @ Gemma (unchanged at ship; gains accrue as cron lands fresh data) | Freshness — YouTube + Pikalytics + Sheets all now 2×/day; lag 72h → 12h max. Next scheduled run will be the first validation |
+| Post A12 (Serebii in cron) | expected ≥0.845 | 13/13 @ Gemma | Patch safety; no quality delta under steady state |
+| Post A13 (staleness telemetry) | unchanged | unchanged | UX transparency only |
 | Post A4c (citation hallucination fix, if pursued) | 0.853 | 13/13 + citation validity ≥95% | Tightens retry-nudge in lib/validate-citations.ts |
 | If B1 ever ships | 0.87-0.90 est | 12-13/13 | Marginal UX gain vs infra cost |
 

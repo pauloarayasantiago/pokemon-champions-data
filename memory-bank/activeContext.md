@@ -1,6 +1,6 @@
 # Active Context
 
-_Last updated: 2026-04-23 PM (post A3 content-enrichment ship). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md)._
+_Last updated: 2026-04-23 evening (post A5 self-eval + A10/A11 cron ship). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md); data-pipeline source-of-truth in [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
 
 ## TL;DR
 
@@ -11,20 +11,35 @@ _Last updated: 2026-04-23 PM (post A3 content-enrichment ship). Purpose: one-pag
 - **Default model retained: `gemma-4-26b`.** No challenger beat it on cost+quality. DeepSeek V3.2 matches at 3× cost; GLM-4.5-Air matches at 5× cost with 3.4× token variance. Detail in [memory/project_default_model.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_default_model.md).
 - **Gemma 4 26B A4B is PAID** ($0.06/$0.33 per M, ~$0.008/run) — earlier docs mis-labeled it as free tier. The `:free` suffix applies only to the 31B variant.
 - **Bug fix shipped:** `lib/rag.ts:223` default `RERANKER` fallback changed from `"jina"` to `"none"`. Jina's account has been depleted; fallback was wasting 300-500ms per RAG call on a silent 403. Retrieval unchanged.
+- **A5 SHIPPED (2026-04-23 evening):** Claude Opus 4.7 self-eval on same 13-test agentic suite via `/lookup` + direct CSV reads. **10/10 on applicable tests, 3 N/A** (tool_workflow / validate_loop / pokedex_dedup score programmatic tool-call patterns inapplicable to manual CLI flow). Ties Gemma at 10/10 on apples-to-apples subset → the 13-test suite saturates at this model tier; premium-model differentiation needs harder tests. Report: [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md); memo: [project_claude_opus_selfeval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_claude_opus_selfeval.md).
+- **A5 findings surfaced 3 new tasks** (see master plan for A6/A7/A8):
+  - **A6 — Japanese text in 14/89 pikalytics rows.** `awk` scan found Archaludon, Charizard, Gyarados, Venusaur, Whimsicott, Gengar, Sylveon, Aegislash, Arcanine-Hisui, Corviknight, Froslass, Palafin, Talonflame (items+moves), plus Gallade (items) and Typhlosion-Hisui (moves) with raw Japanese (たべのこし etc.) in `top_moves`/`top_items` columns. Phase-8 Accept-Language header didn't fully catch these. User-visible: LLM answers about these 14 mons' items/moves may regurgitate Japanese.
+  - **A7 — Retrieval gap on "X+Y WR" natural-language queries.** `/lookup "Archaludon Pelipper rain core win rate"` returned top-5 at 0.11 similarity — all `team_archetypes.md` chunks, NOT the `meta_snapshot.md:32` top-cores table where the actual 55.8% lives. Reformulating as "top cores win rate ..." surfaced it at rank 3 / 0.078. Gemma works around via planner decomposition; manual CLI users hit the gap.
+  - **A8 — CLI harness for eval parity.** 3/13 tests score programmatic `pokedex`/`validate_set` patterns — structurally inapplicable to Claude-via-CLI even though "Local CLI" is a first-class Mission surface. Small wrapper capturing `/lookup` + Read into `toolCallLog` shape would promote them to applicable.
+- **Data pipeline audit (2026-04-23 evening) → A10/A11/A12/A13.** Inventoried all 4 scrapers (Serebii, Pikalytics, Sheets, YouTube) into [techContext.md § Data Pipeline](techContext.md#data-pipeline). Findings: only Pikalytics + Sheets were in the GH Actions cron `0 6 */3 * *` (every 3 days); YouTube was manual-only despite being the most volatile source; Serebii is also manual-only. User specified "scrape YouTube ≥2×/day or however often the API allows." A10 + A11 **SHIPPED same evening** (cron bumped to `0 0,12 * * *`; YouTube step added; `yt-dlp` added to pip install). A12 (Serebii weekly) and A13 (staleness UX) remain open.
 
 ## Next actions (Tier A, in order)
 
-1. **A5 — Haiku 4.5 / Sonnet 4.6 eval** (now top Tier A since A1/A2/A3/A4 shipped): register in [scripts/eval-models.ts](../scripts/eval-models.ts); run 13-test `--real-rag` suite; decide whether to offer a measured paid "premium" tier alongside Gemma default. Optional — run if user wants the option.
-2. **A4b — Prompt hardening (optional follow-up to interceptor)** — tighten system prompt "MUST call pokedex first" directive as belt-and-suspenders alongside the interceptor. Low priority since interceptor is the structural fix.
-3. Tier B: Phase 3 reranker retry (deferred; marginal ROI).
+1. **A13 — Surface staleness telemetry** (UX): expose `pc_index_meta.file_mtimes` as "data refreshed N hours ago" footer on webapp + `/lookup` progress stream. Plumbing exists in `checkStaleness()`. Now that A10/A11 fixed the freshness side, surfacing staleness closes the feedback loop (would have caught the "YouTube not in cron" gap proactively).
+2. **A6 — Japanese→English cleanup pass for pikalytics CSV**: either re-scrape the 14 affected Pokemon with stricter language enforcement, or add a dictionary-translation step at scrape-time. High user-visible value, low complexity. See [errors.md](errors.md) entry.
+3. **A7 — Retrieval hardening for "X+Y core WR" queries**: small content tweak — inline a natural-phrasing restatement of the top-cores table in `meta_snapshot.md` (e.g., "The Archaludon+Pelipper rain core has a 55.8% win rate"), OR add WR-pattern boost to `lib/rag/boost.ts`. Low-hanging.
+4. **A12 — Add Serebii scraper to cron** (low urgency): weekly/bi-weekly. Patch-safety net.
+5. **A8 — CLI harness wrapper** (optional): instrument `/lookup` + Read into `toolCallLog` so the 3 N/A tests become applicable to Claude-via-CLI. Makes the eval comparison complete.
+6. **A9 — Harder eval tests** (optional): the 13-test suite saturates at 10/10 for both Gemma and Claude Opus. To differentiate premium models (Sonnet 4.6, Opus 4.7), add adversarial retrieval tests.
+7. **A4b — Prompt hardening** — unchanged, low priority.
+8. Tier B: Phase 3 reranker retry (deferred; marginal ROI).
+
+**Observational gate on A10/A11 ship:** first scheduled run fires at next 00:00 UTC. Monitor workflow logs for IP-throttle on YouTube; if systemic, cut back to 1×/day. Pikalytics + Sheets are polite and should have zero issues at 2×/day.
 
 ## Session 2026-04-23 — SHIPPED list
 
+- **A10/A11 (data-pipeline cron) — SHIPPED (evening).** [.github/workflows/refresh.yml](../.github/workflows/refresh.yml) cron `0 6 */3 * *` → `0 0,12 * * *` (2×/day @ 00:00 + 12:00 UTC). New `Scrape YouTube transcripts` step (`continue-on-error: true`) inserted between Sheets and reindex. `yt-dlp` added to pip install (scraper shells out via `python -m yt_dlp`; `youtube-transcript-api` alone insufficient). Bundles A11 by default (Pikalytics + Sheets ride same cadence). Observational gate: monitor next scheduled run for IP-throttle; fall back to 1×/day if systemic.
 - A1 (Groq Llama 3.3 70B eval) — NO-GO; Groq parser rejects Llama native tool format + 12k TPM cap. Memo: [project_groq_llama33_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_groq_llama33_eval.md).
 - A2 (Ollama local eval) — NO-GO on 7-8B Q4 for this workload; qwen2.5-7b 8/13 + llama3.1-8b 4/13. Registry additions retained for future stronger local models.
 - A4 (phantom_pokemon interceptor) — SHIPPED; single-test smoke passes in 0ms/0 tokens; 3-run variance 3/3 pass post-ship.
 - OpenRouter bake-off — DeepSeek V3.2, GLM-4.5-Air (3-run), Gemini 2.5 Flash Lite. No challenger beat Gemma on cost+quality. Registry adds in `scripts/eval-models.ts`.
 - Jina default fix — `lib/rag.ts:223`.
+- A5 (Claude Opus 4.7 self-eval) — SHIPPED (evening); 10/10 applicable, 3 N/A. Full report at [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md). **Surfaced A6 (Japanese items/moves in 14 pikalytics rows), A7 (NL "X+Y WR" retrieval gap), A8 (CLI harness gap), A9 (eval ceiling saturation).**
 - **A3 (content enrichment) — SHIPPED (PM)** · commits `3555ad2`..`8b31999`:
   - Task 1: fresh Pikalytics (89/216 Pokemon) + VGCPastes tournament CSV (445 teams). Reindex 2511 chunks vs 2329 prior.
   - Task 2: short 3-line "Viability vs Usage" paragraph in [data/knowledge/meta_snapshot.md](../data/knowledge/meta_snapshot.md) citing AngrySlowbroPlus's top-5. Initial 22-line structured version dominated 5+ chunks → trimmed after retrieval-regression signal.
@@ -143,14 +158,19 @@ Tier B / C + dead code cleanup detail: master-plan.
 
 ## Working tree
 
-Clean after A3 ship (6 commits: `3555ad2` CSVs, `50631e2` meta_snapshot, `3eaa3a2` singles_meta, `05dbd43` team_archetypes, `8b31999` eval baselines, memory-bank update is this commit). Index: 2511 chunks. Default behavior (`RERANKER` unset) remains RRF + boosts only.
+Post A10/A11: uncommitted changes to [.github/workflows/refresh.yml](../.github/workflows/refresh.yml) (cron + YouTube step + `yt-dlp` pip), plus memory-bank updates reflecting the ship. Prior A3 ship: 6 commits on main (`3555ad2` CSVs, `50631e2` meta_snapshot, `3eaa3a2` singles_meta, `05dbd43` team_archetypes, `8b31999` eval baselines). Index: 2511 chunks. Default behavior (`RERANKER` unset) remains RRF + boosts only.
 
 ## Immediately queued — see top-of-doc Tier A list
 
-All of A1/A2/A3/A4 have shipped this session. Remaining Tier A:
+A1/A2/A3/A4/A5/A10/A11 all shipped this session. Remaining Tier A (in priority order):
 
-1. **A5 — Haiku 4.5 / Sonnet 4.6 eval** _(optional premium tier)_ — register in [scripts/eval-models.ts](../scripts/eval-models.ts), run 13-test suite, document cost+quality vs Gemma. Only proceed if user wants a paid-premium option alongside Gemma default.
-2. **A4b — Prompt hardening follow-up** — low priority; only if interceptor shows production gaps.
+1. **A13 — Surface staleness telemetry** — expose existing `checkStaleness()` info to UX.
+2. **A6 — Japanese→English pikalytics cleanup** — 14/89 rows have raw Japanese in top_moves/top_items.
+3. **A7 — NL "X+Y core WR" retrieval hardening** — restate top-cores table in natural prose.
+4. **A12 — Add Serebii to cron weekly** — patch-safety, low urgency.
+5. **A8 — CLI harness wrapper** _(optional)_ — promote 3 N/A tests to applicable for Claude-via-CLI.
+6. **A9 — Harder eval tests** _(optional)_ — current suite saturates; needs adversarial retrieval to differentiate Sonnet/Opus.
+7. **A4b — Prompt hardening follow-up** — low priority.
 
 Tier B (Phase 3 retry, subagents) and Tier C (housekeeping refactors, deferred extensions) detail in [rag-master-plan.md](rag-master-plan.md).
 
