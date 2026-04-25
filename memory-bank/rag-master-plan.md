@@ -95,67 +95,26 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | R2 | Enrich `pokedex` tool output with Pikalytics usage stats | R | **SHIPPED (2026-04-25)** | New `loadPikalyticsContext()` + `lookupPikalytics()` helpers in [src/lib/tools.ts](../src/lib/tools.ts) (module-level cache, parses `pikalytics_usage.csv`). Pokedex case appends `competitive: {rank, usagePct, topMoves, topItems, topAbilities, topTeammates, source}` block (capped 4-6 each) when the mon is in the index. Tool description updated. Smoke test [scripts/smoke-pokedex-enrich.ts](../scripts/smoke-pokedex-enrich.ts) confirms: 89 rows loaded, Froslass enriched (rank 19, 10% usage), low-usage mons (Krookodile, Flapple) gracefully fall through to base-only response |
 | R3 | Strip wasteful "Pokemon Champions"/"Regulation M-A" prefix at search tool | R | **SHIPPED (2026-04-25)** | New `stripChampionsPrefix()` regex in [src/lib/tools.ts](../src/lib/tools.ts) `executeSearch()` — anchored, case-insensitive, handles "Pokemon Champions ", "Champions ", "Reg M-A ", "Regulation MA ", "PoChamp " variants. Smoke test confirms strip on all variants, no-op on clean queries, preserves original if strip would yield <3 chars. System-prompt also nudges models to skip the prefix |
 | A14 | Pikalytics non-EN detection misses ASCII-Latin scripts (Italian) | A | OPEN | Discovered during R2 smoke test 2026-04-25: `pikalytics_usage.csv` Froslass row currently in Italian (Bora=Blizzard, Protezione=Protect, Velaurora=Aurora Veil, etc.). A6's `[^\x00-\x7f]` detector misses Italian/Spanish/French because they use the standard Latin alphabet without diacritics on common words. Fix: cross-check scraped move names against canonical English `moves.csv` and trigger retry/fallback when >50% don't match. Surfaced from R2 smoke. Detail in [progress.md](progress.md) |
+| A15 | Team-level structural validation (item clause + species clause + SP caps) | A | **SHIPPED (2026-04-25 night)** | New [lib/validate-team.ts](../lib/validate-team.ts) (extract+validate+nudge formatter, mirrors validate-citations.ts shape). Wired into [src/app/api/team/route.ts](../src/app/api/team/route.ts) (one-shot `team_retry` SSE event + final `team_result` event for observability) and [scripts/eval-models.ts](../scripts/eval-models.ts) (parallel one-shot retry + AgentResult/TestResult `teamValid`/`teamRetryFired`/`teamDuplicateItemCount`/`teamDuplicateSpeciesCount`/`teamSpreadIssueCount` fields). Catches: items appearing >1×, Pokemon appearing >1×, per-stat >32 SP, total >66 SP. Smoke test [scripts/smoke-validate-team.ts](../scripts/smoke-validate-team.ts) confirms detection on real-world bad teams: Gemma `aw0u5a` (Milotic+Kingambit spread 84) and Kimi `6nfkt7` (2× Black Glasses). Runs BEFORE citation validation in both surfaces (a team-retry regenerates the whole response, so citation check on the failed draft would be wasted) |
 
 ---
 
-## Session findings (2026-04-23)
+## Session findings (eval bake-offs)
 
-Appended post strategic reframe. Captures the 7-model bake-off + phantom interceptor ship in one place so future sessions don't re-read the progress.md entry to orient.
+Full per-model eval data lives in `.claude/projects/.../memory/project_<model>_eval.md` files. Cross-session memory is the canonical source per model. The 2026-04-23 7-model bake-off retained Gemma 4 26B as default; no challenger beat on cost+quality. The 2026-04-25 5-model real-world team-build compare (Gemini 3 Flash, Gemma, DeepSeek V4 Flash, Kimi K2.6, DeepSeek V4 Pro [429]) is captured in [progress.md](progress.md) "Compare" entries — full headlines: Gemini 3 Flash 21.3s 8/8 citations (fastest, default for `/team`); Kimi K2.6 18.2 min slowest; DeepSeek V4 Flash 11.3 min most thorough; Gemma 58.8s with retry (eval default). 4 untested: MiniMax M2.7, MiniMax M2.5, Grok 4.1 Fast, DeepSeek V4 Pro (BYOK needed).
 
-**Models evaluated** (all `--real-rag`, 13-test agentic suite, 1-run smoke unless noted):
-
-| Model | Pass | Citations | Tok/pass | Latency | Est $/run | Verdict |
-|---|---|---|---|---|---|---|
-| Gemma 4 26B A4B (default, 3-run history) | 12-13/13 | 80-100% | 25k | 44s | ~$0.008 | **Retained as default** |
-| Groq Llama 3.3 70B | 0/13 | n/a | n/a | n/a | free | NO-GO (tool_use_failed + 12k TPM) |
-| GPT-OSS 20B | crashed | n/a | 550k (test 1) | 665s (test 1) | high | NO-GO (reasoning bloat + socket timeout) |
-| qwen2.5-7b (Ollama local) | 8/13 | 60% | 17k | 100s | $0 | Best of 4 locals, still below bar |
-| llama3.1-8b (Ollama local) | 4/13 | 20% | 17.4k | 124s | $0 | Below bar |
-| qwen3:8b (Ollama local) | 4/13 | 40% | 8.9k | 136s | $0 | Behavior 0/5 (all timeouts); NOT upgrade over qwen2.5-7b |
-| qwen2.5-coder:7b (Ollama local) | 2/13 | 0% | 34k | 73s | $0 | Coder variant fails retrieval entirely |
-| DeepSeek V3.2 | 12/13 | 100% | 62k | 85s | ~$0.022 | Viable paid opt-in, not default-worthy |
-| GLM-4.5-Air (3-run) | 13/12/12 | 100%/100%/100% | avg 92k (46/155/75) | avg 48s | **~$0.038** | Tightest citation floor; token variance disqualifies as default |
-| Gemini 2.5 Flash Lite | 10/13 | 20% | 37k | 12s | ~$0.008 | Fast + cheap but chaotic (47 nudges) |
-
-**Key insight:** Every LLM tested (including those matching Gemma's pass rate) failed `phantom_pokemon` at 1/3-3/3 rate. Switching LLMs does NOT fix this — it's systemic. Master plan's A4 reframed from "Gemma flake fix" to "agent-side interceptor (model-agnostic)".
-
-**Addendum 2026-04-25 — first prod-shape `gemini-3-flash` observation (single run, not a full eval):**
-
-| Model | Pass | Citations | Tok/pass | Latency | Tool calls | Verdict |
-|---|---|---|---|---|---|---|
-| gemini-3-flash (1-shot Snow-Balance prompt via webapp) | n/a single | **8/8 valid (0 retries)** | n/a | 21.3s | 25 across 4 iters (high parallel fan-out) | A4c held on out-of-distribution model; no banned-item hallucination this run; Gemma comparison run pending from user. Detail in [progress.md](progress.md) "Real-world `gemini-3-flash` run observed" entry |
-
-**A4 interceptor shipped:** [lib/phantom-guard.ts](../lib/phantom-guard.ts) + wiring in [src/app/api/team/route.ts](../src/app/api/team/route.ts) (POST handler, post-meta/pre-loop) and [scripts/eval-models.ts](../scripts/eval-models.ts) (`runAgent()`). Reuses `PRE_EVO_MAP` (newly exported from [lib/team-validator.ts](../lib/team-validator.ts)) for 23 pre-evos + small `EXPLICIT_PHANTOMS` table (Amoonguss today; extensible). Hyphen-aware word-boundary match. 18 unit assertions pass; single-test `phantom_pokemon` smoke 1/1 in 0ms / 0 tokens.
-
-**Bug fix:** [lib/rag.ts:223](../lib/rag.ts) default `RERANKER` fallback `"jina"` → `"none"`. Was wasting 300-500ms per RAG call on silent 403s. Retrieval baseline 0.853 unchanged.
-
-**Registry additions in [scripts/eval-models.ts:59-78](../scripts/eval-models.ts):** `llama-3.3-70b` (Groq), `gpt-oss-20b`, `gemini-2.5-flash-lite`, `glm-4.5-air` (paid OR), `qwen3-8b`, `qwen2.5-coder-7b` (Ollama local). Plus new `GROQ_API` endpoint constant alongside `OLLAMA_LOCAL` / `OLLAMA_REMOTE`.
+**Key cross-session insight:** every LLM fails `phantom_pokemon` at 1/3-3/3 rate. Switching LLMs does NOT fix it — A4 interceptor is the structural model-agnostic fix. Same for citation hallucination (A4c) and team-level constraints (A15) — structural validators, not prompt-only nudges.
 
 ---
 
 ## Part A — Active priorities (user-value first)
 
-### A1 — Groq Llama 3.3 70B eval · SHIPPED — NO-GO (2026-04-23)
+All A1-A13 + A15 SHIPPED rows have detail in the roadmap-status table above and full archive entries in [progress.md](progress.md). A14 (Pikalytics ASCII-Latin detection gap) is the only OPEN item — see roadmap row for fix candidate. A8/A9 remain optional (deferred unless concrete need surfaces).
 
-0/13. Groq's server-side parser rejects Llama 3.3 70B's native XML tool-call format (`<function=name{...}/>`) even with OpenAI-format `tools` + `tool_choice: "auto"` in the request; separately, the free-tier 12k TPM cap can't fit the 13-test suite's ~4k tokens/call bursts. Registry entry retained in case Groq fixes the parser or the user opens a paid tier. Detail: [memory/project_groq_llama33_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_groq_llama33_eval.md).
 
-### A2 — Ollama local model eval · SHIPPED — NO-GO (2026-04-23)
 
-Four local models tested at Q4_K_M on RTX 2070 SUPER 8GB: qwen2.5-7b (8/13 — best), llama3.1-8b (4/13), qwen3:8b (4/13, behavior 0/5 all timeouts), qwen2.5-coder:7b (2/13, 0% citations). None cleared the 10/13 viable-local bar. "Smaller models lose coherence after 2-3 steps" pattern matches community reports. **Every local passed `phantom_pokemon` in 0.0s**, confirming the interceptor works model-agnostic. A genuine free local path would need 12GB+ VRAM (remote server) for a 14B+ Q4 model. Registry entries retained for reference. Memos: [project_qwen3_8b_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_qwen3_8b_eval.md), [project_qwen25_coder_7b_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_qwen25_coder_7b_eval.md).
+_A3-A7, A10-A13 detail moved to [progress.md](progress.md). Roadmap-status table above carries the canonical 1-line summary per phase._
 
-### A1-alt — OpenRouter paid bake-off · SHIPPED (2026-04-23)
-
-User authorized paid OR credits; tested DeepSeek V3.2, GLM-4.5-Air (3-run), Gemini 2.5 Flash Lite, and GPT-OSS 20B. Full table in the "Session findings (2026-04-23)" section above. Verdict: none beat Gemma 4 26B A4B on cost+quality. DeepSeek is a viable paid opt-in (100% citation floor, 3× cost); GLM matches Gemma on pass rate but with 3.4× token-variance; Gemini 2.5 Flash Lite is fast + cheap but chaotic (20% citations). Registry entries retained as opt-ins. Memos in the memory/ folder.
-
-### A3 — Content enrichment round (NEXT)
-
-**Rationale.** Retrieval quality is a ceiling set by what's in the index. Users ask about the current meta — if the data is 3 months stale, no amount of boost tuning saves the answer. This is the highest-ROI "work on the data, not the code" phase.
-
-**Tasks.**
-- [ ] **Singles-meta coverage.** `data/knowledge/singles_meta.md` — Singles ladder diverges from Doubles; users sometimes ask. Write ~150-line doc covering top-20 singles usage, key differences from Doubles, banned-in-Singles mechanics.
-- [ ] **Tier-list reconciliation.** `memory-bank/...`-style drift: `meta_snapshot.md` lists Incineroar-first; AngrySlowbroPlus's latest video puts Sinistcha-first. Update `meta_snapshot.md` with a reconciliation section or defer to the creator's take.
-- [ ] **Fresh tournament data.** Run `/refresh pikalytics` + scrape any tournaments from the last 2 weeks. `/reindex` after.
-- [ ] **Phase 12 items from old plan:** `creator_opinion` test verification (may already pass — confirm), TheDelybird's 5 template archetypes with EV pastes.
 
 **Gates.**
 - [ ] Reindex produces ≥ 2,329 chunks (baseline) + new content. No translation-missing warnings.
@@ -163,50 +122,6 @@ User authorized paid OR credits; tested DeepSeek V3.2, GLM-4.5-Air (3-run), Gemi
 - [ ] Spot-check: `npx tsx scripts/search.ts "best singles Pokemon" 5` returns singles-meta.md in top-3.
 
 **No commit gate** — content updates are low-risk; ship per item.
-
-### A4 — Phantom Pokemon interceptor · SHIPPED (2026-04-23)
-
-Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-agnostic)" after 7-model bake-off confirmed every LLM fails `phantom_pokemon` at ~1/3-3/3 rate. Fix shipped at [lib/phantom-guard.ts](../lib/phantom-guard.ts); wired into [src/app/api/team/route.ts](../src/app/api/team/route.ts) (post-meta, pre-agent-loop; emits `phantom_pokemon_refused` SSE event + content delta + done) and [scripts/eval-models.ts](../scripts/eval-models.ts) (`runAgent()` short-circuit). Exported `PRE_EVO_MAP` from [lib/team-validator.ts](../lib/team-validator.ts) (23 pre-evolutions) + added small `EXPLICIT_PHANTOMS` table (Amoonguss today; extensible). 18 unit assertions pass; single-test Gemma smoke goes from "fails 1/3 runs" to 1/1 in 0ms / 0 tokens. Detail: [memory/project_phantom_pokemon_systemic.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_phantom_pokemon_systemic.md).
-
-**A4b (deferred):** Prompt hardening as belt-and-suspenders alongside the interceptor — tighten [src/lib/system-prompt.ts](../src/lib/system-prompt.ts) "MUST call pokedex first" clause. Low priority since the interceptor is the structural fix; revisit only if the interceptor shows gaps in production.
-
-**Citation hallucination (separate from phantom_pokemon) — A4c SHIPPED (2026-04-23 late evening).** Gemma's baseline citation validity ran 80/100/80 across 3 runs — ~1/3 of prod responses shipped with a phantom chunk_id. Fix: `formatValidationNudge(invalidIds, seenChunkIds)` in [lib/validate-citations.ts](../lib/validate-citations.ts) now explicitly enumerates the valid chunk_ids from the search result set (capped at 50 ≈ 1k tokens) so the retry nudge closes the guess loop instead of leaving the model to remember which IDs it got. Callers updated in [src/app/api/team/route.ts](../src/app/api/team/route.ts) and [scripts/eval-models.ts](../scripts/eval-models.ts). 3-run gate: 100/100/100 citation validity, 12-13/13 pass, 25-30k tok/pass (best Gemma result measured). Snapshots under `snapshots/model-eval-2026-04-24T04-*.json`.
-
-### A5 — Claude Opus 4.7 self-eval · SHIPPED (2026-04-23)
-
-**Outcome.** 10/10 on applicable tests. 3 tests marked N/A because they score programmatic `pokedex` / `validate_set` tool-call patterns that don't exist in the CLI surface. On the apples-to-apples 10-test subset, Claude-via-CLI ties Gemma 4 26B at 100%. Report: [team_outputs/claude-opus-self-eval-2026-04-23.md](../team_outputs/claude-opus-self-eval-2026-04-23.md). Memo: [memory/project_claude_opus_selfeval.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_claude_opus_selfeval.md).
-
-**Strategic finding:** The 13-test eval saturates at this model tier. Both Gemma 4 26B and Claude Opus 4.7 score 10/10 on applicable tests — registering Sonnet 4.6 / Opus 4.7 as web-agent providers (the original A5 scope) won't produce a differentiating result on this test set. Differentiation requires harder tests (see A9) — deferred that work under `Haiku-eval` row.
-
-**Three new-task findings** — see A6/A7/A8 below.
-
-### A6 — Multilingual locale flips in pikalytics scrape · SHIPPED (2026-04-23 evening)
-
-**Framing shift.** Originally scoped as "JP→EN cleanup for 14 rows" based on the A5 self-eval `awk` scan. Investigation showed the actual contamination is multilingual and the affected set drifts per scrape: three consecutive scrapes hit 3 / 4 / 17 different Pokemon with seven distinct locales observed (Japanese, Traditional Chinese, Simplified Chinese, Spanish, German, French, Korean). Root cause: Pikalytics' Cloudflare layer caches per-URL and ignores the `Accept-Language` header; each URL gets whichever locale its cache-entry was last warmed with.
-
-**Fix shipped** (see [errors.md](errors.md) row 47 for the consolidated bug entry):
-- Cache-bust query param `?_r=<random>` + `Cache-Control: no-cache` + `Pragma: no-cache` — forces Cloudflare to miss its cache, typically returns EN from origin.
-- Post-parse non-ASCII detection + retry loop (`MAX_LANG_RETRIES=2`) — each retry uses a fresh random cache-bust; catches in-scrape regressions.
-- `load_prior_english_rows()` at scrape-start — when fresh retry-exhausted scrape still returns non-EN, preserves the prior English row from the existing CSV. Self-heals across cron runs.
-- Final assertion + `sys.exit(1)` if any row remains non-EN with no EN fallback available — GH Actions surfaces failure instead of silently publishing non-English data.
-- Manual English seed for Floette-Eternal from commit `3555ad2` — Pikalytics appears permanently non-EN for that URL; every scrape will regress, fallback logic preserves the seed.
-- Detection regex widened from `[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]` (JP/CJK-only) to `[^\x00-\x7f]` (any non-ASCII) after Spanish/German/French/Korean slipped through the narrower version. `moves.csv` + `items.csv` verified 100% ASCII so no false positives.
-
-**What ships to users:** `pikalytics_usage.csv` with zero non-ASCII rows + a scraper that keeps it that way on every cron run, regardless of which locales Pikalytics rotates next.
-
-**Gate:** zero non-ASCII in `top_moves`/`top_items` post-fix (verified). Retrieval spot-check on the previously affected rows returns English names in top-3. No retrieval-eval regression expected since content went from mixed-language to purely English (pure-win).
-
-### A7 — Retrieval hardening for "X+Y core WR" NL queries · SHIPPED (2026-04-23 late evening)
-
-**Rationale.** A5 test 13 (meta_core_attribution — "Archaludon+Pelipper rain core WR") exposed a gap: `/lookup "Archaludon Pelipper rain core win rate"` returned top-5 at similarity 0.11 — all `team_archetypes.md` chunks, NOT the `meta_snapshot.md:32` top-cores table where the actual 55.8% lives. Reformulating to "top cores win rate Archaludon Pelipper Electro Shot" surfaced it at rank 3 / 0.078 similarity (still low). Gemma's agent works around this via query-planner decomposition, but a direct `/lookup` user (CLI, or a less-capable agent) hits the bare gap.
-
-**Root cause.** Two combined: (1) the top-cores table's chunk embedding gets dominated by table-level words ("Top Cores by Win Rate") and loses row-specific semantics; (2) when the archetype token "rain" is present, the boost layer lifts 17 `team_archetypes.md` chunks by ~+0.05 (theory-route +0.025 + archetype-match +0.025) over `meta_snapshot.md`'s +0.020 knowledge-tier baseline. Content tweak alone was insufficient — meta_snapshot landed at ranks 17-20 even after adding dense per-core prose.
-
-**Shipped.** Two-layer fix (Option A + Option B together):
-1. **Content:** new `### Core Win Rates (Natural Phrasing)` subsection in [data/knowledge/meta_snapshot.md](../data/knowledge/meta_snapshot.md) after the top-cores table. Six bullet points, each with dense per-core sentence using both "+" and "and" phrasings tightly coupling Pokemon names with WR% (e.g., "**Archaludon + Pelipper** rain core win rate: 55.8% at 20.8% usage. Archaludon Pelipper rain core fires Electro Shot instantly under Drizzle.").
-2. **Boost:** +0.08 lift in [lib/rag/boost.ts](../lib/rag/boost.ts) for `meta_snapshot.md` chunks gated on `\bcore\b` AND `\b(win rate|winrate|wr)\b` both present. Calibrated to clear the ~+0.07 team_archetypes stack. Narrow trigger — zero golden-set cases match.
-
-**Gate met.** `/lookup "Archaludon Pelipper rain core win rate" 3` returns meta_snapshot ranks 1/2/3 (post-boost similarities 0.1377/0.1322/0.1309 vs team_archetypes' 0.1114); "Top Cores by Win Rate" chunk containing 55.8% at rank 3. Pre-change this chunk was absent from top-20. tsc clean; 25-test RAG eval identical to baseline (22/25, same 3 pre-existing fails in unrelated categories).
 
 ### A8 — CLI harness wrapper _(optional)_
 
@@ -236,9 +151,9 @@ Reframed mid-session from "Gemma flake fixes" to "agent-side interceptor (model-
 
 **Note.** Only pursue if user actually wants a premium-tier option. Today there's no clear demand.
 
-### A10 — YouTube scraper on 2×/day cadence (hybrid local+cron) · SHIPPED (2026-04-23 evening, revised + scheduled)
+_A10-A13 detail moved to [progress.md](progress.md). Roadmap-status table above carries the canonical 1-line summary per phase._
 
-**User-specific ask (2026-04-23):** "we need to scrape from the youtube transcripts at least twice a day or however often the api allows for because it has very short limits and a lot of content is coming out."
+
 
 **Initial attempt (reverted same session).** [.github/workflows/refresh.yml](../.github/workflows/refresh.yml) got a `Scrape YouTube transcripts` step between Sheets and reindex; `yt-dlp` added to pip install. Manual `workflow_dispatch` (run 24867630255) returned green but `Saved: 0 transcripts` — every fetch failed with `YouTube is blocking requests from your IP. [...] most IPs from cloud providers are blocked by YouTube`. `continue-on-error: true` hid it. Root cause: `youtube-transcript-api` categorically blocks cloud provider IPs (GH Actions runs on Azure). Not a rate-limit — a blanket IP-range ban. Step + `yt-dlp` dep reverted. Logged in [errors.md](errors.md) "YouTube cloud-IP ban".
 
@@ -270,54 +185,6 @@ schtasks /create /tn "pokemon-youtube-scraper" \
 **Rollback.** `schtasks /delete /tn "pokemon-youtube-scraper" /f` + `git revert` the .bat. Transcripts stay — they accumulate additively.
 
 **Risk remaining.** User's machine must be logged on when schtasks fires. Desktop use case makes this fine; if it becomes a gap, options are (a) drop `/it` and store password for unattended runs, (b) add `/wake` flag, (c) migrate to a residential-IP proxy in GH Actions (no budget today).
-
-### A11 — Increase Pikalytics + Sheets cron frequency · SHIPPED (2026-04-23 evening)
-
-**What shipped.** Bundled into A10's cron edit. Both scrapers now fire 2×/day (`0 0,12 * * *`) instead of every 3 days. Zero extra lines — the existing Pikalytics + Sheets steps stay in place, they just fire more often.
-
-**Gate.**
-- [ ] No 429/403 from either source across 5 consecutive runs.
-- [ ] Chunk count in `pc_index_meta` grows on at least one run per week (sanity: data IS churning).
-
-### A12 — Serebii scraper in cron · SHIPPED (2026-04-23 late evening)
-
-**Rationale.** Serebii is static game data — Pokémon rosters, moves, items, abilities. It only drifts when Nintendo patches Champions. Prior to A12 `scraper.py` was manual-only; a patch would silently leave `pokemon_champions.csv` / `mega_evolutions.csv` / `moves.csv` stale until someone noticed.
-
-**Shipped.** New isolated workflow [.github/workflows/refresh-serebii.yml](../.github/workflows/refresh-serebii.yml):
-- Cron `0 4 * * 0` — Sunday 04:00 UTC (23:00 CST Saturday), after the weekend tournament window; offset from the 00:00/12:00 UTC Pikalytics+Sheets cron so logs don't interleave.
-- `concurrency.group: refresh-serebii` isolates it from the existing `refresh` group.
-- `timeout-minutes: 15` — Serebii scrape ~3min (186 pages × 1s polite delay) + reindex ~1min.
-- `environment: Production` scopes `SUPABASE_SECRET` + `NEXT_PUBLIC_SUPABASE_URL`.
-- `permissions: contents: write` for the auto-commit step.
-- Steps mirror refresh.yml: checkout → setup-node@v4 (node 22) → setup-python@v5 (python 3.12) → `npm ci` → `pip install requests beautifulsoup4 lxml` → `python scraper.py` (`continue-on-error: true` justified by known fragilities: Mega X/Y name ambiguity, 21 FORM_VARIANTS hardcoded paths, Floette-Eternal layout edge case — see [errors.md](errors.md) rows 15–18, 36–37) → `npx tsx scripts/index-data.ts` with supabase env → auto-commit "refresh: weekly serebii scrape".
-- `workflow_dispatch` included for manual one-off patch checks.
-
-**Architecture choice.** Separate workflow file over extending refresh.yml or adding a second gated job — clean separation of cadence (weekly vs 2×/day), distinct failure profile, and independent disable/debug. One extra file, zero coupling.
-
-**Explicitly out of scope (flagged C-tier):**
-- Row-count diff logging / patch-detection notification.
-- Retry logic for transient 429/503 (weekly cadence + `continue-on-error: true` handles this).
-- Shared setup-python pip-cache across workflows.
-
-**Gate pending.**
-- [x] YAML parse + file structure validated.
-- [ ] Sunday 2026-04-28: first scheduled fire. Verify green check + auto-commit (or clean no-op) in `gh run list --workflow=refresh-serebii.yml`.
-- [ ] Sunday 2026-05-05: second scheduled fire. Same verification.
-- [ ] Row-count of each output CSV stable across both runs (no unintended data loss).
-
-### A13 — Surface "last refreshed" staleness telemetry · SHIPPED (2026-04-23 evening, commit `740ef9b`)
-
-**What shipped.** Sibling `getStaleness(): Promise<StalenessInfo | null>` next to `checkStaleness()` in [lib/rag.ts](../lib/rag.ts). Returns `{indexedAt, hoursSinceIndex, sources: StalenessSource[], hasFsDrift}` where each source is `{name, fileCount, mostRecentMtime, hoursSinceMostRecent, hasFsDrift}`. Source buckets: `data/transcripts/*`→youtube, `pikalytics_usage.csv`→pikalytics, `tournament_teams.csv`→sheets, `data/knowledge/*`→knowledge, everything else→serebii. 60s in-process cache (`STALENESS_TTL_MS`) amortizes one DB hit across multiple `query()` calls per request. Vercel skips fs-drift detection (Lambda mtimes are build-time).
-
-**Surfaces:**
-- [src/app/api/team/route.ts](../src/app/api/team/route.ts) emits `send({type: "staleness", data: info})` once per request right after the `meta` event via non-blocking `getStaleness().then(...)`.
-- [src/app/api/team/health/route.ts](../src/app/api/team/health/route.ts) GET response includes `staleness` so the webapp footer renders on mount (before any query).
-- [src/app/team/page.tsx](../src/app/team/page.tsx) `<StalenessFooter>` below input form — single-line button "Data refreshed Nh ago" (amber-styled at >72h max source age), expand-on-click 3-column grid showing per-source name/age/file-count + drift flag. Updates from both health probe (mount) and SSE event (per request).
-- [scripts/search.ts](../scripts/search.ts) prints `Data refreshed Nh ago · sources: youtube=Nh, pikalytics=Nm*, ... (* = local fs drift)` before results; `[STALE >72h]` prefix when over threshold.
-
-**Verification:** tsc clean across all 4 touched .ts files; CLI smoke on "Protect PP in Champions" returns expected top-3 (moves.csv rank 1, champions_rules.md rank 2, damage_calc.md rank 3 — Phase 4 baseline preserved); natural fs drift surfaces on pikalytics + sheets (recent CI scrape mtime ahead of local index mtime). Read-only side-channel — no retrieval impact.
-
-**Note.** Implementation is 1–2 hours of plumbing. Low technical risk, clear user value. Schedule after A10 (which prevents the most common "stale" scenario from occurring in the first place).
 
 ---
 
@@ -354,38 +221,6 @@ schtasks /create /tn "pokemon-youtube-scraper" \
 - **Golden set:** frozen this cycle. Don't edit to close gate failures.
 - **Vercel Lambda 250MB bundle:** `onnxruntime-node` doesn't bundle reliably. Query embedding routes through HF Inference API on prod. See [memory/project_vercel_embedding_constraint.md](../../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_vercel_embedding_constraint.md).
 - **Rollback triggers:** any intent >3% nDCG regression, agentic <12/13 on any of 3 runs, Lambda >240MB.
-
----
-
-## Ollama quickstart (for A2)
-
-```powershell
-# 1. Install Ollama for Windows
-# Download: https://ollama.com/download/windows
-# Installer runs as a service; listens on http://localhost:11434
-
-# 2. Pull the candidate models (Q4 quantized, fits 8GB VRAM)
-ollama pull qwen2.5:7b-instruct-q4_K_M
-ollama pull llama3.1:8b-instruct-q4_K_M
-
-# 3. Verify
-curl http://localhost:11434/api/tags
-#   Should list both models.
-
-# 4. Smoke test via the eval harness
-cd C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill
-npx tsx scripts/eval-models.ts --models qwen2.5-7b --real-rag --tests tool_workflow,stat_accuracy
-
-# 5. If smoke passes, run the full 13-test suite
-npx tsx scripts/eval-models.ts --models qwen2.5-7b --real-rag
-npx tsx scripts/eval-models.ts --models llama3.1-8b --real-rag
-```
-
-**Storage note.** Each Q4 model is ~4-5 GB on disk. Budget ~10 GB for the two.
-
-**Troubleshooting.**
-- Tool-use failures: Ollama's OpenAI-compat layer supports `tools` parameter on qwen2.5 and llama3.1. If the model doesn't emit tool calls, check `src/lib/llm/ollama.ts` — it wraps `openai-compat.ts` which handles the translation.
-- OOM: drop to `qwen2.5:7b-instruct-q3_K_M` (smaller) or reduce context via `--ctx-size` on the ollama server.
 
 ---
 

@@ -17,6 +17,11 @@ import {
   formatValidationNudge,
   collectChunkIdsFromSearchResult,
 } from "@core/validate-citations";
+import {
+  extractTeamBlock,
+  validateTeam,
+  formatTeamValidationNudge,
+} from "@core/validate-team";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +85,8 @@ export async function POST(request: NextRequest) {
       // Phase 2 — chunk_id citation state, shared across all iterations.
       const seenChunkIds = new Set<string>();
       let citationRetryFired = false;
+      // A15 — team-level structural validation state (item clause, species clause, SP caps).
+      let teamRetryFired = false;
 
       try {
         send({
@@ -191,6 +198,30 @@ export async function POST(request: NextRequest) {
           });
 
           if (pendingToolCalls.length === 0 || finishReason !== "tool_calls") {
+            // A15 — team-level structural validation (item clause + species clause + SP caps).
+            // Run BEFORE citation validation: a team-retry regenerates the whole response so
+            // any citation-validity check against the failed draft would be wasted.
+            const teamExtract = extractTeamBlock(assistantContent);
+            if (teamExtract.parsed && !teamRetryFired) {
+              const tv = validateTeam(teamExtract.parsed);
+              if (!tv.valid) {
+                teamRetryFired = true;
+                const nudge = formatTeamValidationNudge(tv);
+                messages.push({ role: "user", content: nudge });
+                send({
+                  type: "team_retry",
+                  iter,
+                  duplicateItems: Object.keys(tv.duplicateItems),
+                  duplicateSpecies: tv.duplicateSpecies,
+                  spreadIssueCount: tv.spreadIssues.length,
+                });
+                log(
+                  `team_retry iter=${iter} dupItems=${Object.keys(tv.duplicateItems).length} dupSpecies=${tv.duplicateSpecies.length} spreadIssues=${tv.spreadIssues.length}`,
+                );
+                continue;
+              }
+            }
+
             // Phase 2 — validate chunk_id citations against accumulated search results.
             const extract = extractClaimsBlock(assistantContent);
             const claims = extract.parsed?.claims ?? [];
@@ -225,6 +256,26 @@ export async function POST(request: NextRequest) {
             log(
               `citation_result valid=${v.valid} cited=${v.validCited}/${v.totalCited} invalid=${v.invalidIds.length} retry=${citationRetryFired}`,
             );
+
+            // A15 — final team-level result for observability.
+            const finalTeamExtract = extractTeamBlock(assistantContent);
+            const finalTeamResult = finalTeamExtract.parsed
+              ? validateTeam(finalTeamExtract.parsed)
+              : null;
+            send({
+              type: "team_result",
+              valid: finalTeamResult?.valid ?? null,
+              hasBlock: !!finalTeamExtract.parsed,
+              parseError: finalTeamExtract.parseError ?? null,
+              duplicateItemCount: finalTeamResult ? Object.keys(finalTeamResult.duplicateItems).length : 0,
+              duplicateSpeciesCount: finalTeamResult?.duplicateSpecies.length ?? 0,
+              spreadIssueCount: finalTeamResult?.spreadIssues.length ?? 0,
+              retryFired: teamRetryFired,
+            });
+            log(
+              `team_result valid=${finalTeamResult?.valid ?? "n/a"} hasBlock=${!!finalTeamExtract.parsed} dupItems=${finalTeamResult ? Object.keys(finalTeamResult.duplicateItems).length : 0} dupSpecies=${finalTeamResult?.duplicateSpecies.length ?? 0} spreadIssues=${finalTeamResult?.spreadIssues.length ?? 0} retry=${teamRetryFired}`,
+            );
+
             send({ type: "done", finishReason, totalMs: Date.now() - tStart });
             log(`done in ${Date.now() - tStart}ms`);
             controller.close();

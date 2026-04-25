@@ -12,6 +12,24 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### A15 — Team-level structural validation (item clause + species + SP caps) — SHIPPED (2026-04-25 night)
+
+- **Status:** SHIPPED. User confirmed Champions enforces both Item Clause AND SP caps (per-stat ≤32, total ≤66) — the existing `validate_set` checks per-Pokemon legality only, missing both rule classes. Spot-checks across the 5-model compare found two real production violations: Gemma run `aw0u5a` shipped Milotic + Kingambit with spread total 84 (cap 66), and Kimi run `6nfkt7` shipped 2× Black Glasses (Krookodile + Kingambit). Both passed all 6 `validate_set` calls.
+- **Implementation.** Mirrors A4c's pattern.
+  - **New [lib/validate-team.ts](../lib/validate-team.ts)** (~210 LOC, pure module): `extractTeamBlock` (handles `\`\`\`team-json` / `\`\`\`team_json` / `\`\`\`team` fence variants + json-repair fallback for trailing commas, double-brace, "thought:" prefixes); `validateTeam` returns `{valid, duplicateItems, duplicateSpecies, spreadIssues}` with per-mon stat-index + total tracking; `formatTeamValidationNudge` produces a structured Markdown nudge with separate sections per violation class.
+  - **[src/app/api/team/route.ts](../src/app/api/team/route.ts):** new `team_retry` SSE event + `team_result` final event for observability. Runs BEFORE citation validation: a team-retry regenerates the whole response so a citation check against the failed draft would be wasted compute.
+  - **[scripts/eval-models.ts](../scripts/eval-models.ts):** `AgentResult` + `TestResult` interfaces gained `teamValid` (boolean | null when no team-json block exists), `teamRetryFired`, `teamDuplicateItemCount`, `teamDuplicateSpeciesCount`, `teamSpreadIssueCount`. Same one-shot retry pattern as the existing citation block.
+  - **[CLAUDE.md](../CLAUDE.md):** new "Team Rules" section documents Item Clause + Species Clause.
+  - **[src/lib/system-prompt.ts](../src/lib/system-prompt.ts):** prompt version bumped to `2026-04-25.v4.3-item-clause`; explicit "Item Clause is ENFORCED... `validate_set` does NOT yet enforce it across the team — you must check this yourself" instruction added.
+- **Verification.**
+  - `npx tsc --noEmit` clean. `npx eslint` clean.
+  - Smoke test [scripts/smoke-validate-team.ts](../scripts/smoke-validate-team.ts): both real-world bad teams caught with correct nudges, clean team passes. Output:
+    - Gemma `aw0u5a` → `valid: false`, 2 spread issues (Milotic + Kingambit total 84), nudge enumerates each with cap reminder.
+    - Kimi `6nfkt7` → `valid: false`, `duplicateItems: { 'Black Glasses': [ 'Krookodile', 'Kingambit' ] }`, nudge tells the model to swap one.
+    - Clean 2-mon test team → `valid: true`.
+- **What ships to users.** Teams emitted by any model now go through a server-side legality gate. If the team has a duplicate item, duplicate Pokemon, or any spread violation, the agent is forced to regenerate exactly once with a precise nudge listing every violation. After the retry, the final `team_result` event reports the outcome to the UI for observability. Both production webapp and offline eval harness use identical validation logic.
+- **What this DOESN'T cover.** Mega normalization (we treat "Mega Froslass" and "Froslass" as distinct names for species-clause purposes — a future iteration can normalize). Move-pool legality is still per-Pokemon via `validate_set` (separate concern). Item-availability list is enforced by `validate_set`'s banned-items check, not by this validator.
+
 ### R-tier (R1 + R2 + R3) — RAG improvements from 4-model compare findings — SHIPPED (2026-04-25 late evening)
 
 - **Status:** SHIPPED. Three RAG suggestions from the gemini-3-flash / gemma-4-26b / deepseek-v4-flash compare were converted to live fixes. Plus a side-discovery filed as A14.
@@ -94,6 +112,24 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
   - **D9 — filter or collapse intermediate-iter content.** Either: (a) only show iter-N (final, `finish=stop`) content in the bubble, OR (b) show intermediate content collapsed under a "Thinking..." disclosure so users see the answer not the reasoning trail. Big blast radius for DeepSeek-class models.
 - **Verdict on DeepSeek V4 Flash as a default candidate.** Quality is higher than Gemma + Gemini-3-flash (more rigor, real damage numbers, self-correction), but **11.3 min is non-viable for an interactive UX**. Possible niche: opt-in "Deep Research" mode triggered by an explicit user toggle (not the default). For now keep `gemini-3-flash` as TEAM_BUILDING_MODEL default.
 - **All 9 dropdown models wired and ready.** Pending tests on: Kimi K2.6, MiniMax M2.7, MiniMax M2.5, Grok 4.1 Fast, DeepSeek V4 Pro. Recommend D7+D8+D9 before continuing or accept that long-running models will produce messy chat output.
+- **Compare — Kimi K2.6 run (2026-04-25 night, post-D7+D8+D9 ship).** Run `6nfkt7`. Same Snow-Balance prompt. **Latency 18.2 min** (1094s) — slowest model tested so far, beating DeepSeek V4 Flash's 11.3 min. 9 iterations, 25 tool calls, 10/10 citations valid first try. Updated 4-way (5-way) compare:
+
+  | Metric | gemini-3-flash | gemma-4-26b | deepseek-v4-flash | kimi-k2-6 |
+  |---|---|---|---|---|
+  | Latency | 21.3s | 58.8s | 11.3 min | **18.2 min** |
+  | Iterations | 4 | 4 | 12 | 9 |
+  | Tool calls | 25 | 11 | 45 | 25 |
+  | Citations | 8/8 | 3/3 (retry) | 12/12 | 10/10 |
+  | Pre-tool TTFT | <2s | <2s | 1-2s | **10-250s extreme** |
+
+- **Kimi-specific behavior — extreme pre-tool TTFT.** Multiple iterations spent minutes "thinking" before emitting any output tokens: iter 2 = 80s TTFT, iter 4 = 64s TTFT, **iter 5 = 162s TTFT** (~3 min before first tool call), iter 9 = 248s TTFT (4 min before final synthesis started streaming). This is a reasoning-model pattern — long chain-of-thought before each iter. Total time = sum of these waits + actual generation. Different latency profile than DeepSeek (which emits intermediate prose between tool calls); Kimi produces little text but waits a lot.
+- **iter 7 anomaly — 21k chars + 6 tool calls in same iter.** `iter 7 end 361274ms ttft=1481ms chars=21475 tools=6 finish=tool_calls`. Kimi emitted the FULL team prose + JSON template, THEN appended 6 validate_set calls — an unusual "show then validate" flow vs. the typical "validate then show". **D7+D9 fix worked perfectly here:** when iter 8 started, that 21k-char draft was wiped, so the user only saw the iter 9 final synthesis (7526 chars). Without D9 the chat bubble would have shown 28k chars (draft + final stacked).
+- **D8 (Stop button) was tested in this run** per user — interrupted iter-9 mid-stream after seeing the run was approaching 18 min. AbortController fired cleanly, `errorStage: "cancelled"` set, no transport-error toast. Validates the cancel path on a real long-running production-shape request.
+- **DeepSeek V4 Pro — 429 rate limit on first attempt** (run `6zd3l6`). OpenRouter returned `Provider returned error code 429 [...] deepseek/deepseek-v4-pro is temporarily rate-limited upstream. Provider: Together`. Not a model failure; infrastructure-level rate limit. Options: retry (suggested wait `retry_after_seconds: 1`), or add a BYOK Together key in OpenRouter integrations to bypass the shared free-tier pool. Worth deferring further DeepSeek V4 Pro testing until BYOK is configured or testing during off-peak hours.
+- **R2 (pokedex enrichment) — partial signal.** Kimi made 9 search calls vs DeepSeek's earlier ~10. Hard to claim a clear "30% reduction" without controlled re-runs of the same prompt against pre-R2 baselines. Worth a focused before/after experiment (e.g., re-run gemini-3-flash on the same prompt, count search vs pokedex calls). Could be a follow-up.
+- **R3 (prefix strip) — non-firing for Kimi.** None of Kimi's queries used "Pokemon Champions"/"Reg M-A" prefixes (e.g. "Krookodile sets items ability competitive", "Froslass Krookodile tournament team"). Either Kimi naturally avoided the prefix or it picked up the new system-prompt nudge. Either way, the strip is a no-op when models don't add the prefix — defensive.
+- **Output quality observation — possible Item Clause edge case.** Kimi's team had 2× Black Glasses (Krookodile + Kingambit). All 6 `validate_set` calls returned `ok=true` so the validator does NOT enforce item clause. Champions itself may not have item clause (it's primarily a Smogon convention) — worth a CLAUDE.md confirmation. If Champions DOES enforce item clause and validate_set lacks the check, that's a structural validator gap; if not, we're fine. Filed as low-priority observation; not a regression.
+- **Stale-index warning still includes `memory-bank/*.md`** — C4 still pending. Three runs since C4 was filed; the noise compounds with every memory-bank edit.
 
 ### Tier D — Webapp UX Phase 1 (D1 + D2 + D3) — SHIPPED (2026-04-25)
 

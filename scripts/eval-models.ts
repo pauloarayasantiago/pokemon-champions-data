@@ -32,6 +32,11 @@ import {
   formatValidationNudge,
   collectChunkIdsFromSearchResult,
 } from "../lib/validate-citations.js";
+import {
+  extractTeamBlock,
+  validateTeam,
+  formatTeamValidationNudge,
+} from "../lib/validate-team.js";
 
 // ── env loading ────────────────────────────────────────────────────────────────
 
@@ -500,6 +505,12 @@ interface AgentResult {
   citationInvalidIds: string[];
   citationRetryFired: boolean;
   citationParseError?: string;
+  // A15 — team-level validation (item clause + species clause + SP caps).
+  teamValid: boolean | null; // null when no team-json block was emitted
+  teamRetryFired: boolean;
+  teamDuplicateItemCount: number;
+  teamDuplicateSpeciesCount: number;
+  teamSpreadIssueCount: number;
   error?: string;
 }
 
@@ -705,6 +716,11 @@ async function runAgent(
       citationValidCount: 0,
       citationInvalidIds: [],
       citationRetryFired: false,
+      teamValid: null,
+      teamRetryFired: false,
+      teamDuplicateItemCount: 0,
+      teamDuplicateSpeciesCount: 0,
+      teamSpreadIssueCount: 0,
     };
   }
   let inputTokens = 0;
@@ -727,6 +743,12 @@ async function runAgent(
   let citationInvalidIds: string[] = [];
   let citationRetryFired = false;
   let citationParseError: string | undefined;
+  // A15 — team-level validation state
+  let teamValid: boolean | null = null;
+  let teamRetryFired = false;
+  let teamDuplicateItemCount = 0;
+  let teamDuplicateSpeciesCount = 0;
+  let teamSpreadIssueCount = 0;
 
   const callModel = (msgs: OAIMessage[], tools: typeof TOOL_DEFS) =>
     isAnthropic
@@ -749,6 +771,11 @@ async function runAgent(
     citationInvalidIds,
     citationRetryFired,
     citationParseError,
+    teamValid,
+    teamRetryFired,
+    teamDuplicateItemCount,
+    teamDuplicateSpeciesCount,
+    teamSpreadIssueCount,
   });
 
   while (turns < maxTurns) {
@@ -926,6 +953,44 @@ async function runAgent(
       if (fcMsg?.content && fcMsg.content.trim().length > 0) {
         lastContent = fcMsg.content;
         messages.push(fcMsg);
+      }
+    }
+  }
+
+  // A15 — team-level validation (item clause + species clause + SP caps) + one-shot retry.
+  // Runs BEFORE citation check: a team-retry regenerates the whole response so any
+  // citation check against the failed draft would be wasted work.
+  {
+    const tExtract = extractTeamBlock(lastContent);
+    if (tExtract.parsed) {
+      const tv = validateTeam(tExtract.parsed);
+      teamValid = tv.valid;
+      teamDuplicateItemCount = Object.keys(tv.duplicateItems).length;
+      teamDuplicateSpeciesCount = tv.duplicateSpecies.length;
+      teamSpreadIssueCount = tv.spreadIssues.length;
+      if (!tv.valid && !teamRetryFired) {
+        teamRetryFired = true;
+        nudgeCount++;
+        messages.push({ role: "user", content: formatTeamValidationNudge(tv) });
+        const retryResult = await callModel([{ role: "system", content: SYSTEM }, ...messages], []);
+        if (!("error" in retryResult)) {
+          const { message: rMsg, usage: rUsage } = retryResult;
+          inputTokens += rUsage.prompt_tokens ?? 0;
+          outputTokens += rUsage.completion_tokens ?? 0;
+          totalTokens += rUsage.total_tokens ?? ((rUsage.prompt_tokens ?? 0) + (rUsage.completion_tokens ?? 0));
+          messages.push(rMsg);
+          if (rMsg?.content && rMsg.content.trim().length > 20) {
+            lastContent = rMsg.content;
+            const tExtract2 = extractTeamBlock(lastContent);
+            if (tExtract2.parsed) {
+              const tv2 = validateTeam(tExtract2.parsed);
+              teamValid = tv2.valid;
+              teamDuplicateItemCount = Object.keys(tv2.duplicateItems).length;
+              teamDuplicateSpeciesCount = tv2.duplicateSpecies.length;
+              teamSpreadIssueCount = tv2.spreadIssues.length;
+            }
+          }
+        }
       }
     }
   }
@@ -1301,6 +1366,12 @@ interface TestResult {
   citationInvalidIds: string[];
   citationRetryFired: boolean;
   citationParseError?: string;
+  // A15 — team-level validation
+  teamValid: boolean | null;
+  teamRetryFired: boolean;
+  teamDuplicateItemCount: number;
+  teamDuplicateSpeciesCount: number;
+  teamSpreadIssueCount: number;
   toolCallLog: Array<{ name: string; args: Record<string, unknown> }>;
   error?: string;
   contentPreview: string;
@@ -1376,6 +1447,11 @@ async function main() {
         citationInvalidIds: agentResult.citationInvalidIds,
         citationRetryFired: agentResult.citationRetryFired,
         citationParseError: agentResult.citationParseError,
+        teamValid: agentResult.teamValid,
+        teamRetryFired: agentResult.teamRetryFired,
+        teamDuplicateItemCount: agentResult.teamDuplicateItemCount,
+        teamDuplicateSpeciesCount: agentResult.teamDuplicateSpeciesCount,
+        teamSpreadIssueCount: agentResult.teamSpreadIssueCount,
         toolCallLog: agentResult.toolCallLog,
         error: agentResult.error,
         contentPreview: agentResult.finalContent.slice(0, 600),

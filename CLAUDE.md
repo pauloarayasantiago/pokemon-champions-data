@@ -49,6 +49,10 @@ If lookup results contradict your training data, **TRUST THE LOOKUP RESULTS**. Y
 ### MISSING ITEMS (DO NOT RECOMMEND)
 Life Orb, Choice Band, Choice Specs, Assault Vest, Rocky Helmet, Heavy-Duty Boots, Eviolite, Flame Orb, Toxic Orb, Power Herb, Light Clay, Covert Cloak, Loaded Dice, Utility Umbrella, Expert Belt, Clear Amulet, Throat Spray, Metronome (held item), Booster Energy, Normal Gem, typed Gems, Weakness Policy, Black Sludge, Safety Goggles
 
+### Team Rules
+- **Item Clause: ENFORCED.** Each held item may appear at most once across the team of 6. Two Pokemon both holding "Black Glasses" or both holding "Sitrus Berry" is illegal — the team will be rejected. The mega stone counts toward this (e.g. only one Froslassite per team is automatic since only one Mega is allowed). Pick distinct items per slot.
+- **Species Clause: standard VGC** — at most one of each Pokemon per team.
+
 ### Roster
 - 186 fully-evolved Pokemon + Pikachu only
 - No Legendaries, Mythicals, Restricted, or Paradox Pokemon
