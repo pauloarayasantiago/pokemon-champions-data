@@ -29,11 +29,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </header>
 
       <form action="/search" method="get" className="relative" role="search">
+        <label htmlFor="search-q" className="sr-only">
+          Search Pokemon, moves, items, meta
+        </label>
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
         />
         <Input
+          id="search-q"
           name="q"
           type="search"
           defaultValue={q}
@@ -41,6 +45,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           className="h-11 pl-9"
           autoComplete="off"
           enterKeyHint="search"
+          aria-label="Search Pokemon, moves, items, meta"
           required
         />
       </form>

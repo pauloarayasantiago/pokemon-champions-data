@@ -14,6 +14,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { AVAILABLE_MODELS, TEAM_BUILDING_MODEL } from "@/lib/llm";
 import type { ModelId, Provider } from "@/lib/llm/types";
 
@@ -124,6 +130,7 @@ export default function TeamPage() {
   const [runs, setRuns] = useState<RunState[]>([]);
   const [nowTick, setNowTick] = useState(Date.now());
   const [staleness, setStaleness] = useState<StalenessInfo | null>(null);
+  const [debugOpen, setDebugOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -155,25 +162,10 @@ export default function TeamPage() {
     }
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!input.trim() || isStreaming) return;
-
-    const userMsg: ChatMessage = {
-      id: newId(),
-      role: "user",
-      content: input.trim(),
-    };
-    const assistantMsg: ChatMessage = {
-      id: newId(),
-      role: "assistant",
-      content: "",
-      model,
-      toolIds: [],
-    };
-
-    setMessages((m) => [...m, userMsg, assistantMsg]);
-    setInput("");
+  async function streamReply(
+    apiMessages: Array<{ role: Role; content: string }>,
+    assistantId: string,
+  ) {
     setIsStreaming(true);
     setError(null);
 
@@ -184,11 +176,6 @@ export default function TeamPage() {
       rawEvents: [],
     };
     setRun(freshRun);
-
-    const apiMessages = [...messages, userMsg].map((m: ChatMessage) => ({
-      role: m.role,
-      content: m.content,
-    }));
 
     try {
       const res = await fetch("/api/team", {
@@ -218,7 +205,7 @@ export default function TeamPage() {
           if (!payload) continue;
           try {
             const evt = JSON.parse(payload) as Record<string, unknown>;
-            applyEvent(assistantMsg.id, evt, setMessages, setRun);
+            applyEvent(assistantId, evt, setMessages, setRun);
             if (evt.type === "staleness" && evt.data) {
               setStaleness(evt.data as StalenessInfo);
             }
@@ -230,7 +217,9 @@ export default function TeamPage() {
     } catch (err) {
       setError((err as Error).message);
       setRun((r) =>
-        r ? { ...r, errorStage: "transport", errorText: (err as Error).message, endedAt: Date.now() } : r,
+        r
+          ? { ...r, errorStage: "transport", errorText: (err as Error).message, endedAt: Date.now() }
+          : r,
       );
     } finally {
       setIsStreaming(false);
@@ -243,27 +232,103 @@ export default function TeamPage() {
     }
   }
 
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || isStreaming) return;
+
+    const userMsg: ChatMessage = {
+      id: newId(),
+      role: "user",
+      content: input.trim(),
+    };
+    const assistantMsg: ChatMessage = {
+      id: newId(),
+      role: "assistant",
+      content: "",
+      model,
+      toolIds: [],
+    };
+
+    setMessages((m) => [...m, userMsg, assistantMsg]);
+    setInput("");
+
+    const apiMessages = [...messages, userMsg].map((m: ChatMessage) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    await streamReply(apiMessages, assistantMsg.id);
+  }
+
+  async function retry() {
+    if (isStreaming) return;
+    // Drop the failed (empty) assistant placeholder, if present, and re-stream from the prior history.
+    const trimmed = (() => {
+      const last = messages[messages.length - 1];
+      if (last?.role === "assistant" && !last.content) return messages.slice(0, -1);
+      return messages;
+    })();
+    if (trimmed.length === 0 || trimmed[trimmed.length - 1].role !== "user") return;
+
+    const assistantMsg: ChatMessage = {
+      id: newId(),
+      role: "assistant",
+      content: "",
+      model,
+      toolIds: [],
+    };
+    setMessages([...trimmed, assistantMsg]);
+
+    const apiMessages = trimmed.map((m: ChatMessage) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    await streamReply(apiMessages, assistantMsg.id);
+  }
+
+  const runActive = !!run && !run.endedAt;
+
   return (
     <div className="mx-auto grid h-[calc(100vh-5rem)] w-full max-w-[1400px] grid-cols-1 gap-4 px-4 pt-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
       {/* Chat column */}
       <div className="flex min-h-0 flex-col">
         <header className="mb-3 flex items-center justify-between gap-3">
           <h1 className="text-lg font-semibold">Team Builder</h1>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Model:</span>
-            <select
-              value={model}
-              onChange={(e) => setModel(e.target.value as ModelId)}
-              disabled={isStreaming}
-              className="rounded-md border bg-background px-2 py-1 text-sm"
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDebugOpen(true)}
+              className="lg:hidden"
+              aria-label="Open debug panel"
             >
-              {AVAILABLE_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label} {m.tier === "free" ? "(free)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+              <Wrench className="h-3.5 w-3.5" />
+              <span className="ml-1">Debug</span>
+              {runActive && (
+                <span
+                  className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"
+                  aria-hidden
+                />
+              )}
+            </Button>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground hidden sm:inline">Model:</span>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value as ModelId)}
+                disabled={isStreaming}
+                aria-label="Select model"
+                className="rounded-md border bg-background px-2 py-1 text-sm"
+              >
+                {AVAILABLE_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label} {m.tier === "free" ? "(free)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </header>
 
         <div
@@ -280,48 +345,134 @@ export default function TeamPage() {
               </div>
             </div>
           )}
-          {messages.map((m) => (
-            <MessageView key={m.id} message={m} tools={run?.tools ?? {}} />
-          ))}
+          {messages.map((m, idx) => {
+            const isLast = idx === messages.length - 1;
+            return (
+              <MessageView
+                key={m.id}
+                message={m}
+                tools={run?.tools ?? {}}
+                isStreaming={isStreaming && isLast}
+                isFinal={!isStreaming && isLast && !error}
+              />
+            );
+          })}
           {error && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <div>{error}</div>
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
+              <div className="flex-1 space-y-2">
+                <div>{error}</div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void retry()}
+                  disabled={isStreaming}
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span className="ml-1">Retry</span>
+                </Button>
+              </div>
             </div>
           )}
         </div>
 
-        <form onSubmit={submit} className="mt-3 flex gap-2">
+        <form onSubmit={submit} className="mt-3 flex gap-2" aria-label="Team builder chat">
+          <label htmlFor="team-input" className="sr-only">
+            Ask about teams, counters, sets, meta
+          </label>
           <input
+            id="team-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about teams, counters, sets, meta..."
             disabled={isStreaming}
-            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+            aria-label="Ask about teams, counters, sets, meta"
+            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60"
             autoComplete="off"
             enterKeyHint="send"
           />
-          <Button type="submit" disabled={isStreaming || !input.trim()} size="icon">
-            <Send className="h-4 w-4" />
+          <Button type="submit" disabled={isStreaming || !input.trim()} size="icon" aria-label="Send message">
+            <Send className="h-4 w-4" aria-hidden />
           </Button>
         </form>
         <StalenessFooter staleness={staleness} />
       </div>
 
-      {/* Debug sidebar */}
+      {/* Debug sidebar — desktop inline */}
       <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto rounded-lg border bg-card/30 p-3 text-xs lg:flex">
-        <HealthStrip
+        <DebugPanel
           health={health}
-          loading={healthLoading}
-          onRefresh={probeHealth}
-          selectedModel={model}
+          healthLoading={healthLoading}
+          onRefreshHealth={probeHealth}
+          model={model}
+          run={run}
+          isStreaming={isStreaming}
+          nowTick={nowTick}
+          runs={runs}
         />
-        <CurrentRun run={run} isStreaming={isStreaming} nowTick={nowTick} />
-        <IterTimeline run={run} nowTick={nowTick} />
-        {runs.length > 0 && <HistorySection runs={runs} />}
-        <RawEventLog run={run} />
       </aside>
+
+      {/* Debug sheet — mobile bottom drawer */}
+      <Sheet open={debugOpen} onOpenChange={setDebugOpen}>
+        <SheetContent
+          side="bottom"
+          className="lg:hidden h-[85vh] overflow-y-auto p-3 pt-12"
+        >
+          <SheetHeader className="p-0 pb-3">
+            <SheetTitle>Debug</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-3 text-xs">
+            <DebugPanel
+              health={health}
+              healthLoading={healthLoading}
+              onRefreshHealth={probeHealth}
+              model={model}
+              run={run}
+              isStreaming={isStreaming}
+              nowTick={nowTick}
+              runs={runs}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+}
+
+function DebugPanel({
+  health,
+  healthLoading,
+  onRefreshHealth,
+  model,
+  run,
+  isStreaming,
+  nowTick,
+  runs,
+}: {
+  health: HealthResponse | null;
+  healthLoading: boolean;
+  onRefreshHealth: () => void;
+  model: ModelId;
+  run: RunState | null;
+  isStreaming: boolean;
+  nowTick: number;
+  runs: RunState[];
+}) {
+  return (
+    <>
+      <HealthStrip
+        health={health}
+        loading={healthLoading}
+        onRefresh={onRefreshHealth}
+        selectedModel={model}
+      />
+      <CurrentRun run={run} isStreaming={isStreaming} nowTick={nowTick} />
+      <IterTimeline run={run} nowTick={nowTick} />
+      {runs.length > 0 && <HistorySection runs={runs} />}
+      <RawEventLog run={run} />
+    </>
   );
 }
 
@@ -668,7 +819,7 @@ function HistorySection({ runs }: { runs: RunState[] }) {
       {open && (
         <div className="mt-1 space-y-0.5 font-mono text-[10px]">
           {runs.map((r, i) => {
-            const total = (r.endedAt ?? Date.now()) - r.startedAt;
+            const total = (r.endedAt ?? r.startedAt) - r.startedAt;
             const iters = Object.keys(r.iters).length;
             const tools = Object.keys(r.tools).length;
             return (
@@ -940,17 +1091,24 @@ function applyEvent(
 function MessageView({
   message,
   tools,
+  isStreaming,
+  isFinal,
 }: {
   message: ChatMessage;
   tools: Record<string, ToolEvent>;
+  isStreaming: boolean;
+  isFinal: boolean;
 }) {
   const isUser = message.role === "user";
   const msgTools = (message.toolIds ?? []).map((id) => tools[id]).filter(Boolean);
+  const isEmpty = !message.content && msgTools.length === 0;
+  const showSkeleton = !isUser && isStreaming && isEmpty;
+  const showEmptyFallback = !isUser && isFinal && isEmpty;
   return (
     <div className={`flex gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
         <div className="shrink-0 mt-1">
-          <Bot className="h-5 w-5 text-muted-foreground" />
+          <Bot className="h-5 w-5 text-muted-foreground" aria-hidden />
         </div>
       )}
       <div
@@ -974,11 +1132,13 @@ function MessageView({
                   key={t.id}
                   className="flex items-center gap-1.5 text-xs text-muted-foreground"
                 >
-                  <Wrench className="h-3 w-3" />
+                  <Wrench className="h-3 w-3" aria-hidden />
                   <span className="font-mono truncate">
                     {t.name}({summarizeArgs(t.arguments)})
                   </span>
-                  <span className={badgeColor}>{badge}</span>
+                  <span className={badgeColor} aria-label={`tool ${t.ok === true ? "succeeded" : t.ok === false ? "failed" : "running"}`}>
+                    {badge}
+                  </span>
                   {duration !== null && <span className="text-[10px]">{duration}ms</span>}
                 </div>
               );
@@ -990,7 +1150,13 @@ function MessageView({
             {message.content}
           </div>
         )}
-        {!isUser && message.model && (
+        {showSkeleton && <ThinkingSkeleton />}
+        {showEmptyFallback && (
+          <div className="text-xs italic text-muted-foreground">
+            Stream ended without output. Try resubmitting your question.
+          </div>
+        )}
+        {!isUser && message.model && !showSkeleton && (
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
             {message.model}
           </div>
@@ -998,9 +1164,19 @@ function MessageView({
       </div>
       {isUser && (
         <div className="shrink-0 mt-1">
-          <User className="h-5 w-5 text-muted-foreground" />
+          <User className="h-5 w-5 text-muted-foreground" aria-hidden />
         </div>
       )}
+    </div>
+  );
+}
+
+function ThinkingSkeleton() {
+  return (
+    <div className="space-y-1.5" role="status" aria-label="Assistant is thinking">
+      <div className="h-2 w-32 animate-pulse rounded bg-muted-foreground/20" />
+      <div className="h-2 w-24 animate-pulse rounded bg-muted-foreground/20" />
+      <div className="h-2 w-40 animate-pulse rounded bg-muted-foreground/20" />
     </div>
   );
 }

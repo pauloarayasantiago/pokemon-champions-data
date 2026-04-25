@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Field, FieldHint, FieldLabel } from "@/components/ui/field";
 
 interface CalcFormProps {
   pokemonNames: string[];
@@ -40,6 +41,12 @@ export function CalcForm({ pokemonNames, moveNames }: CalcFormProps) {
   const [response, setResponse] = useState<CalcResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const attackerId = useId();
+  const defenderId = useId();
+  const moveId = useId();
+  const weatherId = useId();
+  const spreadId = useId();
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!attacker.trim() || !defender.trim()) return;
@@ -64,45 +71,51 @@ export function CalcForm({ pokemonNames, moveNames }: CalcFormProps) {
 
   return (
     <div className="space-y-4">
-      <form onSubmit={onSubmit} className="space-y-3">
+      <form onSubmit={onSubmit} className="space-y-3" noValidate>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="space-y-1">
-            <span className="text-xs font-medium">Attacker</span>
+          <Field id={attackerId}>
+            <FieldLabel>Attacker</FieldLabel>
             <Input
+              id={attackerId}
               list="pokemon-list"
               value={attacker}
               onChange={(e) => setAttacker(e.target.value)}
               placeholder="e.g. Incineroar, Mega Dragonite"
               required
             />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs font-medium">Defender</span>
+          </Field>
+          <Field id={defenderId}>
+            <FieldLabel>Defender</FieldLabel>
             <Input
+              id={defenderId}
               list="pokemon-list"
               value={defender}
               onChange={(e) => setDefender(e.target.value)}
               placeholder="e.g. Azumarill"
               required
             />
-          </label>
+          </Field>
         </div>
-        <label className="space-y-1 block">
-          <span className="text-xs font-medium">Move (optional — omit for all-moves)</span>
+        <Field id={moveId}>
+          <FieldLabel>Move</FieldLabel>
           <Input
+            id={moveId}
             list="moves-list"
             value={move}
             onChange={(e) => setMove(e.target.value)}
             placeholder="e.g. Flare Blitz"
+            aria-describedby={`${moveId}-hint`}
           />
-        </label>
-        <div className="flex flex-wrap gap-3 items-center">
-          <label className="space-y-1">
-            <span className="text-xs font-medium">Weather</span>
+          <FieldHint>Optional — omit to compare all moves.</FieldHint>
+        </Field>
+        <div className="flex flex-wrap gap-x-4 gap-y-3 items-end">
+          <Field id={weatherId} className="space-y-1">
+            <FieldLabel>Weather</FieldLabel>
             <select
+              id={weatherId}
               value={weather}
               onChange={(e) => setWeather(e.target.value)}
-              className="h-9 rounded-md border bg-background px-2 text-sm"
+              className="h-9 rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="">None</option>
               <option value="sun">Sun</option>
@@ -110,12 +123,14 @@ export function CalcForm({ pokemonNames, moveNames }: CalcFormProps) {
               <option value="sand">Sand</option>
               <option value="snow">Snow</option>
             </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm mt-5">
+          </Field>
+          <label htmlFor={spreadId} className="flex items-center gap-2 text-sm pb-1.5 cursor-pointer">
             <input
+              id={spreadId}
               type="checkbox"
               checked={spread}
               onChange={(e) => setSpread(e.target.checked)}
+              className="h-4 w-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             />
             Spread move
           </label>
@@ -139,7 +154,10 @@ export function CalcForm({ pokemonNames, moveNames }: CalcFormProps) {
       </form>
 
       {error && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        >
           {error}
         </div>
       )}

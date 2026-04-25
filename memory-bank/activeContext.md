@@ -1,8 +1,26 @@
 # Active Context
 
-_Last updated: 2026-04-23 late evening (post full-session closeout — A7 + A12 + A4c + reranker cleanup all shipped + pushed). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md); data-pipeline source-of-truth in [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
+_Last updated: 2026-04-25 (RAG → UI/UX pivot). Purpose: one-page "right now" snapshot. Forward plan lives in [rag-master-plan.md](rag-master-plan.md); stage-by-stage history in [progress.md](progress.md); bug log in [errors.md](errors.md); data-pipeline source-of-truth in [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
 
-## TL;DR
+## Current focus: UI/UX Phase 2 (active track)
+
+**Strategic pivot (2026-04-25):** RAG roadmap declared feature-complete for current product surface. Diminishing-returns signals all green: retrieval nDCG plateau at 0.844 (+0.8pp absolute over 2 weeks), agentic eval saturated at 13/13 + 100% citations across all viable models, all 4 user-value quality levers (model selection, freshness, citations, phantoms) shipped 2026-04-23. Active track is now **Tier D — Webapp UX**.
+
+**Phase 1 (passive RAG observation, no keyboard):**
+- 2026-04-26 (~24h after task fire): confirm `data/transcripts/` has new `.md` files from Windows Task Scheduler YouTube job (A10 gate close).
+- 2026-04-28 04:00 UTC: first Serebii weekly cron fire (A12 gate 1).
+- 2026-05-05 04:00 UTC: second Serebii fire → A12 verified-shipped.
+
+**Phase 2 (UI/UX, all 3 SHIPPED 2026-04-25):**
+1. **D1** — Mobile Team debugger via `<Sheet side="bottom">` + header toggle. `<DebugPanel>` extracted; reused across desktop aside + mobile drawer.
+2. **D2** — `streamReply()` extracted; Retry button on transport-error card; `<ThinkingSkeleton>` while streaming-empty; "stream ended" fallback. Pre-existing `Date.now()` impurity fixed.
+3. **D3** — New [src/components/ui/field.tsx](../src/components/ui/field.tsx) primitives (`Field`/`FieldLabel`/`FieldHint`/`FieldError`/`useFieldControl`); applied to `/calc` (5 fields), `/search` + `/team` inputs (sr-only labels, aria-labels, focus rings).
+
+Detail in [progress.md](progress.md) "Tier D — Webapp UX Phase 1" entry. tsc + eslint clean.
+
+**Re-entry triggers for RAG work** (don't touch unless one fires): real users surface a quality issue the eval suite missed; new Champions patch ships; budget unlocks paid APIs; A9 demand emerges.
+
+## RAG TL;DR (for cold readers)
 
 - **Retrieval baseline:** nDCG@10 = **0.844** overall (post-reranker-cleanup, 2,639 chunks). Δ -0.1% vs 0.845 post-A3 — well within 3% budget. Canonical snapshot: [retrieval-2026-04-24T05-27-53-696Z.json](eval-baselines/retrieval-2026-04-24T05-27-53-696Z.json).
 - **Agentic baseline (`gemma-4-26b --real-rag`, post-A4c 3-run):** **13/13 + 13/13 + 12/13** pass, **citation validity 100/100/100** (up from 80/100/80 pre-A4c), avg ~27k tok/pass. Phantom_pokemon interceptor fires in 0ms/0 tokens. Snapshots: `snapshots/model-eval-2026-04-24T04-*.json`.
@@ -15,12 +33,19 @@ _Last updated: 2026-04-23 late evening (post full-session closeout — A7 + A12 
 - **Session 2026-04-23 ship count:** A1/A2 (NO-GOs, memos), A3 (content refresh), A4 (phantom interceptor), A4c (citation nudge), A5 (Claude self-eval), A6 (multilingual pikalytics fix), A7 (core-WR NL retrieval), A10 revised (YouTube local schtasks), A11 (2×/day cron), A12 (Serebii weekly cron), A13 (staleness telemetry), C-tier reranker cleanup. Detailed archive entries in [progress.md](progress.md).
 - **Push state:** 6 session commits pushed to `origin/main` (`7ac3b1c` A7, `cc7e927` A12, `2ba58b5` A4c, `cd66ce1` reranker cleanup code, `9b85dfd` memory-bank wrap-up, `a1be19f` post-cleanup retrieval baseline). Working tree clean.
 
-## Next actions (Tier A, in order) — all optional or low-priority
+## Next actions (Tier D — UI/UX continued)
 
-1. **A8 — CLI harness wrapper** (optional): instrument `/lookup` + Read into `toolCallLog` so the 3 N/A tests become applicable to Claude-via-CLI. Internal tooling only; no user-visible value.
-2. **A9 — Harder eval tests** (optional): 13-test suite saturates at 10/10 for both Gemma and Claude Opus. Differentiating premium models (Sonnet 4.6, Opus 4.7) needs adversarial retrieval cases (misleading top-1, multi-hop, longer synthesis). Only pursue if user wants a paid-premium tier option.
-3. **A4b — Prompt hardening** — unchanged, low priority; A4 interceptor is the structural fix.
-4. Tier B: Phase 3 reranker retry — **PERMANENTLY DEFERRED** (B1 closeout 2026-04-23 late evening).
+1. **Manual smoke validation** of D1/D2/D3 (DevTools mobile mode for D1; force a transport error for D2 retry; tab-nav + screen-reader pass for D3). No code changes if smoke passes.
+2. **Commit + push** D1/D2/D3 + memory-bank updates as one logical unit ("feat(ux): Tier D Phase 1 — mobile debugger + retry/skeleton + Field primitives").
+3. **D4 — Mobile bottom-nav consistency** (next session candidate): the existing custom bottom-nav component is anchored on some pages but not all. Audit + apply uniformly. Pairs with D1's mobile-first push.
+4. **D5 — `/pokedex` & `/sets` polish** (next session candidate): search-as-you-type on `/pokedex`; archetype/core filter on `/sets`. Both surfaces are template-quality today.
+5. **D6 — Design tokens formalize** (deferred): Tailwind v4 `@theme` block lacks semantic names (`--color-success`, `--color-info`, radius-sm/lg). Pre-mature until a real component-library scale shows up.
+
+**Tier A residue (optional, unchanged from 2026-04-23):**
+
+- A8 (CLI harness wrapper) and A9 (harder eval tests) remain DEFERRED. Only pursue if a Tier-D session surfaces a concrete need (e.g., user complaint demanding paid-tier model differentiation).
+- A4b (prompt hardening) DEFERRED — A4 interceptor is the structural fix.
+- Tier B: Phase 3 reranker retry — **PERMANENTLY DEFERRED** (B1 closeout 2026-04-23 late evening).
 
 ## Observation gates pending
 

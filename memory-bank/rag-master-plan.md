@@ -1,6 +1,6 @@
 # Pokemon Champions RAG — Master Plan (Canonical)
 
-_Last revision: 2026-04-23 evening (post A5 + data-pipeline audit; A6/A7/A8/A9 from A5 findings, A10/A11/A12/A13 from data-freshness audit). This doc is the canonical forward plan. History is archived in [progress.md](progress.md); right-now state in [activeContext.md](activeContext.md); data-pipeline source-of-truth in [techContext.md](techContext.md#data-pipeline)._
+_Last revision: 2026-04-25 (RAG → UI/UX pivot; Tier D activated). This doc is the canonical forward plan. History is archived in [progress.md](progress.md); right-now state in [activeContext.md](activeContext.md); data-pipeline source-of-truth in [techContext.md](techContext.md#data-pipeline)._
 
 ---
 
@@ -23,6 +23,26 @@ Both surfaces pull from the same Supabase-backed RAG index. Retrieval is shared;
 - **Local CLI:** Claude Opus/Sonnet via this conversation. `/lookup` returns RAG results; I synthesize. Works well for open-ended analysis.
 - **Provider keys available today:** OpenRouter (multiple paid + free), Anthropic (Sonnet 4.6, Opus 4.7), Groq (Llama 3.3 70B free but unusable — see memo), HF Inference. **Ollama local** now installed; qwen2.5-7b + llama3.1-8b pulled, both below viable bar at Q4.
 - **Dormant code:** three reranker clients (Jina, Gemma pointwise, BGE cross-encoder) behind `RERANKER` env var. Default was silently firing Jina on every request before 2026-04-23 (fix: [lib/rag.ts:223](../lib/rag.ts) default now `"none"`).
+
+---
+
+## Strategic pivot (2026-04-25) — RAG → UI/UX
+
+The RAG roadmap is **feature-complete for the current product surface**. All four user-value quality levers from the 2026-04-23 reframe shipped that session (model selection, content freshness, citation hardening, phantom interceptor). Diminishing-returns signals are now decisive:
+
+| Signal | Reading | Verdict |
+|---|---|---|
+| Retrieval nDCG | Plateau at **0.844** for 2+ weeks (+0.8pp absolute over 13 phases) | Saturated; bounded by index content, not tuning |
+| Agentic eval (13-test) | Gemma 13/13 + 13/13 + 12/13; Claude Opus 10/10 applicable | Suite ceiling — can't differentiate models |
+| Citation validity | 80% → **100/100/100** after A4c | Resolved |
+| Phantom Pokemon | 3/3 pass via interceptor (model-agnostic, 0 tokens) | Resolved structurally |
+| Data freshness | YouTube + Pikalytics + Sheets 2×/day; Serebii weekly | At API ceiling |
+| Tier A | A1-A7, A10-A13 shipped; A8/A9 explicitly "optional, low user value" | Tier complete |
+| Budget constraint | No paid APIs outside OpenRouter Gemma | Hard ceiling |
+
+**Decision.** Activate **Tier D — Webapp UX** (previously the open "webapp regression / Tailwind 4 unblock" track). Three concrete improvements scoped (D1/D2/D3 — see roadmap table). RAG re-entry only on these triggers: real-user quality complaint not caught by the eval suite, Champions patch ships, budget unlocks paid APIs, or A9 demand emerges.
+
+**Phase 1 (passive RAG verification):** observation gates fire 2026-04-26 (YouTube task 24h gate), 2026-04-28 + 2026-05-05 (Serebii weekly cron). No keyboard time required.
 
 ---
 
@@ -65,7 +85,9 @@ Through Phases 0-5 we moved retrieval from 0.849 → 0.853 (+0.4 pp) over ~2 wee
 | C1 | eval-models.ts / chunker.ts splits | C | DEFERRED | Housekeeping; ship if actively blocking |
 | C2 | Stage 6.3 P2 (LLM planner fallback, $var deps) | C | DEFERRED | Wait for concrete need |
 | C3 | Late chunking | C | DEFERRED | BGE headroom check first |
-| D | Webapp regression / Tailwind 4 unblock | Separate | OPEN TRACK | webapp/HANDOVER.md |
+| D1 | Mobile-friendly Team debugger (sidebar → Sheet on mobile) | D | **SHIPPED (2026-04-25)** | Convert `<aside>` (lg-only) to `<Sheet>`-backed bottom drawer + header toggle; preserve all existing debug components |
+| D2 | Async UX hardening (retry, skeleton, empty-bubble fallback, debounce) | D | **SHIPPED (2026-04-25)** | Add retry button to transport-error card; skeleton loader for assistant pre-first-token; "stream ended early" fallback when content empty at done; debounce resubmits |
+| D3 | Form & a11y baseline (`Label`/`FieldError`/`FormGroup` + ARIA) | D | **SHIPPED (2026-04-25)** | New components in [src/components/ui/](../src/components/ui); apply to `/team`, `/calc`, `/search`; ARIA labels + heading hierarchy + focus rings |
 
 ---
 
