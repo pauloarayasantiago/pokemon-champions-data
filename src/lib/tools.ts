@@ -1,3 +1,6 @@
+import { readFileSync } from "fs";
+import { join } from "path";
+import { parse } from "csv-parse/sync";
 import { query, type ProgressStage } from "@core/rag";
 import {
   calculateDamage,
@@ -81,7 +84,7 @@ export const TOOL_DEFINITIONS: Tool[] = [
   {
     name: "pokedex",
     description:
-      "Authoritative structured lookup of a Pokemon. Returns types, abilities, base stats, and the FULL legal movepool as an array of strings. Accepts base form ('Froslass') or Mega ('Mega Froslass'). If a Mega exists, includes mega form details and its stone. Use this BEFORE proposing any set — the moves[] field is the single source of truth for move legality.",
+      "Authoritative structured lookup of a Pokemon. Returns types, abilities, base stats, the FULL legal movepool, and (for meta-relevant mons) a `competitive` block with Pikalytics usage rank, usage %, top moves with %, top items, top abilities, and top teammates with %. Accepts base form ('Froslass') or Mega ('Mega Froslass'). If a Mega exists, includes mega form details and its stone. Use this BEFORE proposing any set — the moves[] field is the single source of truth for move legality, and the competitive block usually has the meta context you'd otherwise search for.",
     parameters: {
       type: "object",
       properties: {
@@ -236,14 +239,29 @@ export type ToolProgressCallback = (
   detail?: Record<string, unknown>,
 ) => void;
 
+// R3 — strip the "Pokemon Champions" / "Regulation M-A" prefixes that some
+// models prepend to every search query. Every chunk in the index is from this
+// game/format, so these prefixes burn embedding tokens without helping retrieval.
+// Match is anchored, case-insensitive, allows reasonable variants ("Reg M-A",
+// "Regulation MA", "PoChamp"). Trim and collapse whitespace after stripping.
+const PREFIX_PATTERN =
+  /^(?:(?:pokemon\s+)?champions?\s+|po\s*champ\s+|reg(?:ulation)?\s+m-?a\s+)+/i;
+
+function stripChampionsPrefix(q: string): string {
+  const stripped = q.replace(PREFIX_PATTERN, "").trim();
+  // Don't return empty if the whole query was the prefix — keep original as fallback.
+  return stripped.length >= 3 ? stripped : q;
+}
+
 async function executeSearch(
   args: { query: string; topK?: number },
   onProgress?: ToolProgressCallback,
 ) {
   const topK = Math.max(1, Math.min(15, args.topK ?? 5));
-  const results = await query(args.query, topK, (stage, detail) => onProgress?.(stage, detail));
+  const cleanQuery = stripChampionsPrefix(args.query);
+  const results = await query(cleanQuery, topK, (stage, detail) => onProgress?.(stage, detail));
   return {
-    query: args.query,
+    query: cleanQuery,
     topK,
     results: results.map((r) => ({
       id: r.id,
@@ -253,6 +271,68 @@ async function executeSearch(
       text: r.text,
     })),
   };
+}
+
+// R2 — enrich pokedex tool output with Pikalytics competitive context so the
+// model doesn't need to fire a follow-up search for usage rank, top moves,
+// top items, top teammates. Module-level cache keeps repeated calls cheap.
+interface PikalyticsRow {
+  rank: number;
+  usagePct: number;
+  topMoves: Array<{ name: string; pct: number }>;
+  topItems: Array<{ name: string; pct: number }>;
+  topAbilities: Array<{ name: string; pct: number }>;
+  topTeammates: Array<{ name: string; pct: number }>;
+}
+
+let pikalyticsCache: Map<string, PikalyticsRow> | null = null;
+
+function parsePipeList(s: string | undefined): Array<{ name: string; pct: number }> {
+  if (!s) return [];
+  return s
+    .split("|")
+    .map((entry) => {
+      const idx = entry.lastIndexOf(":");
+      if (idx === -1) return { name: entry.trim(), pct: 0 };
+      return {
+        name: entry.slice(0, idx).trim(),
+        pct: parseFloat(entry.slice(idx + 1)) || 0,
+      };
+    })
+    .filter((e) => e.name.length > 0);
+}
+
+function loadPikalyticsContext(): Map<string, PikalyticsRow> {
+  if (pikalyticsCache) return pikalyticsCache;
+  try {
+    const raw = readFileSync(join(process.cwd(), "pikalytics_usage.csv"), "utf-8");
+    const rows: Record<string, string>[] = parse(raw, {
+      columns: true,
+      skip_empty_lines: true,
+    });
+    const map = new Map<string, PikalyticsRow>();
+    for (const row of rows) {
+      const name = (row.pokemon ?? "").trim().toLowerCase();
+      if (!name) continue;
+      map.set(name, {
+        rank: parseInt(row.rank, 10) || 0,
+        usagePct: parseFloat(row.usage_pct) || 0,
+        topMoves: parsePipeList(row.top_moves),
+        topItems: parsePipeList(row.top_items),
+        topAbilities: parsePipeList(row.top_abilities),
+        topTeammates: parsePipeList(row.top_teammates),
+      });
+    }
+    pikalyticsCache = map;
+    return map;
+  } catch {
+    pikalyticsCache = new Map();
+    return pikalyticsCache;
+  }
+}
+
+function lookupPikalytics(pokemonName: string): PikalyticsRow | null {
+  return loadPikalyticsContext().get(pokemonName.trim().toLowerCase()) ?? null;
 }
 
 async function executeCalc(args: CalcArgs, onProgress?: ToolProgressCallback) {
@@ -331,7 +411,28 @@ export async function executeTool(
     }
     if (call.name === "pokedex") {
       const { name } = call.arguments as { name: string };
-      return JSON.stringify(lookupPokemon(name));
+      const result = lookupPokemon(name);
+      // R2 — enrich with Pikalytics competitive context for known mons.
+      // Skip when not found (no canonical name to look up); cap each list to
+      // avoid response bloat (the model rarely needs more than top 4-6 of each).
+      if (!result.notFound) {
+        const usage = lookupPikalytics(result.name);
+        if (usage) {
+          return JSON.stringify({
+            ...result,
+            competitive: {
+              rank: usage.rank,
+              usagePct: usage.usagePct,
+              topMoves: usage.topMoves.slice(0, 6),
+              topItems: usage.topItems.slice(0, 4),
+              topAbilities: usage.topAbilities.slice(0, 3),
+              topTeammates: usage.topTeammates.slice(0, 6),
+              source: "pikalytics_usage.csv",
+            },
+          });
+        }
+      }
+      return JSON.stringify(result);
     }
     if (call.name === "validate_set") {
       const out = validateSet(call.arguments as unknown as SetInput);

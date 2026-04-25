@@ -11,6 +11,24 @@ _Last updated: 2026-04-25 (RAG → UI/UX pivot). Purpose: one-page "right now" s
 - 2026-04-28 04:00 UTC: first Serebii weekly cron fire (A12 gate 1).
 - 2026-05-05 04:00 UTC: second Serebii fire → A12 verified-shipped.
 
+**R-tier RAG improvements SHIPPED (2026-04-25 late evening):**
+- **R1** — system-prompt v4.2: replaced fake `knowledge:meta_snapshot.md#top-cores` example with real chunker shapes (12 prefix list + actual `md:data/knowledge/...:5` example). Audit found validator IS strict — apparent heterogeneity was just legitimate multi-source IDs.
+- **R2** — `pokedex` now appends a `competitive` block (rank, usagePct, top moves/items/abilities/teammates) from `pikalytics_usage.csv`. Module-level cache; graceful fallback for low-usage mons. Should cut ~30% of follow-up search calls.
+- **R3** — `executeSearch` strips "Pokemon Champions"/"Regulation M-A" prefix variants before embedding. Saves tokens; system-prompt also nudges against the prefix.
+- Verified `tsc` + `eslint` clean; smoke test [scripts/smoke-pokedex-enrich.ts](../scripts/smoke-pokedex-enrich.ts) confirms enrichment + 89 pikalytics rows loaded.
+- **Side discovery → A14 filed:** Pikalytics Froslass row currently in Italian (Bora/Protezione/Velaurora). A6's `[^\x00-\x7f]` detector misses ASCII-Latin scripts. Fix candidate: cross-check scraped move names against canonical English `moves.csv`. Filed; not blocking R-track shipping.
+
+**Tier D Phase 2 SHIPPED (2026-04-25 evening):**
+- **D7+D9 (combined)** — `applyEvent` clears assistant content on `iter_start` when iter > 0. Handles citation-retry duplicate AND chain-of-thought intermediate-content accumulation in a single 5-line edit. Tool calls preserved across iters.
+- **D8** — Stop button (destructive variant, `<Square>` icon) replaces Send while `isStreaming`. `AbortController` wired to `streamReply()`'s fetch; AbortError handled silently as `errorStage: "cancelled"`. Critical for prod given Vercel Lambda timeout (~5-10 min) and 11-min DeepSeek runs.
+- **3 RAG suggestions filed (R1/R2/R3)** in master plan — chunk_id format audit, enrich pokedex output, strip search prefix. All low-priority/exploratory; ship when convenient.
+
+**Recent observations (2026-04-25):**
+- **`gemini-3-flash` vs `gemma-4-26b` real-world compare on Snow-Balance prompt — DONE.** Headline: Gemini-3-flash ran in 21.3s with 8/8 citations on first attempt; Gemma needed 58.8s + survived a streaming tool_use crash + a missing-claims-block retry to reach 3/3 citations. Both clean on banned items. **Strategic implication:** worth scheduling an `A1-alt-2` 3-run agentic eval on `gemini-3-flash` (newer than the 2.5 Flash Lite tested in the original bake-off) — could be a faster default if the banned-item hallucination from the original [project_gemini3_eval.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_gemini3_eval.md) doesn't re-appear. Detail in [progress.md](progress.md) "Real-world gemini-3-flash run observed" entry + "Compare — Gemma 4 26B run" addendum.
+- **D2 retry button validated.** Gemma's `xsy7lm` streaming-JSON crash is exactly the failure mode the new D2 retry button is for. UX safety net works in production-shape conditions.
+- **C4 — exclude `memory-bank/**` from indexer ingest.** Promoted in priority. Stale-warning noise grew from 3 files to 5 between runs (mix of real CSV churn + meta-doc noise); 60% signal / 40% noise is too lossy. Worth shipping the 5-min fix soon.
+- **Possible new task: `A1-alt-2` (gemini-3-flash 3-run eval).** Open question for next session — only worth it if the user wants to consider switching default from Gemma. No pressure; Gemma's slower-but-reliable profile may still be the right call.
+
 **Phase 2 (UI/UX, all 3 SHIPPED 2026-04-25):**
 1. **D1** — Mobile Team debugger via `<Sheet side="bottom">` + header toggle. `<DebugPanel>` extracted; reused across desktop aside + mobile drawer.
 2. **D2** — `streamReply()` extracted; Retry button on transport-error card; `<ThinkingSkeleton>` while streaming-empty; "stream ended" fallback. Pre-existing `Date.now()` impurity fixed.

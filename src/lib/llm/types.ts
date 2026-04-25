@@ -4,6 +4,12 @@ export type ModelId =
   | "gemma-4-26b"
   | "gemini-2.5-flash"
   | "gemini-3-flash"
+  | "deepseek-v4-flash"
+  | "deepseek-v4-pro"
+  | "kimi-k2-6"
+  | "minimax-m2-7"
+  | "minimax-m2-5"
+  | "grok-4-1-fast"
   | "llama-3.3-70b"
   | "sonnet-4-6"
   | "opus-4-7"
@@ -77,7 +83,7 @@ export const MODEL_REGISTRY: Record<
   "gemma-4-26b": {
     provider: "openrouter",
     remoteName: "google/gemma-4-26b-a4b-it",
-    tier: "free",
+    tier: "paid",
   },
   "gemini-2.5-flash": {
     provider: "gemini",
@@ -87,6 +93,36 @@ export const MODEL_REGISTRY: Record<
   "gemini-3-flash": {
     provider: "openrouter",
     remoteName: "google/gemini-3-flash-preview",
+    tier: "paid",
+  },
+  "deepseek-v4-flash": {
+    provider: "openrouter",
+    remoteName: "deepseek/deepseek-v4-flash",
+    tier: "paid",
+  },
+  "deepseek-v4-pro": {
+    provider: "openrouter",
+    remoteName: "deepseek/deepseek-v4-pro",
+    tier: "paid",
+  },
+  "kimi-k2-6": {
+    provider: "openrouter",
+    remoteName: "moonshotai/kimi-k2.6",
+    tier: "paid",
+  },
+  "minimax-m2-7": {
+    provider: "openrouter",
+    remoteName: "minimax/minimax-m2.7",
+    tier: "paid",
+  },
+  "minimax-m2-5": {
+    provider: "openrouter",
+    remoteName: "minimax/minimax-m2.5",
+    tier: "paid",
+  },
+  "grok-4-1-fast": {
+    provider: "openrouter",
+    remoteName: "x-ai/grok-4.1-fast",
     tier: "paid",
   },
   "llama-3.3-70b": {

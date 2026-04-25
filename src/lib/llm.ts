@@ -47,21 +47,23 @@ export function chatStream(params: ChatParams): AsyncIterable<ChatDelta> {
   return pick(params.model).chatStream(params);
 }
 
-// Routing (2026-04-20): Gemma for batch/eval (cheap, 85% pass); Gemini 3 Flash for team-building UI (94.9% pass, parallel tools, always-valid output). See memory-bank/activeContext.md Task 4.
+// Routing (2026-04-25): Gemma 4 26B is the eval/batch default (13/13 + 100% citations after A4c, ~$0.008/run, ~50s/team-build).
+// Gemini 3 Flash Preview drives the team-building UI (faster ~21s, parallel tools, 8/8 citations clean on real-world Snow-Balance run, no banned-item hallucination observed).
+// See memory-bank/progress.md "Real-world gemini-3-flash run observed" + "Compare — Gemma 4 26B run" entries.
 export const DEFAULT_MODEL: ModelId = "gemma-4-26b";
 export const TEAM_BUILDING_MODEL: ModelId = "gemini-3-flash";
 
+// Curated dropdown — 3 models the user actually picks between.
+// MODEL_REGISTRY in llm/types.ts retains the rest (groq llama, ollama locals, claude, etc.) for eval-models.ts benchmarking
+// without surfacing them to end users; restore an entry here to expose it in the /team selector.
 export const AVAILABLE_MODELS: { id: ModelId; label: string; tier: "free" | "paid" }[] = [
   { id: "gemini-3-flash", label: "Gemini 3 Flash Preview", tier: "paid" },
+  { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash", tier: "paid" },
+  { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro", tier: "paid" },
+  { id: "kimi-k2-6", label: "Kimi K2.6", tier: "paid" },
+  { id: "minimax-m2-7", label: "MiniMax M2.7", tier: "paid" },
+  { id: "minimax-m2-5", label: "MiniMax M2.5", tier: "paid" },
+  { id: "grok-4-1-fast", label: "Grok 4.1 Fast", tier: "paid" },
+  { id: "gemma-4-26b", label: "Gemma 4 26B", tier: "paid" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", tier: "free" },
-  { id: "llama-3.3-70b", label: "Llama 3.3 70B", tier: "free" },
-  { id: "nemotron-super", label: "GPT-OSS 120B (OpenRouter)", tier: "free" },
-  { id: "gemma-4-31b", label: "Gemma 4 31B IT (OpenRouter)", tier: "free" },
-  { id: "gemma-4-26b", label: "Gemma 4 26B A4B (OpenRouter)", tier: "free" },
-  { id: "qwen2.5-7b", label: "Qwen 2.5 7B (Local Ollama)", tier: "free" },
-  { id: "llama3.1-8b", label: "Llama 3.1 8B (Local Ollama)", tier: "free" },
-  { id: "remote-gemma4", label: "Gemma 4 27B (Remote Server)", tier: "free" },
-  { id: "remote-qwen32b", label: "Qwen 2.5 32B (Remote Server)", tier: "free" },
-  { id: "sonnet-4-6", label: "Claude Sonnet 4.6", tier: "paid" },
-  { id: "opus-4-7", label: "Claude Opus 4.7", tier: "paid" },
 ];

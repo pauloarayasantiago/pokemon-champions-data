@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Send,
+  Square,
   Wrench,
   User,
   Bot,
@@ -132,6 +133,7 @@ export default function TeamPage() {
   const [staleness, setStaleness] = useState<StalenessInfo | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -169,6 +171,9 @@ export default function TeamPage() {
     setIsStreaming(true);
     setError(null);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     const freshRun: RunState = {
       startedAt: Date.now(),
       iters: {},
@@ -182,6 +187,7 @@ export default function TeamPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model, messages: apiMessages }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) {
@@ -215,13 +221,22 @@ export default function TeamPage() {
         }
       }
     } catch (err) {
-      setError((err as Error).message);
-      setRun((r) =>
-        r
-          ? { ...r, errorStage: "transport", errorText: (err as Error).message, endedAt: Date.now() }
-          : r,
-      );
+      const error = err as Error;
+      const aborted = error.name === "AbortError" || controller.signal.aborted;
+      if (aborted) {
+        setRun((r) =>
+          r ? { ...r, errorStage: "cancelled", errorText: "Cancelled by user", endedAt: Date.now() } : r,
+        );
+      } else {
+        setError(error.message);
+        setRun((r) =>
+          r
+            ? { ...r, errorStage: "transport", errorText: error.message, endedAt: Date.now() }
+            : r,
+        );
+      }
     } finally {
+      abortRef.current = null;
       setIsStreaming(false);
       setRun((r) => {
         if (!r) return r;
@@ -230,6 +245,10 @@ export default function TeamPage() {
         return finished;
       });
     }
+  }
+
+  function cancel() {
+    abortRef.current?.abort();
   }
 
   async function submit(e: React.FormEvent) {
@@ -393,9 +412,22 @@ export default function TeamPage() {
             autoComplete="off"
             enterKeyHint="send"
           />
-          <Button type="submit" disabled={isStreaming || !input.trim()} size="icon" aria-label="Send message">
-            <Send className="h-4 w-4" aria-hidden />
-          </Button>
+          {isStreaming ? (
+            <Button
+              type="button"
+              onClick={cancel}
+              size="icon"
+              variant="destructive"
+              aria-label="Stop generation"
+              title="Stop generation"
+            >
+              <Square className="h-4 w-4" aria-hidden />
+            </Button>
+          ) : (
+            <Button type="submit" disabled={!input.trim()} size="icon" aria-label="Send message">
+              <Send className="h-4 w-4" aria-hidden />
+            </Button>
+          )}
         </form>
         <StalenessFooter staleness={staleness} />
       </div>
@@ -1082,6 +1114,14 @@ function applyEvent(
       if (type === "tool_call") {
         const toolIds = [...(m.toolIds ?? []), evt.id as string];
         return { ...m, toolIds };
+      }
+      // D7+D9: clear accumulated content at the start of any non-first iter so the visible
+      // bubble shows only the current iter's stream. This drops intermediate "thinking" text
+      // from chain-of-thought-style models (e.g. DeepSeek streams ~6.8k chars across pre-final
+      // iters) AND replaces a failed iter's content when citation_retry triggers a fresh iter.
+      // Tool calls are preserved across iters since they represent real history.
+      if (type === "iter_start" && (evt.iter as number) > 0) {
+        return { ...m, content: "" };
       }
       return m;
     }),
