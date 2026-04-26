@@ -463,7 +463,7 @@ Trick,Psychic,Status,12,--,100,The user and the target swap their held items.
 Trick Room,Psychic,Status,8,--,101,Gives the entire field the Trick Room status for 5 turns.
 Trick-or-Treat,Ghost,Status,20,--,100,Gives the target the Trick-or-Treating status.
 Triple Arrows,Fighting,Physical,12,90,100,Has a 50% chance of lowering the target's Defense stat by 1 stage and has a 30% chance of making the target flinch. This move has a 1-stage Critical-Hit Ratio Boost.
-Triple Axel,Ice,Physical,12,20,90,The user attacks 3 times in a rowÃ¢â¬âfirst with a power of 20 then with a power of 40 then with a power of 60. The attack ends if the user misses.
+Triple Axel,Ice,Physical,12,20,90,The user attacks 3 times in a row-first with a power of 20 then with a power of 40 then with a power of 60. The attack ends if the user misses.
 Trop Kick,Grass,Physical,16,85,100,Lowers the target's Attack stat by 1 stage.
 Twin Beam,Psychic,Special,12,40,100,The user attacks twice in a row.
 U-turn,Bug,Physical,20,70,100,After attacking the user switches out of battle to be replaced by another party Pokémon.
