@@ -133,3 +133,62 @@ The agent layer wraps the RAG layer. It runs in two places: [src/app/api/team/ro
 5. **Tool execution** — Stage 6.3 parallelism: `Promise.all` over the turn's tool calls; each runs via `executeTool()` which routes to `search` / `calc` / `pokedex` / `validate_set`. `tool_start`/`tool_end`/`tool_result` SSE events fire for UI; `search` results feed `seenChunkIds` for citation validation.
 6. **Termination** — when `finishReason !== "tool_calls"`, validate claims-json against `seenChunkIds` via `validateCitations()` (Phase 2). If invalid and retry not yet fired, nudge once (`citation_retry`), continue. Otherwise emit `citation_result` + `done` and close.
 7. **Guardrails** — eval harness only: hard pokedex dedup cap (3rd+ identical call refused, not logged), post-loop force-completion (fires once if lastContent empty or no team-json block, disables tools for pure text), tool-syntax-garbage nudge (catches raw `call:name{args}` text output instead of real tool_calls — known Gemma failure mode).
+
+## OpenRouter Routing (post-2026-04-25)
+
+Every OpenRouter request from this project sends a `provider` block in the body — set in [src/lib/llm/openrouter.ts](../src/lib/llm/openrouter.ts) `buildConfig(params)` and merged via the `extraBody` hook in [src/lib/llm/openai-compat.ts](../src/lib/llm/openai-compat.ts) `CompatConfig`. Defaults applied to every model:
+
+- `provider.allow_fallbacks: false` — fail fast on the chosen backend; never silently degrade to a different (cheaper, often throttled) provider.
+- `provider.sort: "throughput"` — when no `provider.order` is set, prefer faster (typically paid) backends over cheapest.
+- `provider.require_parameters: true` — only route to providers that fully support our params (we always pass `tools`); without this, OpenRouter could pick a tools-less provider and silently ignore our function definitions.
+
+When a `MODEL_REGISTRY` entry sets `openrouterProviderOrder?: string[]`, the adapter pins to those upstream providers in priority order (overrides `sort: throughput`). Currently pinned: `deepseek-v4-flash`, `deepseek-v4-pro`, `minimax-m2-7` — all to first-party (cheapest AND least throttled per `GET /v1/models/{id}/endpoints`). See [memory/project_openrouter_paid_routing.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_openrouter_paid_routing.md) for the discovery story and [errors.md](errors.md) for the prior-shared-pool-429 bug.
+
+When adding a new OpenRouter model: query `GET /v1/models/{vendor}/{model}/endpoints` to see available providers; if <5 exist or first-party isn't first-by-throughput, set `openrouterProviderOrder` to put first-party in slot 1.
+
+## Model Tier Classification (post-2026-04-25 9-model comparison)
+
+Models in `AVAILABLE_MODELS` ([src/lib/llm.ts](../src/lib/llm.ts)) are tiered along **two dimensions**: operational reliability (latency / completion / citation hygiene) AND output quality (team correctness / item legality / strategic coherence / system-prompt convention adherence). Both dimensions matter — a model that produces fast valid JSON but recommends banned items is a worse default than a slower model whose teams actually work.
+
+**Reference prompt:** "Build a team around Froslass and Krookodile" — same input across the 5-batch comparison so output differences reflect model behavior, not prompt variance.
+
+### Operational dimension (completes + valid JSON + cites)
+
+| Op-Tier | Latency | Models |
+|---|---|---|
+| Op-S | < 30s | `gemini-3-flash` (~21s · 5 iters · 6/6 cites) |
+| Op-A | < 90s | `gemma-4-26b` (~81s · 6 iters · 4/4), `grok-4-1-fast` (~63s · 5 iters · 5/5) |
+| Op-B | < 5min | `minimax-m2-5` (~67s · 18 iters · 9/9), `minimax-m2-7` (~265s · 10 iters · 8/8 — needs first-party pin), `kimi-k2-6` (~221s · 9 iters · 9/9) |
+| Op-C | up to ~30min, or 429-prone | `deepseek-v4-flash` (~1755s · 18 iters · 9/9), `deepseek-v4-pro` (intermittent 429) |
+
+### Quality dimension (team is competitive + Champions-legal + system-prompt-convention-correct)
+
+Audit applied to each model's final team-json from the 2026-04-25 comparison runs, scored against CLAUDE.md banned-items list, item-move interaction rules, system-prompt format conventions, and Champions VGC strategic principles.
+
+| Q-Tier | Issue | Models |
+|---|---|---|
+| Q-A — clean | None | `gemini-3-flash`, `grok-4-1-fast`, `minimax-m2-5` |
+| Q-B — minor convention/strategic flaw | Wrong ability per system-prompt convention (lists base ability instead of Mega ability — Aurora Veil setup reads as broken without inspection); OR suboptimal item/move pairing that costs effectiveness but isn't illegal | `kimi-k2-6` (Froslass `Cursed Body` instead of `Snow Warning`), `deepseek-v4-flash` (Froslass `Snow Cloak` instead of `Snow Warning`), `minimax-m2-7` (Krookodile `Leftovers + Superpower` — Superpower self-debuffs Atk/Def each use; Basculegion no Scarf weakens its Last Respects role) |
+| **Q-D — illegal team** | Recommended a banned item AND/OR shipped an item-move conflict that nullifies a moveslot | `gemma-4-26b` (**Assault Vest on Incineroar** is banned per CLAUDE.md MISSING ITEMS list; **Sneasler Focus Sash + Acrobatics** — Acrobatics is 55 BP with item, 110 BP without, so the Sash permanently weakens the move) |
+
+### Combined tier (operational × quality, used for production selection)
+
+| Combined | Models | Use when |
+|---|---|---|
+| **S — Production default** | `gemini-3-flash` | Always, unless explicitly comparing alternatives |
+| **A — Recommended alternatives** | `grok-4-1-fast`, `minimax-m2-5` | User wants comparison; budget allows ~60-90s |
+| **B — Slow but consistent** | `minimax-m2-7`, `kimi-k2-6` | Thoroughness over latency; tolerate convention/strategy quirks |
+| **C — Fast but flawed** | `gemma-4-26b` | **AVOID for end-user team output until validate_set compliance is enforced.** Currently emits banned items because it skips `validate_set` calls (model-compliance gap with system prompt). Acceptable for batch/eval where structural validators catch the issue post-hoc. See [project_gemma_agentic_quirks.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_gemma_agentic_quirks.md). |
+| **C — Very slow** | `deepseek-v4-flash` | Last resort; minor convention flaw + 30min latency |
+| **C — Intermittent** | `deepseek-v4-pro` | Retry periodically; routing pinned but upstream capacity transient |
+| **X — Excluded** (in `MODEL_REGISTRY`, NOT in `AVAILABLE_MODELS`) | `gemini-2.5-flash` | Re-add when a paid Google AI Studio / Vertex key is configured |
+
+### Selection rules
+
+1. Default to **S** for production user-facing team building.
+2. Use **A** for side-by-side comparisons or when latency budget allows.
+3. Use **B** when you want thorough citations + don't mind 4-5 min wall.
+4. **DO NOT use Gemma (current C) for end-user team output** without first verifying it called `validate_set` on every team member. The A15 team-validator catches duplicate items / SP issues but doesn't catch banned-item violations on its own (those are `validate_set`'s job, and Gemma skips). Gemma is fine for offline eval where the banned-item issue is caught by the suite's `item_availability` test.
+5. **Tier promotions/demotions follow re-test evidence**, not training-data assumptions. Capacity transients (deepseek-v4-pro) and model-update churn can move models in/out of usable status day-to-day. Re-run with `npx tsx scripts/test-team.ts <model>` and audit the resulting `runs/<model>-<ts>.md` against this rubric.
+
+**Per-model evaluation memos** (in `.claude/projects/.../memory/`): `project_minimax_m2_eval.md`, `project_kimi_k26_eval.md`, `project_grok_41_fast_eval.md`, `project_deepseek_v4_eval.md`, `project_gemini_25_flash_eval.md`, plus older `project_gemini3_eval.md`, `project_gemma_agentic_quirks.md`, `project_default_model.md`.

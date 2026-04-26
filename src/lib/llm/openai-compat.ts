@@ -110,6 +110,10 @@ interface CompatConfig {
   apiUrl: string;
   getApiKey: () => string;
   extraHeaders?: Record<string, string>;
+  // Provider-specific request-body fields (e.g. OpenRouter's `provider` block
+  // for routing preferences). Merged into the body before the conditional
+  // fields below, so callers can't accidentally override `model`/`messages`.
+  extraBody?: Record<string, unknown>;
 }
 
 export async function compatChat(
@@ -118,6 +122,7 @@ export async function compatChat(
 ): Promise<ChatResult> {
   const reg = MODEL_REGISTRY[params.model];
   const body: Record<string, unknown> = {
+    ...(config.extraBody ?? {}),
     model: reg.remoteName,
     messages: toOpenAIMessages(params.messages, params.system),
   };
@@ -166,6 +171,7 @@ export async function* compatChatStream(
 ): AsyncIterable<ChatDelta> {
   const reg = MODEL_REGISTRY[params.model];
   const body: Record<string, unknown> = {
+    ...(config.extraBody ?? {}),
     model: reg.remoteName,
     messages: toOpenAIMessages(params.messages, params.system),
     stream: true,

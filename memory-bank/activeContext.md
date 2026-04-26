@@ -1,33 +1,48 @@
 # Active Context
 
-_Last updated: 2026-04-25 night (post A15 ship + R-tier ship + Tier D Phase 1+2 ship + 5-model real-world compare). Purpose: one-page "right now" snapshot for next-agent handoff. Forward plan: [rag-master-plan.md](rag-master-plan.md). Detailed history: [progress.md](progress.md). Bug log: [errors.md](errors.md). Data-pipeline source-of-truth: [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
+_Last updated: 2026-04-25 late night (post 9-model comparison + paid-routing fix + system prompt v4.5 + 7 new memory memos). Purpose: one-page "right now" snapshot for next-agent handoff. Forward plan: [rag-master-plan.md](rag-master-plan.md). Detailed history: [progress.md](progress.md). Bug log: [errors.md](errors.md). Data-pipeline source-of-truth: [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
 
 ## TL;DR
 
-**RAG declared feature-complete 2026-04-25** after the 2026-04-23 Tier-A close. Diminishing-returns signals decisive: nDCG plateau 0.844, agentic eval saturated at 13/13 + 100% citations, all 4 user-value quality levers shipped. Active track since the pivot is **Tier D — Webapp UX**. Three D-tier improvements + three R-tier RAG-quality follow-ups + one A-tier structural validator (A15) all shipped 2026-04-25 night.
+**RAG declared feature-complete 2026-04-25**. Active track since the pivot is **Tier D — Webapp UX**. Tier D Phase 1+2, A15 validator, R1-R3 RAG follow-ups all shipped earlier today.
 
-**Current state:** webapp surface is hardened, validator covers item-clause + species-clause + SP caps server-side, multi-model dropdown is testing-ready with 9 OpenRouter models. User has been comparison-testing models (5 done so far). 4 more pending: MiniMax M2.7, MiniMax M2.5, Grok 4.1 Fast, DeepSeek V4 Pro (BYOK needed for the latter — 429s on shared OpenRouter pool).
+**Late-night session (2026-04-25 17:30-19:30):** Built [scripts/test-team.ts](../scripts/test-team.ts) capture tool, ran 9-model comparison batches on the prompt "Build a team around Froslass and Krookodile". Discovered the OpenRouter adapter sent NO `provider` routing field — explaining why 6/9 models hit shared-pool 429s or transport timeouts despite a paid account. Shipped:
+- **Paid routing fix** in [src/lib/llm/openrouter.ts](../src/lib/llm/openrouter.ts) + [src/lib/llm/openai-compat.ts](../src/lib/llm/openai-compat.ts): per-call config injects `provider.{allow_fallbacks:false, sort:throughput, require_parameters:true}` plus per-model `provider.order` first-party pinning.
+- **System prompt v4.5** (`2026-04-25.v4.5-reemit-both`) in [src/lib/system-prompt.ts](../src/lib/system-prompt.ts): rule 3 strengthened (must omit pokedex/validate/calc claims), STOP CONDITION after blocks, rule 6 fixed (re-emit BOTH blocks on citation_retry — v4.4's "only claims" version was broken).
+- **AVAILABLE_MODELS curated** in [src/lib/llm.ts](../src/lib/llm.ts): dropped `gemini-2.5-flash` (Google free-tier daily quota); kept 8 paid OpenRouter models.
+- **7 new memory memos** in `.claude/projects/.../memory/` covering: paid routing, MiniMax pair, Kimi, Grok, DeepSeek V4 pair, full Gemini 2.5 Flash (distinct from Lite), system prompt v4.5.
 
-**Working tree:** uncommitted changes from 2026-04-25 evening/night session — D7+D8+D9 + R1+R2+R3 + A15 + CLAUDE.md + system-prompt v4.3 + 9-model dropdown (curated to 5 visible). Plus memory-bank docs. Recommend a single feature commit before next session.
+**Result:** 7 of 9 models verified passing on the prompt. Failing: `deepseek-v4-pro` (transient OpenRouter capacity — all 3 tool-supporting providers 429 simultaneously today; routing config is correct), `gemini-2.5-flash` (Google free-tier quota — needs paid Google key to re-enable, separate from OpenRouter).
+
+**Working tree:** uncommitted changes spanning earlier ships PLUS today's session (test-team.ts, openrouter.ts, openai-compat.ts, types.ts, system-prompt.ts, llm.ts, CLAUDE.md, memory-bank/activeContext.md, runs/* gitignored, .gitignore). Recommend a single feature commit before next session.
 
 ## Active model dropdown (curated `AVAILABLE_MODELS`)
 
-1. Gemini 3 Flash Preview (paid) — TEAM_BUILDING_MODEL default
-2. DeepSeek V4 Flash (paid)
-3. DeepSeek V4 Pro (paid — 429-prone on shared pool)
-4. Kimi K2.6 (paid — slowest tested at 18.2 min)
-5. MiniMax M2.7 (paid — untested)
-6. MiniMax M2.5 (paid — untested)
-7. Grok 4.1 Fast (paid — untested)
-8. Gemma 4 26B (paid) — DEFAULT_MODEL for batch/eval
-9. Gemini 2.5 Flash (free)
+Verified 2026-04-25 with paid routing + v4.5 prompt. **Tiers below combine operational + quality dimensions** — see [systemPatterns.md § Model Tier Classification](systemPatterns.md) for the full rubric.
 
-`MODEL_REGISTRY` retains additional opt-in models (Groq Llama 3.3 70B, Ollama locals, Claude Sonnet/Opus, etc.) for `eval-models.ts` benchmarking.
+| Combined tier | Model | Op-tier | Q-tier | Notes |
+|---|---|---|---|---|
+| **S — production default** | `gemini-3-flash` | S (~21s) | A (clean) | `TEAM_BUILDING_MODEL` default. Targeted tool flow + sound team |
+| **A — recommended alternatives** | `grok-4-1-fast` | A (~63s) | A | Citation hallucination fixed by v4.5 |
+| **A — recommended alternatives** | `minimax-m2-5` | A (~67s) | A | Sophisticated team, multiple win conditions |
+| **B — slow but consistent** | `minimax-m2-7` | B (~265s) | B | First-party pinned. Krook/Basc minor strategic flaws |
+| **B — slow but consistent** | `kimi-k2-6` | B (~221s) | B | Lists base Froslass ability vs Mega ability (system-prompt convention slip) |
+| **C — fast but flawed** | `gemma-4-26b` | A (~81s) | **D** ⚠️ | **Skipped `validate_set` → shipped banned Assault Vest on Incineroar AND Focus-Sash-with-Acrobatics conflict.** OK for batch/eval (suite catches it); **avoid for end-user output** until compliance improves. Was `DEFAULT_MODEL`; recommend NOT promoting to webapp default |
+| **C — very slow** | `deepseek-v4-flash` | C (~30min) | B | First-party pinned. Sound team but base-vs-Mega ability slip like Kimi |
+| **C — intermittent** | `deepseek-v4-pro` | C (429-prone) | n/a (no successful run today) | All 3 tool-supporting providers throttled today. Routing pinned correctly; retest when capacity recovers |
+
+**Dropped from dropdown** (still in `MODEL_REGISTRY`):
+- `gemini-2.5-flash` — routes through Google API, free-tier 5 RPM daily quota = unusable in any session > 5 LLM calls. Re-add when paid Google key configured.
+
+`MODEL_REGISTRY` also retains opt-in models (Groq Llama 3.3 70B, Ollama locals, Claude Sonnet/Opus, etc.) for `eval-models.ts` benchmarking.
+
+**Quality audit rubric** (applied to each model's final team-json from 2026-04-25 runs against CLAUDE.md banned-items list, item-move interactions, system-prompt format conventions, Champions VGC strategic principles): A = clean; B = minor convention/strategic flaw (functions but reads as broken to a careful reader); D = illegal team (banned item OR moveset conflict that nullifies a slot).
 
 ## Next actions (in priority order)
 
-1. **Smoke + commit** the 2026-04-25 session bundle. Run any model in `/team`, confirm: D8 stop button works, D7+D9 wipes intermediate-iter content, R2 pokedex now returns `competitive` block, A15 catches a deliberate item-clause violation if you craft one. Then `git commit -m "feat(ux+rag): Tier D Phase 1+2, R1-R3, A15, model-list curation"`.
-2. **Resume model testing** on the 4 untested models. Use the same Snow-Balance prompt for apples-to-apples; collect run logs. Append a row per model to the [progress.md](progress.md) "5-model compare" table.
+1. **Smoke + commit** the 2026-04-25 session bundle. Touched files span earlier ships (D7-D9, R1-R3, A15) + tonight (paid routing in openrouter.ts + openai-compat.ts + types.ts, system-prompt v4.5, AVAILABLE_MODELS curation in llm.ts, scripts/test-team.ts, CLAUDE.md). Run any model in `/team` to smoke. Suggested commit: `git commit -m "feat(ux+rag+routing): Tier D, R1-R3, A15, system prompt v4.5, OpenRouter paid routing, test-team capture CLI"`.
+2. **Retest `deepseek-v4-pro` periodically.** All 3 tool-supporting OpenRouter providers were simultaneously throttled today. Routing config (`provider.order: [DeepSeek, SiliconFlow, Together, Io Net]` + `require_parameters=true`) is correct — just need OpenRouter capacity to recover. Try: `npx tsx scripts/test-team.ts deepseek-v4-pro` after a few hours.
+3. **Optional: paid Google API for gemini-2.5-flash.** If user wants this back in the dropdown, set a paid Google AI Studio key (currently free tier hits 5 RPM daily cap). Adapter at [src/lib/llm/gemini.ts](../src/lib/llm/gemini.ts) just needs the env var.
 3. **A14 — Pikalytics non-EN ASCII-Latin detection.** Currently leaks Italian (Bora/Velaurora) past the `[^\x00-\x7f]` regex. Fix candidate: cross-check scraped move names against canonical `moves.csv` and trigger retry/fallback when >50% don't match. Currently degrading R2 enrichment for Froslass specifically.
 4. **C4 — exclude `memory-bank/**` from indexer ingest.** Stale-warning noise on every memory-bank edit. 5-min fix in chunker ignore globs.
 
@@ -54,7 +69,7 @@ Don't touch RAG further unless one fires:
 
 ## Hard constraints
 
-- **Budget:** No paid APIs outside the allowlist (OpenRouter Gemma + opt-in Anthropic, plus the user-added paid OpenRouter models for testing). Jina permanently OFF. See [memory/project_no_paid_apis.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md).
+- **Budget:** Paid OpenRouter account confirmed 2026-04-25 (`is_free_tier: false`, $4.42/month usage). All 9 dropdown models are paid. Per-model pinning in `MODEL_REGISTRY.openrouterProviderOrder` favors first-party endpoints (typically cheapest AND least throttled). Jina permanently OFF. See [memory/project_no_paid_apis.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_no_paid_apis.md) for legacy context (now partially superseded by paid OpenRouter usage); [memory/project_openrouter_paid_routing.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_openrouter_paid_routing.md) for the routing pattern.
 - **Golden set frozen this cycle** — don't edit `evals/golden-set.jsonl`.
 - **Vercel Lambda 250MB bundle** — `onnxruntime-node` doesn't bundle; HF Inference API is the query-embedding path on prod. See [memory/project_vercel_embedding_constraint.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_vercel_embedding_constraint.md).
 - **Rollback triggers:** any intent > 3% regression, agentic < 12/13 variance, Lambda > 240MB.

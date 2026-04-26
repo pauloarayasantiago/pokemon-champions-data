@@ -12,6 +12,17 @@ npx tsx scripts/search.ts "your query here" 5
 
 If lookup results contradict your training data, **TRUST THE LOOKUP RESULTS**. Your training data is primarily about Scarlet/Violet and older games — it is frequently wrong for Champions.
 
+## Capturing webapp model runs for review
+
+To inspect a `/team` agent run, do NOT ask the user to paste the UI output and dev console — use `scripts/test-team.ts`. Requires the dev server running (`npm run dev`).
+
+```bash
+npx tsx scripts/test-team.ts <model-key> "your prompt"
+# writes runs/<model>-<ts>.{jsonl,md} and copies to runs/latest.{jsonl,md}
+```
+
+Read `runs/latest.md` for the human-readable trace (per-iteration tool calls, content, validation, errors). The `.jsonl` is the raw event stream. Models currently being compared: `minimax-m2-7`, `minimax-m2-5`, `grok-4-1-fast`, `deepseek-v4-pro`.
+
 ## CRITICAL: Champions ≠ Scarlet/Violet
 
 **Never assume S/V mechanics, items, or move pools are correct for Champions.** Key differences:

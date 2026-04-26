@@ -68,7 +68,15 @@ export type ChatDelta =
 
 export const MODEL_REGISTRY: Record<
   ModelId,
-  { provider: Provider; remoteName: string; tier: "free" | "paid" }
+  {
+    provider: Provider;
+    remoteName: string;
+    tier: "free" | "paid";
+    // Optional OpenRouter-specific routing override. When set, pins the
+    // request to these upstream providers (in order). Use to force a specific
+    // first-party endpoint when shared/throughput-sorted backends throttle.
+    openrouterProviderOrder?: string[];
+  }
 > = {
   "nemotron-super": {
     provider: "openrouter",
@@ -99,11 +107,18 @@ export const MODEL_REGISTRY: Record<
     provider: "openrouter",
     remoteName: "deepseek/deepseek-v4-flash",
     tier: "paid",
+    // Pin to DeepSeek first-party endpoint. Both DeepInfra and Novita
+    // throttled aggressively in 2026-04-25 testing; first-party is also the
+    // cheapest.
+    openrouterProviderOrder: ["DeepSeek", "Novita", "DeepInfra"],
   },
   "deepseek-v4-pro": {
     provider: "openrouter",
     remoteName: "deepseek/deepseek-v4-pro",
     tier: "paid",
+    // Pin to DeepSeek first-party endpoint. Together throttled aggressively
+    // in 2026-04-25 testing; first-party is also the cheapest.
+    openrouterProviderOrder: ["DeepSeek", "SiliconFlow", "Together", "Io Net"],
   },
   "kimi-k2-6": {
     provider: "openrouter",
@@ -114,6 +129,9 @@ export const MODEL_REGISTRY: Record<
     provider: "openrouter",
     remoteName: "minimax/minimax-m2.7",
     tier: "paid",
+    // Only 4 tool-supporting providers exist; Fireworks throttled in
+    // 2026-04-25 testing. Pin to Minimax first-party.
+    openrouterProviderOrder: ["Minimax", "Together", "Fireworks"],
   },
   "minimax-m2-5": {
     provider: "openrouter",

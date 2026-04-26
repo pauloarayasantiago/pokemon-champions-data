@@ -20,6 +20,10 @@ dist/
 # Local data / caches
 .lancedb/
 
+# Local model run captures (scripts/test-team.ts output)
+runs/*
+!runs/.gitkeep
+
 # Tools (vendored, not tracked as source)
 tools/
 

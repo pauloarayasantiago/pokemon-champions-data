@@ -53,17 +53,25 @@ export function chatStream(params: ChatParams): AsyncIterable<ChatDelta> {
 export const DEFAULT_MODEL: ModelId = "gemma-4-26b";
 export const TEAM_BUILDING_MODEL: ModelId = "gemini-3-flash";
 
-// Curated dropdown — 3 models the user actually picks between.
-// MODEL_REGISTRY in llm/types.ts retains the rest (groq llama, ollama locals, claude, etc.) for eval-models.ts benchmarking
-// without surfacing them to end users; restore an entry here to expose it in the /team selector.
+// Curated dropdown — paid OpenRouter models verified working as of 2026-04-25
+// after paid-routing fix (provider.allow_fallbacks=false + sort=throughput +
+// require_parameters=true) and system prompt v4.5. See
+// memory/project_openrouter_paid_routing.md and per-model eval memos.
+//
+// MODEL_REGISTRY in llm/types.ts retains the rest (groq llama, ollama locals,
+// claude, gemini-2.5-flash, etc.) for eval-models.ts benchmarking without
+// surfacing them to end users; restore an entry here to expose it in the
+// /team selector.
+//
+// Excluded: gemini-2.5-flash (Google free-tier 5 RPM daily quota — unusable
+// in any session > 5 LLM calls). Use paid Google AI Studio key to re-enable.
 export const AVAILABLE_MODELS: { id: ModelId; label: string; tier: "free" | "paid" }[] = [
   { id: "gemini-3-flash", label: "Gemini 3 Flash Preview", tier: "paid" },
-  { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash", tier: "paid" },
-  { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro", tier: "paid" },
-  { id: "kimi-k2-6", label: "Kimi K2.6", tier: "paid" },
-  { id: "minimax-m2-7", label: "MiniMax M2.7", tier: "paid" },
-  { id: "minimax-m2-5", label: "MiniMax M2.5", tier: "paid" },
-  { id: "grok-4-1-fast", label: "Grok 4.1 Fast", tier: "paid" },
   { id: "gemma-4-26b", label: "Gemma 4 26B", tier: "paid" },
-  { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash", tier: "free" },
+  { id: "grok-4-1-fast", label: "Grok 4.1 Fast", tier: "paid" },
+  { id: "kimi-k2-6", label: "Kimi K2.6 (slow ~4min)", tier: "paid" },
+  { id: "minimax-m2-5", label: "MiniMax M2.5", tier: "paid" },
+  { id: "minimax-m2-7", label: "MiniMax M2.7", tier: "paid" },
+  { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash (slow ~30min)", tier: "paid" },
+  { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro (intermittent 429)", tier: "paid" },
 ];
