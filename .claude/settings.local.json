@@ -62,7 +62,20 @@
       "Bash(awk *)",
       "Bash(tee /tmp/retrieval-n30-jina-on.log)",
       "Bash(curl -sI \"https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX/resolve/main/onnx/model.onnx\")",
-      "Bash(git -C \"C:\\\\Users\\\\paulo\\\\Documents\\\\LOCAL_WORKSPACE\\\\1-pokemon-skill\" log --oneline -15)"
+      "Bash(git -C \"C:\\\\Users\\\\paulo\\\\Documents\\\\LOCAL_WORKSPACE\\\\1-pokemon-skill\" log --oneline -15)",
+      "Read(//c/Users/paulo/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"Pokemon VGC competitive team builder gaming dark dashboard\" --design-system -p \"Champions VGC\" -f markdown)",
+      "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"Pokemon VGC competitive gaming team builder dark dashboard\" --design-system -p \"Champions VGC\" -f markdown)",
+      "Bash(python *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|md\\)$\")",
+      "Bash(xargs grep *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(curl -sf http://localhost:3000/team -o /dev/null)",
+      "Bash(curl -sf http://localhost:3000/api/pokemon/roster)",
+      "Bash(curl -s http://localhost:3000/team)",
+      "Bash(curl *)",
+      "Bash(npx eslint *)",
+      "Read(//c/Users/paulo/Documents/LOCAL_WORKSPACE/**)"
     ]
   }
 }

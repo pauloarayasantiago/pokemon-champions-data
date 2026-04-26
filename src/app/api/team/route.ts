@@ -8,7 +8,8 @@ import {
   MODEL_REGISTRY,
 } from "@/lib/llm";
 import { TOOL_DEFINITIONS, executeTool } from "@/lib/tools";
-import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@/lib/system-prompt";
+import { buildSystemPrompt, SYSTEM_PROMPT_VERSION } from "@/lib/system-prompt";
+import { classifyOutputMode } from "@/lib/output-mode";
 import { detectPhantomPokemon, formatPhantomRefusal } from "@core/phantom-guard";
 import { getStaleness } from "@core/rag";
 import {
@@ -88,6 +89,15 @@ export async function POST(request: NextRequest) {
       // A15 — team-level structural validation state (item clause, species clause, SP caps).
       let teamRetryFired = false;
 
+      // Phase 3 — classify output mode (team-build vs analysis) from the last
+      // user message so the system prompt + validator branch deterministically.
+      // Default falls through to team-build for ambiguous queries.
+      const lastUser = [...messages].reverse().find((m) => m.role === "user");
+      const lastUserText =
+        lastUser && typeof lastUser.content === "string" ? lastUser.content : "";
+      const outputMode = classifyOutputMode(lastUserText);
+      const systemPrompt = buildSystemPrompt(outputMode);
+
       try {
         send({
           type: "meta",
@@ -97,8 +107,9 @@ export async function POST(request: NextRequest) {
           remoteName: providerInfo.remoteName,
           tier: providerInfo.tier,
           systemPromptVersion: SYSTEM_PROMPT_VERSION,
+          outputMode,
         });
-        log(`start model=${body.model} provider=${providerInfo.provider}`);
+        log(`start model=${body.model} provider=${providerInfo.provider} mode=${outputMode}`);
 
         // A13 — emit staleness telemetry once per request. Cached 60s in
         // getStaleness() so this adds ~0ms on warm cache, ~50ms cold.
@@ -114,7 +125,6 @@ export async function POST(request: NextRequest) {
         // Pre-flight phantom-Pokemon interceptor — short-circuits the agent loop
         // when the user names a Pokemon outside the 186-roster (pre-evo or removed).
         // Every LLM tested fails this category ~1/3+ of the time without this guard.
-        const lastUser = [...messages].reverse().find((m) => m.role === "user");
         if (lastUser && typeof lastUser.content === "string") {
           const phantoms = detectPhantomPokemon(lastUser.content);
           if (phantoms.length > 0) {
@@ -142,7 +152,7 @@ export async function POST(request: NextRequest) {
           const iterable = chatStream({
             model: body.model,
             messages,
-            system: SYSTEM_PROMPT,
+            system: systemPrompt,
             tools: TOOL_DEFINITIONS,
           });
 

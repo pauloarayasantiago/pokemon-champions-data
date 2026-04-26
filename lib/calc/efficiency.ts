@@ -607,6 +607,153 @@ export function buildEfficiencyMatrix(
   return entries;
 }
 
+// ── Counter query (read-only access to the pre-built efficiency_matrix.csv) ──
+
+export interface CounterCandidate {
+  attacker: string;
+  defender: string;
+  efficiency: number;
+  bestMove: string;
+  damagePct: number;
+  reverseMove: string;
+  reversePct: number;
+  attackerUsagePct: number;
+  isOffMeta: boolean;
+  flags: {
+    isOHKO: boolean;
+    is2HKO: boolean;
+    survivesHit: boolean;
+    hasPriority: boolean;
+    coverageDepth: number;
+    trickRoomFavor: number;
+  };
+}
+
+export interface QueryCountersOptions {
+  topK?: number;
+  metaOnly?: boolean;
+  offMetaOnly?: boolean;
+  minEfficiency?: number;
+}
+
+interface MatrixRow {
+  attacker: string;
+  defender: string;
+  bestMove: string;
+  damagePct: number;
+  reverseMove: string;
+  reversePct: number;
+  efficiency: number;
+  isOHKO: boolean;
+  is2HKO: boolean;
+  survivalMargin: number;
+  priorityNet: number;
+  coverageDepth: number;
+  trickRoomFavor: number;
+}
+
+let _matrixCache: MatrixRow[] | null = null;
+let _usageCache: Map<string, number> | null = null;
+
+function loadMatrixCache(): MatrixRow[] {
+  if (_matrixCache) return _matrixCache;
+  const raw = readFileSync(join(ROOT, "efficiency_matrix.csv"), "utf-8");
+  const rows: Record<string, string>[] = parse(raw, { columns: true, skip_empty_lines: true });
+  _matrixCache = rows.map((r): MatrixRow => ({
+    attacker: r.attacker,
+    defender: r.defender,
+    bestMove: r.best_move,
+    damagePct: parseFloat(r.damage_pct),
+    reverseMove: r.reverse_move,
+    reversePct: parseFloat(r.reverse_pct),
+    efficiency: parseFloat(r.efficiency),
+    isOHKO: r.is_ohko === "1",
+    is2HKO: r.is_2hko === "1",
+    survivalMargin: parseFloat(r.survival_margin),
+    priorityNet: parseFloat(r.priority_net),
+    coverageDepth: parseFloat(r.coverage_depth),
+    trickRoomFavor: parseFloat(r.trick_room_favor),
+  }));
+  return _matrixCache;
+}
+
+function loadUsageCache(): Map<string, number> {
+  if (_usageCache) return _usageCache;
+  const raw = readFileSync(join(ROOT, "pikalytics_usage.csv"), "utf-8");
+  const rows: Record<string, string>[] = parse(raw, { columns: true, skip_empty_lines: true });
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.pokemon.trim().toLowerCase(), parseFloat(row.usage_pct) || 0);
+  }
+  _usageCache = map;
+  return map;
+}
+
+function getAttackerUsage(name: string, usageMap: Map<string, number>): number {
+  // Pikalytics tracks base forms only; strip "Mega " to look up the base.
+  const stripped = name.replace(/^Mega\s+/i, "").toLowerCase();
+  return usageMap.get(stripped) ?? 0;
+}
+
+/**
+ * Query the pre-built efficiency_matrix.csv for the top counters to a given threat.
+ *
+ * Matches against the defender column (case-insensitive). If the threat does NOT
+ * begin with "Mega ", both the base form and Mega form rows are considered.
+ * Sorts candidates by composite efficiency descending.
+ */
+export function queryCounters(
+  threat: string,
+  options: QueryCountersOptions = {},
+): CounterCandidate[] {
+  const matrix = loadMatrixCache();
+  const usageMap = loadUsageCache();
+  const threatLower = threat.trim().toLowerCase();
+  const isMegaThreat = threatLower.startsWith("mega ");
+
+  const matched = matrix.filter((r) => {
+    const def = r.defender.toLowerCase();
+    if (isMegaThreat) return def === threatLower;
+    return def === threatLower || def === `mega ${threatLower}`;
+  });
+
+  if (matched.length === 0) return [];
+
+  let annotated: CounterCandidate[] = matched.map((r) => {
+    const attackerUsagePct = getAttackerUsage(r.attacker, usageMap);
+    return {
+      attacker: r.attacker,
+      defender: r.defender,
+      efficiency: r.efficiency,
+      bestMove: r.bestMove,
+      damagePct: r.damagePct,
+      reverseMove: r.reverseMove,
+      reversePct: r.reversePct,
+      attackerUsagePct,
+      isOffMeta: attackerUsagePct < 10,
+      flags: {
+        isOHKO: r.isOHKO,
+        is2HKO: r.is2HKO,
+        survivesHit: r.survivalMargin > 0,
+        hasPriority: r.priorityNet > 0.3,
+        coverageDepth: r.coverageDepth,
+        trickRoomFavor: r.trickRoomFavor,
+      },
+    };
+  });
+
+  if (options.metaOnly) annotated = annotated.filter((c) => !c.isOffMeta);
+  if (options.offMetaOnly) annotated = annotated.filter((c) => c.isOffMeta);
+  if (options.minEfficiency !== undefined) {
+    annotated = annotated.filter((c) => c.efficiency >= options.minEfficiency!);
+  }
+
+  annotated.sort((a, b) => b.efficiency - a.efficiency);
+
+  const topK = options.topK ?? 5;
+  return annotated.slice(0, topK);
+}
+
 // ── CSV export ──
 
 export function efficiencyToCSV(entries: EfficiencyEntry[]): string {

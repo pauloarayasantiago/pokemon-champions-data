@@ -1,0 +1,811 @@
+Skipping 111 previously downloaded videos
+Pokemon Champions YouTube Transcript Scraper
+Release date filter: >= 20260408
+Output: C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\data\transcripts
+Queries: 21 | Cap: 500/run | Delay: 5s | 429-streak abort: 1000 | Impersonate: Chrome
+Whisper fallback: on (cap 500/run)
+
+[1/21] Searching: 'Pokemon Champions competitive team building'
+  Found 15 results
+
+[2/21] Searching: 'Pokemon Champions VGC doubles tier list'
+  Found 15 results
+  Fetching transcript: THE BEST TEAMS FOR POKEMON CHAMPIONS...
+  No transcript for 4vSfI2xRZ2s: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (1/500)
+  whisper model medium.en loaded (cuda/int8) in 3.9s
+  whisper 1146s audio in 88s (13.1x realtime, 20067 chars)
+    -> Saved (whisper): unknown_jptk-vgc-the-best-teams-for-pokemon-champions.md
+
+[3/21] Searching: 'Pokemon Champions best Pokemon meta'
+  Found 15 results
+  Fetching transcript: Dont Miss This! Special Roster In Pokemon Champions...
+  No transcript for 8c4ScOBtdRo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (2/500)
+  whisper 493s audio in 40s (12.3x realtime, 8506 chars)
+    -> Saved (whisper): unknown_spragels-dont-miss-this-special-roster-in-pokemon-champions.md
+  Fetching transcript: 5 Sleeper Combos You're Not Using in Regulation M-A! | Pokémon Champio...
+  No transcript for mDfudSF7JrI: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (3/500)
+  whisper 1280s audio in 113s (11.3x realtime, 28493 chars)
+    -> Saved (whisper): unknown_scooteezyvgc-5-sleeper-combos-youre-not-using-in-regulation-m-a-pokémon-champion.md
+  Fetching transcript: How I Became the #1 Ranked Player in Pokemon Champions...
+  No transcript for lKMl8qWVf1A: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (4/500)
+  whisper 7164s audio in 596s (12.0x realtime, 126710 chars)
+    -> Saved (whisper): unknown_wolfeyvgc-how-i-became-the-1-ranked-player-in-pokemon-champions.md
+  Fetching transcript: ✨The BEST POKÉMON in Pokémon Champions! | Complete Guide for Beginners...
+  No transcript for 6P834GMiX5Q: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (5/500)
+  whisper 871s audio in 94s (9.3x realtime, 15949 chars)
+    -> Saved (whisper): unknown_team-eevee-the-best-pokémon-in-pokémon-champions-complete-guide-for-beginners-bu.md
+
+[4/21] Searching: 'Pokemon Champions team guide'
+  Found 15 results
+  Fetching transcript: This Team is LITERALLY FREE WINS in Pokemon Champions...
+  No transcript for F3JWy8Z6yCU: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (6/500)
+  whisper 2019s audio in 208s (9.7x realtime, 40070 chars)
+    -> Saved (whisper): unknown_hoshinjosh-this-team-is-literally-free-wins-in-pokemon-champions.md
+
+[5/21] Searching: 'Pokemon Champions top Pokemon ranked'
+  Found 15 results
+  Fetching transcript: Why MEGA GENGAR is BROKEN in Pokemon Champions......
+  No transcript for OmeWvonCKpo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (7/500)
+  whisper 2205s audio in 210s (10.5x realtime, 41773 chars)
+    -> Saved (whisper): unknown_splashplate-and-blunder-why-mega-gengar-is-broken-in-pokemon-champions.md
+  Fetching transcript: My BEST Charizard Team! Pokemon Champions VGC Ranked Competitive Battl...
+  No transcript for PtICndF1CuM: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (8/500)
+  whisper 1495s audio in 120s (12.4x realtime, 25240 chars)
+    -> Saved (whisper): unknown_thatsaplusone-my-best-charizard-team-pokemon-champions-vgc-ranked-competitive-ba.md
+
+[6/21] Searching: 'Pokemon Champions mega evolution competitive'
+  Found 15 results
+  Fetching transcript: HUGE POWER MEGA STARMIE Is THE BEST MEGA EVOLUTION For Ranked Battles ...
+  No transcript for LUhv2SO8Ynk: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (9/500)
+  whisper 1673s audio in 114s (14.6x realtime, 25114 chars)
+    -> Saved (whisper): unknown_jeans-huge-power-mega-starmie-is-the-best-mega-evolution-for-ranked-battles-in-p.md
+  Fetching transcript: Anti Meta Mega Meowstic! Pokemon Champions VGC Ranked Competitive Batt...
+  No transcript for kZjRjVjVa78: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (10/500)
+  whisper 2569s audio in 143s (18.0x realtime, 31604 chars)
+    -> Saved (whisper): unknown_thatsaplusone-anti-meta-mega-meowstic-pokemon-champions-vgc-ranked-competitive-b.md
+  Fetching transcript: MEGA MEGANIUM Pokemon Champions Best Moveset Rain Team - How To Use Me...
+  No transcript for _NCf3j8CYRU: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (11/500)
+  whisper 2697s audio in 188s (14.4x realtime, 44772 chars)
+    -> Saved (whisper): unknown_pimpnite-mega-meganium-pokemon-champions-best-moveset-rain-team-how-to-use-mega.md
+  Fetching transcript: is Mega Mawile BROKEN in Pokémon champions?...
+  No transcript for v_5q8gvZcO4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (12/500)
+  whisper 244s audio in 21s (11.6x realtime, 5019 chars)
+    -> Saved (whisper): unknown_snoozevgc-is-mega-mawile-broken-in-pokémon-champions.md
+
+[7/21] Searching: 'Pokemon Champions best mega evolution tier list'
+  Found 15 results
+  Fetching transcript: BEST MEGA EVOLUTION FOR POKÉMON CHAMPIONS? | TIER LIST | COMPETITIVE...
+  No transcript for U16VQBdqBS0: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (13/500)
+  whisper 3317s audio in 684s (4.8x realtime, 40572 chars)
+    -> Saved (whisper): unknown_reki-best-mega-evolution-for-pokémon-champions-tier-list-competitive.md
+
+[8/21] Searching: 'Pokemon Champions mega dragonite mega clefable mega meganium'
+  Found 15 results
+  Fetching transcript: ¿TODO MAL? ❌ ¡HABILIDADES DE NUEVAS MEGAS EN POKÉMON CHAMPIONS! | Scor...
+  No transcript for 0KpV0IZiXZI: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (14/500)
+  whisper 521s audio in 49s (10.7x realtime, 7593 chars)
+    -> Saved (whisper): unknown_scorph-pokémon-todo-mal-habilidades-de-nuevas-megas-en-pokémon-champions-scorph.md
+  Fetching transcript: Pokémon Champions - All Mega Evolution Pokémon (4K)...
+  No transcript for CExcobx08j8: (no stderr)
+  -> trying whisper fallback (15/500)
+  whisper 586s audio in 2s (351.2x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: "mega dragonite looks terrible"... yea ok...
+  No transcript for wZqzKMT89nY: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (16/500)
+  whisper 32s audio in 0s (282.3x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: The BEST New Mega Evolutions in Pokémon Champions [Way Too Early Editi...
+  No transcript for BfigsPlLwM4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (17/500)
+  whisper 1614s audio in 108s (14.9x realtime, 28611 chars)
+    -> Saved (whisper): unknown_sableyevgc-the-best-new-mega-evolutions-in-pokémon-champions-way-too-early-editi.md
+  Fetching transcript: Pokémon Champions ⸱ All Mega Evolution Signature Moves & Abilities (HQ...
+  No transcript for 3_nE8zgOLNg: (no stderr)
+  -> trying whisper fallback (18/500)
+  whisper 1636s audio in 5s (359.0x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: ABILITIES of the NEW MEGA EVOLUTIONS in Pokémon Champions...
+  No transcript for dt9cXn5Mpnc: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (19/500)
+  whisper 752s audio in 82s (9.1x realtime, 12793 chars)
+    -> Saved (whisper): unknown_koffing-sonriente-abilities-of-the-new-mega-evolutions-in-pokémon-champions.md
+  Fetching transcript: Ranking Every New Mega Evolution Weakest to Strongest...
+  No transcript for 7BswmK7FU-0: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (20/500)
+  whisper 1345s audio in 92s (14.6x realtime, 21403 chars)
+    -> Saved (whisper): unknown_mystica-ranking-every-new-mega-evolution-weakest-to-strongest.md
+
+[9/21] Searching: 'Pokemon Champions rain team sun team weather'
+  Found 15 results
+  Fetching transcript: Weather Teams are DOMINATING the Pokémon Champions Meta! (Competitive ...
+  No transcript for pPFmzwkaa7w: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (21/500)
+  whisper 946s audio in 85s (11.1x realtime, 17858 chars)
+    -> Saved (whisper): unknown_mrsteelixyourgirl-weather-teams-are-dominating-the-pokémon-champions-meta-compet.md
+  Fetching transcript: How to Actually Play Weather #pokemon #vgc #regulation...
+  No transcript for ETCWGo5v91M: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (22/500)
+  whisper 482s audio in 39s (12.3x realtime, 9883 chars)
+    -> Saved (whisper): unknown_thedelybird-how-to-actually-play-weather-pokemon-vgc-regulation.md
+  Fetching transcript: This Rain Team Got Me MASTER RANK in 24 Hours... (Pokemon Champions)...
+  No transcript for j-FDlkXFc8g: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (23/500)
+  whisper 1781s audio in 190s (9.4x realtime, 36818 chars)
+    -> Saved (whisper): unknown_pokegrinding-this-rain-team-got-me-master-rank-in-24-hours-pokemon-champions.md
+  Fetching transcript: ALTARIA HAS SUN TEAMS RAGING IN POKEMON CHAMPIONS!...
+  No transcript for rCEwalqsoQQ: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (24/500)
+  whisper 1778s audio in 161s (11.0x realtime, 37373 chars)
+    -> Saved (whisper): unknown_laketwo-altaria-has-sun-teams-raging-in-pokemon-champions.md
+  Fetching transcript: This Japanese Sun Team Reached Rank 1 on The Pokémon Champions Ladder!...
+  No transcript for gEGIgbTfEPM: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (25/500)
+  whisper 2040s audio in 136s (15.0x realtime, 29251 chars)
+    -> Saved (whisper): unknown_scooteezyvgc-this-japanese-sun-team-reached-rank-1-on-the-pokémon-champions-ladd.md
+  Fetching transcript: The History of Rain in Competitive Pokemon...
+  No transcript for eDVhyRbe7VU: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (26/500)
+  whisper 693s audio in 57s (12.1x realtime, 13938 chars)
+    -> Saved (whisper): unknown_skraw-vgc-the-history-of-rain-in-competitive-pokemon.md
+  Fetching transcript: Sun vs Rain in Competitive Pokemon....
+  No transcript for rG6hJiPYVJI: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (27/500)
+  whisper 2737s audio in 208s (13.1x realtime, 45815 chars)
+    -> Saved (whisper): unknown_jimothy-cool-sun-vs-rain-in-competitive-pokemon.md
+  Fetching transcript: THIS IS A RAIN TEAM'S WORST NIGHTMARE IN POKEMON CHAMPIONS.....
+  No transcript for zMIVYd4yKMw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (28/500)
+  whisper 1622s audio in 144s (11.2x realtime, 31653 chars)
+    -> Saved (whisper): unknown_laketwo-this-is-a-rain-teams-worst-nightmare-in-pokemon-champions.md
+  Fetching transcript: The NEW BEST Teams To Play For RANKED BATTLES!!! | Pokemon Champions...
+  No transcript for ql4mSuzoa_E: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (29/500)
+  whisper 1608s audio in 160s (10.0x realtime, 33726 chars)
+    -> Saved (whisper): unknown_championmads-the-new-best-teams-to-play-for-ranked-battles-pokemon-champions.md
+  Fetching transcript: MULTISCALE MEGA DRAGONITE IS BROKEN On RAIN TEAMS For Ranked Battles i...
+  No transcript for f821jbGmG_Y: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (30/500)
+  whisper 1718s audio in 121s (14.2x realtime, 27995 chars)
+    -> Saved (whisper): unknown_jeans-multiscale-mega-dragonite-is-broken-on-rain-teams-for-ranked-battles-in-po.md
+
+[10/21] Searching: 'Pokemon Champions trick room team'
+  Found 15 results
+  Fetching transcript: This NEW Trick Room Team DOMINATES Master Ball Rank...
+  No transcript for tcALWkxcFCM: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (31/500)
+  whisper 3112s audio in 240s (12.9x realtime, 45125 chars)
+    -> Saved (whisper): unknown_pokeaimmd-this-new-trick-room-team-dominates-master-ball-rank.md
+  Fetching transcript: Pokeaim Proves Why SUN is RIDICULOUS in Pokemon Champions......
+  No transcript for cVtk5KKi7jI: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (32/500)
+  whisper 1510s audio in 97s (15.6x realtime, 16648 chars)
+    -> Saved (whisper): unknown_pokeaim-pokeaim-proves-why-sun-is-ridiculous-in-pokemon-champions.md
+  Fetching transcript: THIS MEGA AGGRON TRICK ROOM TEAM is DOMINATING MASTER BALL RANK...
+  No transcript for Vme9WRTfKSA: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (33/500)
+  whisper 2040s audio in 255s (8.0x realtime, 48559 chars)
+    -> Saved (whisper): unknown_pokegrinding-this-mega-aggron-trick-room-team-is-dominating-master-ball-rank.md
+  Fetching transcript: THIS DOUBLE MEGA TRICK ROOM TEAM is UNSTOPPABLE... (Pokemon Champions)...
+  No transcript for Dfek_OAWpYU: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (34/500)
+  whisper 1630s audio in 194s (8.4x realtime, 36931 chars)
+    -> Saved (whisper): unknown_pokegrinding-this-double-mega-trick-room-team-is-unstoppable-pokemon-champions.md
+  Fetching transcript: This Trick Room team is BETTER than it looks! #pokemonchampions...
+  No transcript for 3Kg_TBcY23I: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (35/500)
+  whisper 6885s audio in 1273s (5.4x realtime, 84417 chars)
+    -> Saved (whisper): unknown_pokeaprendiz-this-trick-room-team-is-better-than-it-looks-pokemonchampions.md
+  Fetching transcript: I Tried a HARD Trick Room Team in Pokémon Champions...
+  No transcript for tqkypXOtBIA: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (36/500)
+  whisper 1584s audio in 83s (19.0x realtime, 17412 chars)
+    -> Saved (whisper): unknown_pokésports-i-tried-a-hard-trick-room-team-in-pokémon-champions.md
+  Fetching transcript: I created my very first Trick Room Team in Pokemon Champions...
+  No transcript for A7HzWHpMLWQ: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (37/500)
+  whisper 1009s audio in 38s (26.2x realtime, 7602 chars)
+    -> Saved (whisper): unknown_fallen-whimmy-i-created-my-very-first-trick-room-team-in-pokemon-champions.md
+  Fetching transcript: The Best Trick Room Team in Pokemon Champions - Replica Team...
+  No transcript for UwrXfAQSD4o: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (38/500)
+  whisper 2750s audio in 207s (13.3x realtime, 50591 chars)
+    -> Saved (whisper): unknown_talonvgc-the-best-trick-room-team-in-pokemon-champions-replica-team.md
+  Fetching transcript: Pokémon Champions Barely Has Options… So We Built 8 Cores | 2026 VGC R...
+  No transcript for QObVy2DGpVU: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (39/500)
+  whisper 2480s audio in 207s (12.0x realtime, 42817 chars)
+    -> Saved (whisper): unknown_jon-luke-vgc-and-geordivgc-pokémon-champions-barely-has-options-so-we-built-8-co.md
+  Fetching transcript: Beginner Trick Room Team for Pokemon Champions!...
+  No transcript for JZ16gFM-9Vk: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (40/500)
+  whisper 1348s audio in 44s (30.7x realtime, 8208 chars)
+    -> Saved (whisper): unknown_kaglish-beginner-trick-room-team-for-pokemon-champions.md
+  Fetching transcript: Reach Masterball in Pokemon Champions and beat rain with this Trick Ro...
+  No transcript for 0EmwL5mMuhw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (41/500)
+  whisper 834s audio in 58s (14.4x realtime, 13438 chars)
+    -> Saved (whisper): unknown_zach-ty-reach-masterball-in-pokemon-champions-and-beat-rain-with-this-trick-room.md
+  Fetching transcript: Pokeaim Proves TRICK ROOM is CRAZY in Pokemon Champions 👀...
+  No transcript for KCzpJjwyzT8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (42/500)
+  whisper 1205s audio in 61s (19.8x realtime, 12963 chars)
+    -> Saved (whisper): unknown_pokeaim-pokeaim-proves-trick-room-is-crazy-in-pokemon-champions.md
+  Fetching transcript: Catch Your Opponents Off Guard With This Trick Room Team | Pokemon Cha...
+  No transcript for bM6OWDEpw4w: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (43/500)
+  whisper 2262s audio in 107s (21.1x realtime, 22375 chars)
+    -> Saved (whisper): unknown_prncessdiana-catch-your-opponents-off-guard-with-this-trick-room-team-pokemon-ch.md
+  Fetching transcript: Psyspam Trick Room in Pokemon Champions!...
+  No transcript for qaKZNTYYBG4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (44/500)
+  whisper 2102s audio in 73s (28.6x realtime, 15615 chars)
+    -> Saved (whisper): unknown_trickrubyvgc-psyspam-trick-room-in-pokemon-champions.md
+
+[11/21] Searching: 'Pokemon Champions sand team tyranitar excadrill'
+  Found 15 results
+  Fetching transcript: The MOST BROKEN Duo in Pokémon Champions 🌪️ (Mega Tyranitar + Excadril...
+  No transcript for b6Ubk6iWEbE: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (45/500)
+  whisper 1878s audio in 153s (12.3x realtime, 14811 chars)
+    -> Saved (whisper): unknown_la-fábrica-pokémon-the-most-broken-duo-in-pokémon-champions-mega-tyranitar-excad.md
+  Fetching transcript: Mega Tyranitar is BACK! 6 Sand Teams with Full EVs! | Pokémon Champion...
+  No transcript for O1IpT-VE61I: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (46/500)
+  whisper 5012s audio in 392s (12.8x realtime, 91997 chars)
+    -> Saved (whisper): unknown_cloverbells-mega-tyranitar-is-back-6-sand-teams-with-full-evs-pokémon-champions.md
+  Fetching transcript: Sandstorm Team 🔥 Mega Tyranitar + Excadrill DESTROY | Pokémon Champion...
+  No transcript for I7qtGcl9Heo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (47/500)
+  whisper 4236s audio in 586s (7.2x realtime, 50211 chars)
+    -> Saved (whisper): unknown_pokeaprendiz-sandstorm-team-mega-tyranitar-excadrill-destroy-pokémon-champions.md
+  Fetching transcript: BEST SAND TEAM! 6 WIN STREAK! | Pokemon Champions!...
+  No transcript for 2W33x7Aia8A: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (48/500)
+  whisper 1182s audio in 22s (54.7x realtime, 4232 chars)
+    -> Saved (whisper): unknown_ericko-champions-and-erickotcg-best-sand-team-6-win-streak-pokemon-champions.md
+  Fetching transcript: 🏆 POKÉMON CHAMPIONS 🔥 MY FIRST SANDSTORM TEAM | INTENSE Battles...
+  No transcript for 81UbEVn23Z8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (49/500)
+  whisper 1436s audio in 73s (19.6x realtime, 7794 chars)
+    -> Saved (whisper): unknown_zagastarx-pokémon-champions-my-first-sandstorm-team-intense-battles.md
+  Fetching transcript: 5-GAME WIN STREAK with this AWESOME MEGA TYRANITAR SAND TEAM in Pokémo...
+  No transcript for GoqVtND8qSI: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (50/500)
+  whisper 3180s audio in 184s (17.3x realtime, 35195 chars)
+    -> Saved (whisper): unknown_xehrfelrose-5-game-win-streak-with-this-awesome-mega-tyranitar-sand-team-in-poké.md
+  Fetching transcript: This MEGA TYRANITAR TEAM Is The BEST TEAM RIGHT NOW For Ranked Battles...
+  No transcript for zMuZNtuFs-Y: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (51/500)
+  whisper 2025s audio in 148s (13.7x realtime, 33327 chars)
+    -> Saved (whisper): unknown_jeans-this-mega-tyranitar-team-is-the-best-team-right-now-for-ranked-battles-in.md
+  Fetching transcript: NOTHING is Safe From Mega Excadrill's NEW Ability! (Pokemon Champions ...
+  No transcript for E69B4gvpFuw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (52/500)
+  whisper 1890s audio in 129s (14.6x realtime, 28475 chars)
+    -> Saved (whisper): unknown_cipherblk-nothing-is-safe-from-mega-excadrills-new-ability-pokemon-champions-ran.md
+  Fetching transcript: My First Battles in Pokémon Champions using SAND TEAM [Reg. M-A] Ranke...
+  No transcript for z3ZOOYC1HWY: (no stderr)
+  -> trying whisper fallback (53/500)
+  whisper 1152s audio in 3s (347.1x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: The BEST Beginner Sand Team in Pokémon Champions...
+  No transcript for vyWhV7RgL2E: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (54/500)
+  whisper 278s audio in 21s (13.0x realtime, 5236 chars)
+    -> Saved (whisper): unknown_sersun-the-best-beginner-sand-team-in-pokémon-champions.md
+  Fetching transcript: This Mega Tyranitar Team is Sick! - Pokemon Champions RANKED Singles R...
+  No transcript for sKEvutRJPi4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (55/500)
+  whisper 1217s audio in 62s (19.6x realtime, 13828 chars)
+    -> Saved (whisper): unknown_vio-this-mega-tyranitar-team-is-sick-pokemon-champions-ranked-singles-regulation.md
+
+[12/21] Searching: 'Pokemon Champions fake out changes encore mechanics'
+  Found 15 results
+  Fetching transcript: Pokemon Champions: Every Major Battle Change Explained...
+  No transcript for 3iePv2BazDU: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (56/500)
+  whisper 453s audio in 36s (12.7x realtime, 9126 chars)
+    -> Saved (whisper): unknown_ign-pokemon-champions-every-major-battle-change-explained.md
+  Fetching transcript: Pokemon Champions brings BIG CHANGES...
+  No transcript for yQj-hDzgCVE: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (57/500)
+  whisper 746s audio in 64s (11.7x realtime, 15019 chars)
+    -> Saved (whisper): unknown_cybertronvgc-pokemon-champions-brings-big-changes.md
+  Fetching transcript: Fun, Free, and Ugly - Pokemon Champions...
+  No transcript for tbXDaBQDJf8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (58/500)
+  whisper 1245s audio in 89s (14.0x realtime, 19127 chars)
+    -> Saved (whisper): unknown_austin-john-plays-fun-free-and-ugly-pokemon-champions.md
+  Fetching transcript: Top 5 Things Pokemon Champions Changes FOREVER...
+  No transcript for -LlZO0rvUVM: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (59/500)
+  whisper 710s audio in 53s (13.4x realtime, 12249 chars)
+    -> Saved (whisper): unknown_austin-john-plays-top-5-things-pokemon-champions-changes-forever.md
+  Fetching transcript: ALL Reasons Why Pokémon Champions Is A Disaster So Far.....
+  No transcript for 0LMfhuj1-tg: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (60/500)
+  whisper 2005s audio in 151s (13.2x realtime, 37078 chars)
+    -> Saved (whisper): unknown_haydunn-all-reasons-why-pokémon-champions-is-a-disaster-so-far.md
+  Fetching transcript: 27 MAJOR CHANGES to COMPETITIVE POKEMON! Pokemon Champions Update!...
+  No transcript for J_LbpziuQOY: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (61/500)
+  whisper 659s audio in 63s (10.5x realtime, 13236 chars)
+    -> Saved (whisper): unknown_adrive-27-major-changes-to-competitive-pokemon-pokemon-champions-update.md
+  Fetching transcript: 5 Megas That Could Dominate VGC When Pokémon Champions Drops...
+  No transcript for 6NOFqByRixg: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (62/500)
+  whisper 815s audio in 63s (13.0x realtime, 13798 chars)
+    -> Saved (whisper): unknown_zemtennar-5-megas-that-could-dominate-vgc-when-pokémon-champions-drops.md
+  Fetching transcript: HUGE MOVE NERFS AND BUFFS! Pokemon Champions...
+  No transcript for N02XYFQS6lo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (63/500)
+  whisper 1018s audio in 92s (11.1x realtime, 19223 chars)
+    -> Saved (whisper): unknown_pokeaimmd-huge-move-nerfs-and-buffs-pokemon-champions.md
+  Fetching transcript: I Tried the NEXT VGC Format Early… (Pre-Champions)...
+  No transcript for OtCnE44QQH0: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (64/500)
+  whisper 2013s audio in 98s (20.5x realtime, 18740 chars)
+    -> Saved (whisper): unknown_joserockzvgc-i-tried-the-next-vgc-format-early-pre-champions.md
+  Fetching transcript: Everything You NEED TO KNOW BEFORE You Start Pokemon Champions...
+  No transcript for lp12EnYRNeg: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (65/500)
+  whisper 603s audio in 61s (9.9x realtime, 12914 chars)
+    -> Saved (whisper): unknown_adrive-everything-you-need-to-know-before-you-start-pokemon-champions.md
+  Fetching transcript: MEGA DELPHOX is ANTI META in Pokemon Champions...
+  No transcript for 2xTBzIPDrwc: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (66/500)
+  whisper 2414s audio in 177s (13.7x realtime, 34725 chars)
+    -> Saved (whisper): unknown_pokeaimmd-mega-delphox-is-anti-meta-in-pokemon-champions.md
+
+[13/21] Searching: 'Pokemon Champions missing items no life orb choice band'
+  Found 15 results
+  Fetching transcript: Don't start battling without knowing this! | Pokemon Champions...
+  No transcript for Dg9RwBS4ogQ: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (67/500)
+  whisper 1186s audio in 90s (13.2x realtime, 20176 chars)
+    -> Saved (whisper): unknown_raven-dont-start-battling-without-knowing-this-pokemon-champions.md
+  Fetching transcript: ALL PVP ITEMS LOCATIONS IN POKÉMON BRICK BRONZE...
+  No transcript for MfrV9r83-wk: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (68/500)
+  whisper 50s audio in 0s (297.0x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: Why Priority is Close to Everything - The Scizor Theorem...
+  No transcript for 0fF-aeLPaN0: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (69/500)
+  whisper 1801s audio in 146s (12.4x realtime, 34596 chars)
+    -> Saved (whisper): unknown_false-swipe-gaming-why-priority-is-close-to-everything-the-scizor-theorem.md
+  Fetching transcript: Pokemon's new game is already a disaster......
+  No transcript for u6Bh2hpDPyI: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (70/500)
+  whisper 1689s audio in 129s (13.1x realtime, 28503 chars)
+    -> Saved (whisper): unknown_omniarch-tv-pokemons-new-game-is-already-a-disaster.md
+  Fetching transcript: This Pokemon Proved Everyone Wrong...
+  No transcript for _Ak6a2O2wIw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (71/500)
+  whisper 1506s audio in 110s (13.7x realtime, 26899 chars)
+    -> Saved (whisper): unknown_wolfeyvgc-this-pokemon-proved-everyone-wrong.md
+  Fetching transcript: POKEMON CHAMPIONS is NOT What We Expected... - an IN DEPTH First Look...
+  No transcript for lCGMfB2bc5o: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (72/500)
+  whisper 1763s audio in 128s (13.8x realtime, 28098 chars)
+    -> Saved (whisper): unknown_splashplate-pokemon-champions-is-not-what-we-expected-an-in-depth-first-look.md
+  Fetching transcript: Why Items Are Close to Everything - The Giratina Theorem...
+  No transcript for 06zta6Ac7ng: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (73/500)
+  whisper 1539s audio in 118s (13.0x realtime, 27913 chars)
+    -> Saved (whisper): unknown_false-swipe-gaming-why-items-are-close-to-everything-the-giratina-theorem.md
+  Fetching transcript: Radical Red 2.3 (Kalos-Only) - Elite 4/Champion...
+  No transcript for hf6av4ailpA: (no stderr)
+  -> trying whisper fallback (74/500)
+  whisper 454s audio in 1s (337.9x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+
+[14/21] Searching: 'Pokemon Champions stat points EV IV changes'
+  Found 15 results
+  Fetching transcript: Pokemon Champions Stats, EVs, and Natures Simplified...
+  No transcript for p7i3XdqmT-E: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (75/500)
+  whisper 179s audio in 14s (12.7x realtime, 3495 chars)
+    -> Saved (whisper): unknown_reno-pokemon-champions-stats-evs-and-natures-simplified.md
+  Fetching transcript: IV's GONE, New Abilities and EVERYTHING We Know about Pokemon Champion...
+  No transcript for 3nQAel4MP90: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (76/500)
+  whisper 1000s audio in 87s (11.5x realtime, 20452 chars)
+    -> Saved (whisper): unknown_adrive-ivs-gone-new-abilities-and-everything-we-know-about-pokemon-champions.md
+  Fetching transcript: How the New Pokemon Champions Training System Changes EVERYTHING...
+  No transcript for KufYJ02PBf8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (77/500)
+  whisper 854s audio in 55s (15.6x realtime, 13867 chars)
+    -> Saved (whisper): unknown_dragonwhale-how-the-new-pokemon-champions-training-system-changes-everything.md
+  Fetching transcript: How To Make Your Pokémon Super Strong!...
+  No transcript for n82DieHnpQs: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (78/500)
+  whisper 844s audio in 57s (14.9x realtime, 13295 chars)
+    -> Saved (whisper): unknown_austin-john-plays-how-to-make-your-pokémon-super-strong.md
+  Fetching transcript: How to Invest EVs in Competitive Pokemon...
+  No transcript for e--xQTnlYlY: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (79/500)
+  whisper 802s audio in 58s (13.9x realtime, 13516 chars)
+    -> Saved (whisper): unknown_pinkacross-how-to-invest-evs-in-competitive-pokemon.md
+  Fetching transcript: How Do Pokemon Stats Actually Work?...
+  No transcript for 6YGNwcJhjRg: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (80/500)
+  whisper 798s audio in 66s (12.1x realtime, 15128 chars)
+    -> Saved (whisper): unknown_meplaysgames-how-do-pokemon-stats-actually-work.md
+  Fetching transcript: How To Transfer Pokemon into Pokemon Champions! #pokemon #pokemonchamp...
+  No transcript for sc3sWv5twr4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (81/500)
+  whisper 335s audio in 25s (13.3x realtime, 5814 chars)
+    -> Saved (whisper): unknown_thedelybird-how-to-transfer-pokemon-into-pokemon-champions-pokemon-pokemonchampi.md
+  Fetching transcript: Understanding EVs, IVs And Natures - Pokemon VGC Guide...
+  No transcript for RNCWpIMEbts: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (82/500)
+  whisper 592s audio in 40s (14.7x realtime, 10092 chars)
+    -> Saved (whisper): unknown_jakspii-vgc-understanding-evs-ivs-and-natures-pokemon-vgc-guide.md
+
+[15/21] Searching: 'Pokemon Champions Incineroar no knock off parting shot'
+  Found 15 results
+  Fetching transcript: Incineroar is UNSTOPPABLE Right Now | Pokemon Champions...
+  No transcript for uinlS4A6lPo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (83/500)
+  whisper 1141s audio in 43s (26.3x realtime, 10489 chars)
+    -> Saved (whisper): unknown_edd-saavage-incineroar-is-unstoppable-right-now-pokemon-champions.md
+  Fetching transcript: Incineroar Abillities Guide & How to Get - Pokemon Champions...
+  No transcript for GtD3WyvX7PY: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (84/500)
+  whisper 96s audio in 6s (15.0x realtime, 1445 chars)
+    -> Saved (whisper): unknown_myspaceguide-incineroar-abillities-guide-how-to-get-pokemon-champions.md
+  Fetching transcript: How to defeat the best Pokémon in Pokémon Champions...
+  No transcript for kcf1glOc_OA: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (85/500)
+  whisper 892s audio in 87s (10.3x realtime, 15737 chars)
+    -> Saved (whisper): unknown_pokebot-champions-how-to-defeat-the-best-pokémon-in-pokémon-champions.md
+  Fetching transcript: Why this Stupid Cat is the Best Pokemon Ever...
+  No transcript for BtF7mQljqyk: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (86/500)
+  whisper 1646s audio in 116s (14.2x realtime, 27644 chars)
+    -> Saved (whisper): unknown_wolfeyvgc-why-this-stupid-cat-is-the-best-pokemon-ever.md
+  Fetching transcript: EVERYTHING YOU NEED TO KNOW ABOUT INCINEROAR IN POKEMON CHAMPIONS!...
+  No transcript for P9BA1YxH0S4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (87/500)
+  whisper 861s audio in 82s (10.5x realtime, 18475 chars)
+    -> Saved (whisper): unknown_laketwo-everything-you-need-to-know-about-incineroar-in-pokemon-champions.md
+  Fetching transcript: This Team Just Won A $1000 Tournament for Pokémon Champions...
+  No transcript for IIsqq2TlQC8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (88/500)
+  whisper 1626s audio in 99s (16.5x realtime, 21627 chars)
+    -> Saved (whisper): unknown_tall-grass-gaming-this-team-just-won-a-1000-tournament-for-pokémon-champions.md
+  Fetching transcript: Pokémon Champions - Warm-Up Challenge...
+  No transcript for uDWHKc_piDQ: (no stderr)
+  -> trying whisper fallback (89/500)
+  whisper 1037s audio in 3s (346.5x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: The Underrated Intimidate Pick In Pokemon Champions: Krookodile...
+  No transcript for XejqblhK-fg: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (90/500)
+  whisper 573s audio in 47s (12.3x realtime, 9629 chars)
+    -> Saved (whisper): unknown_robstar-z-the-underrated-intimidate-pick-in-pokemon-champions-krookodile.md
+  Fetching transcript: Gamefreak really ruined this Pokemon's animation......
+  No transcript for aMgUohJwJDE: (no stderr)
+  -> trying whisper fallback (91/500)
+  whisper 58s audio in 0s (303.2x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: Master Tier Ally Switch in Pokémon Champions | Four Win Streak...
+  No transcript for DAPramI_jk8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (92/500)
+  whisper 1071s audio in 63s (17.0x realtime, 12749 chars)
+    -> Saved (whisper): unknown_pinkgeerough-master-tier-ally-switch-in-pokémon-champions-four-win-streak.md
+  Fetching transcript: Is Floette the BEST New Mega? Pokemon Champions VGC Ranked Competitive...
+  No transcript for MT7nbTG8cF4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (93/500)
+  whisper 2745s audio in 164s (16.8x realtime, 35208 chars)
+    -> Saved (whisper): unknown_thatsaplusone-is-floette-the-best-new-mega-pokemon-champions-vgc-ranked-competit.md
+  Fetching transcript: Mega Beedrill is BACK! Pokemon Champions VGC Ranked Competitive Battle...
+  No transcript for 5OUh2_QCvMw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (94/500)
+  whisper 2685s audio in 150s (17.9x realtime, 29574 chars)
+    -> Saved (whisper): unknown_thatsaplusone-mega-beedrill-is-back-pokemon-champions-vgc-ranked-competitive-bat.md
+  Fetching transcript: THE BEST DUO IN POKEMON CHAMPIONS...
+  No transcript for 7aqT-Gb4GA8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (95/500)
+  whisper 738s audio in 10s (76.7x realtime, 1693 chars)
+    -> Saved (whisper): unknown_ghostie-vgc-the-best-duo-in-pokemon-champions.md
+
+[16/21] Searching: 'Pokemon Champions Garchomp Sneasler Kingambit'
+  Found 15 results
+  Fetching transcript: Why Sneasler is the QUEEN of VGC! | Pokemon Champions...
+  No transcript for 0hMTobrqGGY: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (96/500)
+  whisper 1986s audio in 88s (22.6x realtime, 16668 chars)
+    -> Saved (whisper): unknown_dashingsceptile-why-sneasler-is-the-queen-of-vgc-pokemon-champions.md
+  Fetching transcript: How to use Kingambit in Pokemon Champions VGC...
+  No transcript for ycNtdvQZosY: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (97/500)
+  whisper 955s audio in 81s (11.8x realtime, 17409 chars)
+    -> Saved (whisper): unknown_teriso-how-to-use-kingambit-in-pokemon-champions-vgc.md
+  Fetching transcript: Pokémon Champions Online Battles #2 - Hail to the Kingambit! (VGC)...
+  No transcript for thlJXOgaE2A: (no stderr)
+  -> trying whisper fallback (98/500)
+  whisper 846s audio in 2s (346.5x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: ¡Él MEJOR EQUIPO para subir a MASTER! | Pokémon Champions...
+  No transcript for utSOb4PAkCo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (99/500)
+  whisper 867s audio in 90s (9.6x realtime, 5978 chars)
+    -> Saved (whisper): unknown_josebuild-él-mejor-equipo-para-subir-a-master-pokémon-champions.md
+  Fetching transcript: You MUST Recruit These Pokémon right away! | Pokemon Champions...
+  No transcript for 7nLBZiMSl2g: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (100/500)
+  whisper 865s audio in 67s (12.8x realtime, 15685 chars)
+    -> Saved (whisper): unknown_spragels-you-must-recruit-these-pokémon-right-away-pokemon-champions.md
+  Fetching transcript: Sneasler Is SPEEDING Its Way Through RANKED! - Pokemon Champions Team...
+  No transcript for 2kKOAXROss8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (101/500)
+  whisper 1520s audio in 94s (16.1x realtime, 16980 chars)
+    -> Saved (whisper): unknown_xatumi-pokemon-champions-and-xatumi-sneasler-is-speeding-its-way-through-ranked.md
+  Fetching transcript: Aiming for Rank 1 in Pokemon Champions...
+  No transcript for HhwW3StxTHw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (102/500)
+  whisper 7299s audio in 434s (16.8x realtime, 87506 chars)
+    -> Saved (whisper): unknown_wolfeyvgc-aiming-for-rank-1-in-pokemon-champions.md
+
+[17/21] Searching: 'Pokemon Champions Floette Eternal fairy aura'
+  Found 14 results
+  Fetching transcript: WHOSE IDEA WAS IT TO GIVE MEGA FLOETTE ETERNAL FAIRY AURA?!?! (Champio...
+  No transcript for w5nYDi0b244: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (103/500)
+  whisper 2936s audio in 109s (26.9x realtime, 19504 chars)
+    -> Saved (whisper): unknown_emeraldminer-whose-idea-was-it-to-give-mega-floette-eternal-fairy-aura-champions.md
+  Fetching transcript: MEGA FLOETTE Is RIDICULOUS in Pokemon Champions Ranked Singles......
+  No transcript for iWrKJwfPuEs: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (104/500)
+  whisper 1443s audio in 134s (10.8x realtime, 24521 chars)
+    -> Saved (whisper): unknown_splashplate-mega-floette-is-ridiculous-in-pokemon-champions-ranked-singles.md
+  Fetching transcript: Laddering with Mega Floette | Pokemon Champions...
+  No transcript for YwKovNWhTH8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (105/500)
+  whisper 5499s audio in 183s (30.1x realtime, 36127 chars)
+    -> Saved (whisper): unknown_zane-dyrewolf-laddering-with-mega-floette-pokemon-champions.md
+  Fetching transcript: Pokémon Champions - Ranked Battles 1...
+  No transcript for l8sSy0NcPY8: ERROR: [youtube] l8sSy0NcPY8: This video is not available
+  -> trying whisper fallback (106/500)
+  whisper audio-download failed for l8sSy0NcPY8: ERROR: [youtube] l8sSy0NcPY8: This video is not available
+  Fetching transcript: Mega Floette Eternal: O Pokémon que quebrou o VGC atual!...
+  No transcript for tX3OnvVmWt8: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (107/500)
+  whisper 2005s audio in 256s (7.8x realtime, 19011 chars)
+    -> Saved (whisper): unknown_prof-oliveira-professor-oliveira-mega-floette-eternal-o-pokémon-que-quebrou-o-vg.md
+  Fetching transcript: Pokémon Champions - Ranked Battles 2...
+  No transcript for BczJ-U0qlSI: ERROR: [youtube] BczJ-U0qlSI: This video is not available
+  -> trying whisper fallback (108/500)
+  whisper audio-download failed for BczJ-U0qlSI: ERROR: [youtube] BczJ-U0qlSI: This video is not available
+  Fetching transcript: Pokémon HOME - Pokémon Champions Update...
+  No transcript for aIl5mwySubE: ERROR: [youtube] aIl5mwySubE: This video is not available
+  -> trying whisper fallback (109/500)
+  whisper audio-download failed for aIl5mwySubE: ERROR: [youtube] aIl5mwySubE: This video is not available
+  Fetching transcript: GUIA COMPLETO MEGA FLOETTE COMPETITIVO no Pokémon Champions VGC, Doubl...
+  No transcript for dSTnR6XAv_c: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (110/500)
+  whisper 1091s audio in 120s (9.1x realtime, 15803 chars)
+    -> Saved (whisper): unknown_poke-zum-guia-completo-mega-floette-competitivo-no-pokémon-champions-vgc-double.md
+  Fetching transcript: Pokémon Legends: Z-A - Nothing Special (Season 9)...
+  No transcript for hgvB7k9Rnd0: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (111/500)
+  whisper 1851s audio in 6s (330.9x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: Radical Red 2.2 (Fairy Monotype) - Elite 4/Champion...
+  No transcript for hoWD0ZszV40: (no stderr)
+  -> trying whisper fallback (112/500)
+  whisper 412s audio in 1s (334.9x realtime, 0 chars)
+  whisper output too short (0 chars); treating as failure
+  Fetching transcript: Let's Play Pokemon X - #58: Diantha, the Pokémon Champion...
+  No transcript for 01BOApIYWXg: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (113/500)
+  whisper 1595s audio in 86s (18.5x realtime, 17767 chars)
+    -> Saved (whisper): unknown_citano-lets-play-pokemon-x-58-diantha-the-pokémon-champion.md
+  Fetching transcript: Rumbo al Mundial VGC 2016 #073 - Pikachu/Primal Groudon/Xerneas [Pokem...
+  No transcript for E0vGnsdNU9E: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (114/500)
+  whisper 937s audio in 70s (13.4x realtime, 9575 chars)
+    -> Saved (whisper): unknown_tablemon-rumbo-al-mundial-vgc-2016-073-pikachuprimal-groudonxerneas-pokemon-oraz.md
+
+[18/21] Searching: 'Pokemon Champions WolfeyVGC champions'
+  Found 15 results
+  Fetching transcript: Trying to Reach Rank 1 in Pokemon Champions...
+  No transcript for NVAwUbuxyZ4: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (115/500)
+  whisper 11690s audio in 616s (19.0x realtime, 120282 chars)
+    -> Saved (whisper): unknown_wolfeyvgc-trying-to-reach-rank-1-in-pokemon-champions.md
+  Fetching transcript: My First Pokemon Champions Stream...
+  No transcript for GMW3c1nci5U: ERROR: [youtube] GMW3c1nci5U: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (116/500)
+  whisper audio-download failed for GMW3c1nci5U: ERROR: [youtube] GMW3c1nci5U: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Wolfey Couldn't Beat THIS Snorlax on Pokemon Champions...So I Tried It...
+  No transcript for 5sKlJfYPPRw: ERROR: [youtube] 5sKlJfYPPRw: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (117/500)
+  whisper audio-download failed for 5sKlJfYPPRw: ERROR: [youtube] 5sKlJfYPPRw: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I Played Pokemon Champions Early...
+  No transcript for ezv1TyAodrs: ERROR: [youtube] ezv1TyAodrs: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (118/500)
+  whisper audio-download failed for ezv1TyAodrs: ERROR: [youtube] ezv1TyAodrs: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: WolfeyVGC's Reaction to "Pokemon Champions" was priceless....
+  No transcript for 6SVU5YVlkMY: ERROR: [youtube] 6SVU5YVlkMY: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (119/500)
+  whisper audio-download failed for 6SVU5YVlkMY: ERROR: [youtube] 6SVU5YVlkMY: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: THE MONTH OF CHAMPIONS...
+  No transcript for kadHLequVzM: ERROR: [youtube] kadHLequVzM: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (120/500)
+  whisper audio-download failed for kadHLequVzM: ERROR: [youtube] kadHLequVzM: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: day 12 of learning competitive pokemon vgc w/ @WolfeyVGC...
+  No transcript for i3IOrqOOaAo: ERROR: [youtube] i3IOrqOOaAo: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (121/500)
+  whisper audio-download failed for i3IOrqOOaAo: ERROR: [youtube] i3IOrqOOaAo: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: 2016 Pokémon World Championships: VG Masters Finals...
+  No transcript for kKz8imK_IVQ: ERROR: [youtube] kKz8imK_IVQ: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (122/500)
+  whisper audio-download failed for kKz8imK_IVQ: ERROR: [youtube] kKz8imK_IVQ: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Mega Chesnaught is the Strangest New Mega Pokemon...
+  No transcript for WCp70iErZkg: ERROR: [youtube] WCp70iErZkg: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (123/500)
+  whisper audio-download failed for WCp70iErZkg: ERROR: [youtube] WCp70iErZkg: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+[19/21] Searching: 'Pokemon Champions CybertronVGC champions'
+  Found 15 results
+  Fetching transcript: I'm going ALL IN on Pokemon Champions......
+  No transcript for H2NZBl20-Ag: ERROR: [youtube] H2NZBl20-Ag: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (124/500)
+  whisper audio-download failed for H2NZBl20-Ag: ERROR: [youtube] H2NZBl20-Ag: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I speedran the Pokemon Champions Ladder with this INFAMOUS duo...
+  No transcript for iqbvIZC4uvc: ERROR: [youtube] iqbvIZC4uvc: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (125/500)
+  whisper audio-download failed for iqbvIZC4uvc: ERROR: [youtube] iqbvIZC4uvc: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: How to learn from your LOSSES in Pokemon Champions...
+  No transcript for RPfOJ89cQsQ: ERROR: [youtube] RPfOJ89cQsQ: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (126/500)
+  whisper audio-download failed for RPfOJ89cQsQ: ERROR: [youtube] RPfOJ89cQsQ: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Pokemon invited me to play Pokemon Champions...
+  No transcript for pu-y67Q-lHg: ERROR: [youtube] pu-y67Q-lHg: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (127/500)
+  whisper audio-download failed for pu-y67Q-lHg: ERROR: [youtube] pu-y67Q-lHg: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: WIN games QUICKLY with this MEGA BLASTOISE team...
+  No transcript for RiRcR6h6t9M: ERROR: [youtube] RiRcR6h6t9M: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (128/500)
+  whisper audio-download failed for RiRcR6h6t9M: ERROR: [youtube] RiRcR6h6t9M: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I used the BEST TEAM in the world to climb to CHAMPION Tier...
+  No transcript for 7KBaPQVsuho: ERROR: [youtube] 7KBaPQVsuho: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (129/500)
+  whisper audio-download failed for 7KBaPQVsuho: ERROR: [youtube] 7KBaPQVsuho: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: MEGA Delphox won a Pokemon Champions tournament...
+  No transcript for 37N-BYcNAsM: ERROR: [youtube] 37N-BYcNAsM: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (130/500)
+  whisper audio-download failed for 37N-BYcNAsM: ERROR: [youtube] 37N-BYcNAsM: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: This might be the BEST MEGA MEGANIUM team right now...
+  No transcript for KZoWc9QE1OU: ERROR: [youtube] KZoWc9QE1OU: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (131/500)
+  whisper audio-download failed for KZoWc9QE1OU: ERROR: [youtube] KZoWc9QE1OU: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: What do Pokemon Pros think of Pokemon Champions?...
+  No transcript for tzoGliCnTtQ: ERROR: [youtube] tzoGliCnTtQ: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (132/500)
+  whisper audio-download failed for tzoGliCnTtQ: ERROR: [youtube] tzoGliCnTtQ: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: The MOST Important Speed Tiers to Know in Regulation M-A | Pokémon Cha...
+  No transcript for SeOFuen4-24: ERROR: [youtube] SeOFuen4-24: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (133/500)
+  whisper audio-download failed for SeOFuen4-24: ERROR: [youtube] SeOFuen4-24: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+[20/21] Searching: 'Pokemon Champions Freezai champions'
+  Found 15 results
+  Fetching transcript: We Invented Pokemon Champions "Random Battles"...
+  No transcript for xH9oh2ko33E: ERROR: [youtube] xH9oh2ko33E: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (134/500)
+  whisper audio-download failed for xH9oh2ko33E: ERROR: [youtube] xH9oh2ko33E: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: VGC Regional Champion Does Master Ball Pokemon Champions Battles...
+  No transcript for GwZBilazWQM: ERROR: [youtube] GwZBilazWQM: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (135/500)
+  whisper audio-download failed for GwZBilazWQM: ERROR: [youtube] GwZBilazWQM: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I Went Undefeated with a Gravity Team...
+  No transcript for MNKl8ZoZcXk: ERROR: [youtube] MNKl8ZoZcXk: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (136/500)
+  whisper audio-download failed for MNKl8ZoZcXk: ERROR: [youtube] MNKl8ZoZcXk: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: VGC Regional Champion Tries Pokemon Champions | First Impressions...
+  No transcript for LfaedNRvd6M: ERROR: [youtube] LfaedNRvd6M: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (137/500)
+  whisper audio-download failed for LfaedNRvd6M: ERROR: [youtube] LfaedNRvd6M: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Random Battles + Talking about Pokemon Champions...
+  No transcript for C0DSCXu4UB0: ERROR: [youtube] C0DSCXu4UB0: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (138/500)
+  whisper audio-download failed for C0DSCXu4UB0: ERROR: [youtube] C0DSCXu4UB0: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I Drastically Improved the No Guard OHKO Strategy...
+  No transcript for E3izW6tX6ao: ERROR: [youtube] E3izW6tX6ao: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (139/500)
+  whisper audio-download failed for E3izW6tX6ao: ERROR: [youtube] E3izW6tX6ao: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Why Aerodactyl Is Currently The Best It Has Ever Been...
+  No transcript for CJsCCNUFlNA: ERROR: [youtube] CJsCCNUFlNA: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (140/500)
+  whisper audio-download failed for CJsCCNUFlNA: ERROR: [youtube] CJsCCNUFlNA: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I Played in the Pokemon World Championship in Japan...
+  No transcript for xrQpdICqTOo: ERROR: [youtube] xrQpdICqTOo: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (141/500)
+  whisper audio-download failed for xrQpdICqTOo: ERROR: [youtube] xrQpdICqTOo: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Pro Players Break Down The Pokemon Champions Meta...
+  No transcript for 1CG9I_TVaRo: ERROR: [youtube] 1CG9I_TVaRo: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (142/500)
+  whisper audio-download failed for 1CG9I_TVaRo: ERROR: [youtube] 1CG9I_TVaRo: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: The Quickest Pokémon Champions League Game EVER...
+  No transcript for 3yhwW4fCe14: ERROR: [youtube] 3yhwW4fCe14: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (143/500)
+  whisper audio-download failed for 3yhwW4fCe14: ERROR: [youtube] 3yhwW4fCe14: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: The "Best" Games of Week 4 of Smogon's Champions League...
+  No transcript for w7Tf2j5D7Rs: ERROR: [youtube] w7Tf2j5D7Rs: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (144/500)
+  whisper audio-download failed for w7Tf2j5D7Rs: ERROR: [youtube] w7Tf2j5D7Rs: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Mega Gardevoir Just 2v1'd The Whole Team | Pokemon Champions...
+  No transcript for zIqKq47Gzso: ERROR: [youtube] zIqKq47Gzso: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (145/500)
+  whisper audio-download failed for zIqKq47Gzso: ERROR: [youtube] zIqKq47Gzso: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: So I Played an Ubers Champion in a $350 Tournament......
+  No transcript for UsqxNRiwGss: ERROR: [youtube] UsqxNRiwGss: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (146/500)
+  whisper audio-download failed for UsqxNRiwGss: ERROR: [youtube] UsqxNRiwGss: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: I Used the #1 Mega in Pokemon Champions! Rental Code in Description...
+  No transcript for Jq-udJbii8k: ERROR: [youtube] Jq-udJbii8k: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (147/500)
+  whisper audio-download failed for Jq-udJbii8k: ERROR: [youtube] Jq-udJbii8k: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Explaining the Best Competitive Pokémon Games from Week 1 of Smogon Ch...
+  No transcript for ySfL5-vJXXw: ERROR: [youtube] ySfL5-vJXXw: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (148/500)
+  whisper audio-download failed for ySfL5-vJXXw: ERROR: [youtube] ySfL5-vJXXw: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+[21/21] Searching: 'Pokemon Champions tournament winning team results'
+  Found 15 results
+  Fetching transcript: Winning $10000 Pokemon Champions Tournament (Grand Champions Festival)...
+  No transcript for oYnPAr5lFx0: ERROR: [youtube] oYnPAr5lFx0: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (149/500)
+  whisper audio-download failed for oYnPAr5lFx0: ERROR: [youtube] oYnPAr5lFx0: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: This Mega Charizard Team WON The BIGGEST Pokemon Champions Tournament!...
+  No transcript for Al1P9xpe79g: ERROR: [youtube] Al1P9xpe79g: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (150/500)
+  whisper audio-download failed for Al1P9xpe79g: ERROR: [youtube] Al1P9xpe79g: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: Analyzing The Biggest Pokémon Champions Tournament So Far......
+  No transcript for 9h6V2WWGg5k: ERROR: [youtube] 9h6V2WWGg5k: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (151/500)
+  whisper audio-download failed for 9h6V2WWGg5k: ERROR: [youtube] 9h6V2WWGg5k: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: 5 WINNING Teams Dominating Pokemon Champions Right Now...
+  No transcript for kqb0uqMox-E: ERROR: [youtube] kqb0uqMox-E: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (152/500)
+  whisper audio-download failed for kqb0uqMox-E: ERROR: [youtube] kqb0uqMox-E: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: 5 BROKEN Day 1 SANDSTORM Teams For Pokémon Champions! (With Poképastes...
+  No transcript for n3chTRctNWE: ERROR: [youtube] n3chTRctNWE: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (153/500)
+  whisper audio-download failed for n3chTRctNWE: ERROR: [youtube] n3chTRctNWE: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: 5 Teams To Prepare for In Pokemon Champions Reg M-A | VGC 2026...
+  No transcript for VipsHxrBFH4: ERROR: [youtube] VipsHxrBFH4: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (154/500)
+  whisper audio-download failed for VipsHxrBFH4: ERROR: [youtube] VipsHxrBFH4: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  Fetching transcript: This Team WON The BIGGEST Tournament EVER! | Pokémon Champions VGC...
+  No transcript for yr4hVwbWW_M: ERROR: [youtube] yr4hVwbWW_M: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+  -> trying whisper fallback (155/500)
+  whisper audio-download failed for yr4hVwbWW_M: ERROR: [youtube] yr4hVwbWW_M: Sign in to confirm you?re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+
+Done!
+  Saved: 101 transcripts (0 via ytdlp, 101 via whisper)
+  Skipped (filtered): 24
+  No transcript available: 54
+  ytdlp fetch attempts: 155 / cap 500
+  whisper fetch attempts: 155 / cap 500
+  Total unique videos checked: 290
+  Output directory: C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\data\transcripts

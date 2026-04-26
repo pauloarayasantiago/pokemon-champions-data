@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Send,
   Square,
   Wrench,
-  User,
   Bot,
   AlertCircle,
   RefreshCw,
@@ -13,6 +12,12 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Users,
+  Sparkles,
+  Search,
+  CheckCircle2,
+  XCircle,
+  ChevronsUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +26,31 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AVAILABLE_MODELS, TEAM_BUILDING_MODEL } from "@/lib/llm";
 import type { ModelId, Provider } from "@/lib/llm/types";
+import { MarkdownView } from "@/lib/markdown";
+import { cn } from "@/lib/utils";
+import {
+  TeamReferencePanel,
+  type StalenessInfo,
+} from "./TeamReferencePanel";
+import {
+  buildRosterIndex,
+  extractCitations,
+  lookupPokemon,
+  parseTeamFromMessages,
+  parseTeamJsonFromMessages,
+  type RosterEntry,
+  type TeamSlot,
+} from "./teamParser";
+import type { PokemonType } from "@/components/ui/type-badge";
 
 type Role = "user" | "assistant";
 
@@ -93,27 +121,23 @@ interface ChatMessage {
   toolIds?: string[];
 }
 
-type StalenessSourceName =
-  | "youtube"
-  | "pikalytics"
-  | "sheets"
-  | "serebii"
-  | "knowledge";
-
-interface StalenessSource {
-  name: StalenessSourceName;
-  fileCount: number;
-  mostRecentMtime: string;
-  hoursSinceMostRecent: number;
-  hasFsDrift: boolean;
-}
-
-interface StalenessInfo {
-  indexedAt: string;
-  hoursSinceIndex: number;
-  sources: StalenessSource[];
-  hasFsDrift: boolean;
-}
+const QUICK_STARTS: Array<{ label: string; prompt: string; accent: string }> = [
+  {
+    label: "Build from scratch",
+    prompt: "Build a balanced VGC Doubles team for Regulation M-A.",
+    accent: "var(--type-grass)",
+  },
+  {
+    label: "Counter a threat",
+    prompt: "What counters Sneasler in the current Champions VGC meta?",
+    accent: "var(--type-poison)",
+  },
+  {
+    label: "Optimize my team",
+    prompt: "I have Pelipper + Kingdra. What should I add to round out a rain team?",
+    accent: "var(--type-water)",
+  },
+];
 
 function newId(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -132,8 +156,11 @@ export default function TeamPage() {
   const [nowTick, setNowTick] = useState(Date.now());
   const [staleness, setStaleness] = useState<StalenessInfo | null>(null);
   const [debugOpen, setDebugOpen] = useState(false);
+  const [referenceOpen, setReferenceOpen] = useState(false);
+  const [roster, setRoster] = useState<RosterEntry[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -141,6 +168,7 @@ export default function TeamPage() {
 
   useEffect(() => {
     void probeHealth();
+    void loadRoster();
   }, []);
 
   useEffect(() => {
@@ -148,6 +176,29 @@ export default function TeamPage() {
     const id = setInterval(() => setNowTick(Date.now()), 100);
     return () => clearInterval(id);
   }, [isStreaming]);
+
+  // Ctrl+Shift+D toggles legacy debug sheet
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "d")) {
+        e.preventDefault();
+        setDebugOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  async function loadRoster() {
+    try {
+      const res = await fetch("/api/pokemon/roster");
+      if (!res.ok) return;
+      const json = (await res.json()) as { pokemon: RosterEntry[] };
+      if (Array.isArray(json.pokemon)) setRoster(json.pokemon);
+    } catch {
+      /* roster lookup is non-fatal — chat still works without type badges */
+    }
+  }
 
   async function probeHealth() {
     setHealthLoading(true);
@@ -221,18 +272,16 @@ export default function TeamPage() {
         }
       }
     } catch (err) {
-      const error = err as Error;
-      const aborted = error.name === "AbortError" || controller.signal.aborted;
+      const e = err as Error;
+      const aborted = e.name === "AbortError" || controller.signal.aborted;
       if (aborted) {
         setRun((r) =>
           r ? { ...r, errorStage: "cancelled", errorText: "Cancelled by user", endedAt: Date.now() } : r,
         );
       } else {
-        setError(error.message);
+        setError(e.message);
         setRun((r) =>
-          r
-            ? { ...r, errorStage: "transport", errorText: error.message, endedAt: Date.now() }
-            : r,
+          r ? { ...r, errorStage: "transport", errorText: e.message, endedAt: Date.now() } : r,
         );
       }
     } finally {
@@ -251,8 +300,8 @@ export default function TeamPage() {
     abortRef.current?.abort();
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!input.trim() || isStreaming) return;
 
     const userMsg: ChatMessage = {
@@ -270,6 +319,7 @@ export default function TeamPage() {
 
     setMessages((m) => [...m, userMsg, assistantMsg]);
     setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     const apiMessages = [...messages, userMsg].map((m: ChatMessage) => ({
       role: m.role,
@@ -281,7 +331,6 @@ export default function TeamPage() {
 
   async function retry() {
     if (isStreaming) return;
-    // Drop the failed (empty) assistant placeholder, if present, and re-stream from the prior history.
     const trimmed = (() => {
       const last = messages[messages.length - 1];
       if (last?.role === "assistant" && !last.content) return messages.slice(0, -1);
@@ -305,79 +354,102 @@ export default function TeamPage() {
     await streamReply(apiMessages, assistantMsg.id);
   }
 
+  // Derived team state — runs whenever messages or roster change.
+  const team: TeamSlot[] = useMemo(
+    () =>
+      parseTeamFromMessages(
+        messages.map((m) => ({ role: m.role, content: m.content })),
+        roster,
+      ),
+    [messages, roster],
+  );
+  const teamJson = useMemo(
+    () =>
+      parseTeamJsonFromMessages(
+        messages.map((m) => ({ role: m.role, content: m.content })),
+      ),
+    [messages],
+  );
+
+  // Roster index for the markdown renderer's Pokemon-line type lookup.
+  const rosterIndex = useMemo(
+    () => (roster.length > 0 ? buildRosterIndex(roster).byNormalized : null),
+    [roster],
+  );
+  const lookupTypes = useMemo(
+    () =>
+      rosterIndex
+        ? (name: string): PokemonType[] | null => {
+            const entry = lookupPokemon(name, rosterIndex);
+            return entry ? entry.types : null;
+          }
+        : undefined,
+    [rosterIndex],
+  );
+
   const runActive = !!run && !run.endedAt;
+  const teamFilledCount = team.filter(Boolean).length;
 
   return (
-    <div className="mx-auto grid h-[calc(100vh-5rem)] w-full max-w-[1400px] grid-cols-1 gap-4 px-4 pt-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
+    <div className="mx-auto grid h-[calc(100vh-5rem)] w-full max-w-[1400px] grid-cols-1 gap-4 px-4 pt-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
       {/* Chat column */}
       <div className="flex min-h-0 flex-col">
         <header className="mb-3 flex items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">Team Builder</h1>
+          <div>
+            <h1 className="text-sm font-semibold leading-tight">Team Builder</h1>
+            <p className="text-[11px] text-muted-foreground">
+              Champions VGC · Reg M-A
+            </p>
+          </div>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDebugOpen(true)}
-              className="lg:hidden"
-              aria-label="Open debug panel"
+            <Select
+              value={model}
+              onValueChange={(v) => setModel(v as ModelId)}
+              disabled={isStreaming}
             >
-              <Wrench className="h-3.5 w-3.5" />
-              <span className="ml-1">Debug</span>
-              {runActive && (
-                <span
-                  className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"
-                  aria-hidden
-                />
-              )}
-            </Button>
-            <label className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground hidden sm:inline">Model:</span>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value as ModelId)}
-                disabled={isStreaming}
+              <SelectTrigger
+                size="sm"
+                className="h-7 w-fit text-xs"
                 aria-label="Select model"
-                className="rounded-md border bg-background px-2 py-1 text-sm"
               >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
                 {AVAILABLE_MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label} {m.tier === "free" ? "(free)" : ""}
-                  </option>
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.label}
+                    {m.tier === "free" ? " (free)" : ""}
+                  </SelectItem>
                 ))}
-              </select>
-            </label>
+              </SelectContent>
+            </Select>
           </div>
         </header>
 
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto rounded-lg border bg-card/50 p-3 space-y-4"
+          className="flex-1 overflow-y-auto rounded-xl border bg-card/40 px-3 py-4 space-y-5"
         >
-          {messages.length === 0 && (
-            <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
-              <div className="max-w-md space-y-2">
-                <p>Ask me to build, fill, or evaluate a Champions VGC team.</p>
-                <p className="text-xs">
-                  Try: &ldquo;Build a rain team around Pelipper&rdquo; or &ldquo;What counters Sneasler?&rdquo;
-                </p>
-              </div>
-            </div>
+          {messages.length === 0 ? (
+            <EmptyState onPick={(p) => setInput(p)} />
+          ) : (
+            messages.map((m, idx) => {
+              const isLast = idx === messages.length - 1;
+              return (
+                <MessageView
+                  key={m.id}
+                  message={m}
+                  tools={run?.tools ?? {}}
+                  isStreaming={isStreaming && isLast}
+                  isFinal={!isStreaming && isLast && !error}
+                  lookupTypes={lookupTypes}
+                  totalMs={run?.totalMs}
+                />
+              );
+            })
           )}
-          {messages.map((m, idx) => {
-            const isLast = idx === messages.length - 1;
-            return (
-              <MessageView
-                key={m.id}
-                message={m}
-                tools={run?.tools ?? {}}
-                isStreaming={isStreaming && isLast}
-                isFinal={!isStreaming && isLast && !error}
-              />
-            );
-          })}
           {error && (
-            <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
               <div className="flex-1 space-y-2">
                 <div>{error}</div>
@@ -397,61 +469,68 @@ export default function TeamPage() {
           )}
         </div>
 
-        <form onSubmit={submit} className="mt-3 flex gap-2" aria-label="Team builder chat">
-          <label htmlFor="team-input" className="sr-only">
-            Ask about teams, counters, sets, meta
-          </label>
-          <input
-            id="team-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about teams, counters, sets, meta..."
-            disabled={isStreaming}
-            aria-label="Ask about teams, counters, sets, meta"
-            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60"
-            autoComplete="off"
-            enterKeyHint="send"
-          />
-          {isStreaming ? (
-            <Button
-              type="button"
-              onClick={cancel}
-              size="icon"
-              variant="destructive"
-              aria-label="Stop generation"
-              title="Stop generation"
-            >
-              <Square className="h-4 w-4" aria-hidden />
-            </Button>
-          ) : (
-            <Button type="submit" disabled={!input.trim()} size="icon" aria-label="Send message">
-              <Send className="h-4 w-4" aria-hidden />
-            </Button>
-          )}
-        </form>
-        <StalenessFooter staleness={staleness} />
+        <Composer
+          ref={textareaRef}
+          input={input}
+          setInput={setInput}
+          onSubmit={submit}
+          onCancel={cancel}
+          isStreaming={isStreaming}
+        />
       </div>
 
-      {/* Debug sidebar — desktop inline */}
-      <aside className="hidden min-h-0 flex-col gap-3 overflow-y-auto rounded-lg border bg-card/30 p-3 text-xs lg:flex">
-        <DebugPanel
-          health={health}
-          healthLoading={healthLoading}
-          onRefreshHealth={probeHealth}
-          model={model}
-          run={run}
-          isStreaming={isStreaming}
-          nowTick={nowTick}
-          runs={runs}
-        />
-      </aside>
+      {/* Right reference panel — desktop */}
+      <TeamReferencePanel
+        team={team}
+        megaStone={teamJson?.megaStone}
+        staleness={staleness}
+        className="hidden lg:flex"
+      />
 
-      {/* Debug sheet — mobile bottom drawer */}
-      <Sheet open={debugOpen} onOpenChange={setDebugOpen}>
+      {/* Floating reference button — mobile */}
+      <button
+        type="button"
+        onClick={() => setReferenceOpen(true)}
+        className={cn(
+          "fixed right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border shadow-lg lg:hidden transition-all",
+          "bottom-[calc(env(safe-area-inset-bottom)+5rem)]",
+          teamFilledCount > 0
+            ? "bg-vgc-accent text-black border-vgc-accent"
+            : "bg-card text-foreground border-border",
+        )}
+        aria-label="Open team reference panel"
+      >
+        <Users className="h-5 w-5" aria-hidden />
+        {teamFilledCount > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[10px] font-bold text-background">
+            {teamFilledCount}
+          </span>
+        )}
+      </button>
+
+      {/* Reference panel — mobile bottom sheet */}
+      <Sheet open={referenceOpen} onOpenChange={setReferenceOpen}>
         <SheetContent
           side="bottom"
-          className="lg:hidden h-[85vh] overflow-y-auto p-3 pt-12"
+          className="lg:hidden h-[80vh] overflow-y-auto p-0 pt-12"
         >
+          <SheetHeader className="px-4 pb-3">
+            <SheetTitle>Team Reference</SheetTitle>
+          </SheetHeader>
+          <div className="px-4 pb-6">
+            <TeamReferencePanel
+              team={team}
+              megaStone={teamJson?.megaStone}
+              staleness={staleness}
+              className="border-0 bg-transparent p-0"
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Debug Sheet — Ctrl+Shift+D */}
+      <Sheet open={debugOpen} onOpenChange={setDebugOpen}>
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto p-3 pt-12">
           <SheetHeader className="p-0 pb-3">
             <SheetTitle>Debug</SheetTitle>
           </SheetHeader>
@@ -466,12 +545,595 @@ export default function TeamPage() {
               nowTick={nowTick}
               runs={runs}
             />
+            {runActive && (
+              <span
+                className="absolute top-3 right-3 inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"
+                aria-hidden
+              />
+            )}
           </div>
         </SheetContent>
       </Sheet>
     </div>
   );
 }
+
+// ─── Empty state ─────────────────────────────────────────────────────────
+
+function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
+      <div className="space-y-1.5 max-w-sm">
+        <div className="flex justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-vgc-accent-muted">
+            <Sparkles className="h-5 w-5 text-vgc-accent" aria-hidden />
+          </div>
+        </div>
+        <p className="text-sm font-semibold text-foreground">
+          Start building your team
+        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Describe a strategy or ask about the meta. Your team and type
+          coverage will populate in the panel as the assistant responds.
+        </p>
+      </div>
+
+      <div className="w-full max-w-sm space-y-2">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 text-left">
+          Try asking
+        </p>
+        {QUICK_STARTS.map(({ label, prompt, accent }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => onPick(prompt)}
+            className="group flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-2.5 text-left transition-colors hover:bg-accent/40 hover:border-border"
+          >
+            <span
+              className="h-2 w-2 shrink-0 rounded-full transition-transform group-hover:scale-125"
+              style={{ backgroundColor: accent }}
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-foreground">{label}</div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {prompt}
+              </div>
+            </div>
+            <ChevronRight
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Composer ────────────────────────────────────────────────────────────
+
+const Composer = React.forwardRef<
+  HTMLTextAreaElement,
+  {
+    input: string;
+    setInput: (v: string) => void;
+    onSubmit: (e?: React.FormEvent) => void;
+    onCancel: () => void;
+    isStreaming: boolean;
+  }
+>(function Composer({ input, setInput, onSubmit, onCancel, isStreaming }, ref) {
+  function autoResize(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 140) + "px";
+  }
+  return (
+    <form
+      onSubmit={onSubmit}
+      className="mt-3"
+      aria-label="Team builder chat"
+    >
+      <label htmlFor="team-input" className="sr-only">
+        Ask about teams, counters, sets, meta
+      </label>
+      <div
+        className={cn(
+          "rounded-xl border border-input bg-background p-2 shadow-sm transition-all",
+          isStreaming
+            ? "border-vgc-accent/40 shadow-[0_0_0_1px_var(--vgc-accent-muted)]"
+            : "focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50",
+        )}
+      >
+        <textarea
+          id="team-input"
+          ref={ref}
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+            autoResize(e.target);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
+          placeholder="Ask about teams, counters, sets, meta..."
+          disabled={isStreaming}
+          rows={1}
+          aria-label="Ask about teams, counters, sets, meta"
+          className="w-full resize-none bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-60 max-h-[140px]"
+          autoComplete="off"
+          enterKeyHint="send"
+        />
+        <div className="mt-1 flex items-center justify-between gap-2 px-1">
+          <span className="text-[10px] text-muted-foreground/60 select-none hidden sm:inline">
+            Enter to send · Shift+Enter for new line
+          </span>
+          <span className="sm:hidden" />
+          {isStreaming ? (
+            <Button
+              type="button"
+              onClick={onCancel}
+              size="icon"
+              variant="destructive"
+              aria-label="Stop generation"
+              title="Stop generation"
+              className="size-7"
+            >
+              <Square className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={!input.trim()}
+              size="icon"
+              aria-label="Send message"
+              className="size-7"
+            >
+              <Send className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          )}
+        </div>
+      </div>
+    </form>
+  );
+});
+
+// ─── Message view ────────────────────────────────────────────────────────
+
+function MessageView({
+  message,
+  tools,
+  isStreaming,
+  isFinal,
+  lookupTypes,
+  totalMs,
+}: {
+  message: ChatMessage;
+  tools: Record<string, ToolEvent>;
+  isStreaming: boolean;
+  isFinal: boolean;
+  lookupTypes: ((name: string) => PokemonType[] | null) | undefined;
+  totalMs?: number;
+}) {
+  const isUser = message.role === "user";
+  const msgTools = (message.toolIds ?? []).map((id) => tools[id]).filter(Boolean);
+  const isEmpty = !message.content && msgTools.length === 0;
+  const showSkeleton = !isUser && isStreaming && isEmpty;
+  const showEmptyFallback = !isUser && isFinal && isEmpty;
+  const citations = useMemo(
+    () => (message.content ? extractCitations(message.content) : []),
+    [message.content],
+  );
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[78%] rounded-xl rounded-tr-sm bg-primary px-3.5 py-2.5 text-sm text-primary-foreground shadow-sm">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-start gap-2">
+      <div className="mt-2 shrink-0">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-vgc-accent-muted">
+          <Bot className="h-3.5 w-3.5 text-vgc-accent" aria-hidden />
+        </div>
+      </div>
+      <div className="max-w-[88%] rounded-xl rounded-tl-sm border bg-card px-4 py-3 shadow-sm">
+        {msgTools.length > 0 && (
+          <ToolSummaryLine tools={msgTools} isStreaming={isStreaming} />
+        )}
+        {message.content && (
+          <MarkdownView
+            text={message.content}
+            enrich={{
+              pokemon: true,
+              callouts: true,
+              teamCard: true,
+              lookupTypes,
+            }}
+          />
+        )}
+        {showSkeleton && <ThinkingSkeleton />}
+        {showEmptyFallback && (
+          <div className="text-xs italic text-muted-foreground">
+            Stream ended without output. Try resubmitting your question.
+          </div>
+        )}
+        {citations.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/40 pt-2">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+              Sources
+            </span>
+            {citations.map((c) => (
+              <span
+                key={c}
+                className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
+        {!isUser && message.model && !showSkeleton && message.content && (
+          <div className="mt-2 text-[10px] uppercase tracking-wider text-muted-foreground/50">
+            {message.model}
+            {totalMs && isFinal && ` · ${(totalMs / 1000).toFixed(1)}s`}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tool summary (single line, click to expand) ─────────────────────────
+
+function ToolSummaryLine({
+  tools,
+  isStreaming,
+}: {
+  tools: ToolEvent[];
+  isStreaming: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const total = tools.length;
+  const okCount = tools.filter((t) => t.ok === true).length;
+  const failCount = tools.filter((t) => t.ok === false).length;
+  const pendingCount = tools.filter((t) => t.ok === undefined).length;
+
+  const isActive = isStreaming && pendingCount > 0;
+  const allDone = pendingCount === 0;
+  const anyFailed = failCount > 0;
+
+  const subjects = tools
+    .map((t) => describeToolSubject(t))
+    .filter((s): s is string => !!s);
+  const uniqueSubjects = Array.from(new Set(subjects));
+  const visibleSubjects = uniqueSubjects.slice(0, 3);
+  const moreCount = uniqueSubjects.length - visibleSubjects.length;
+
+  let icon: React.ReactNode;
+  let summary: React.ReactNode;
+  let toneClass = "";
+
+  if (isActive) {
+    icon = (
+      <Search
+        className="h-3 w-3 text-vgc-accent animate-pulse"
+        aria-hidden
+      />
+    );
+    toneClass = "text-vgc-accent";
+    summary =
+      visibleSubjects.length > 0 ? (
+        <>
+          Looking up {visibleSubjects.join(", ")}
+          {moreCount > 0 && `, +${moreCount}`}…
+        </>
+      ) : (
+        <>Searching…</>
+      );
+  } else if (anyFailed) {
+    icon = <XCircle className="h-3 w-3 text-destructive" aria-hidden />;
+    toneClass = "text-destructive";
+    summary = (
+      <>
+        Source lookup failed for {failCount} of {total}
+      </>
+    );
+  } else if (allDone) {
+    icon = <CheckCircle2 className="h-3 w-3 text-green-600" aria-hidden />;
+    summary =
+      visibleSubjects.length > 0 ? (
+        <>
+          Referenced {okCount} source{okCount === 1 ? "" : "s"} ·{" "}
+          {visibleSubjects.join(", ")}
+          {moreCount > 0 && ` +${moreCount}`}
+        </>
+      ) : (
+        <>
+          Referenced {okCount} source{okCount === 1 ? "" : "s"}
+        </>
+      );
+  } else {
+    icon = <Wrench className="h-3 w-3" aria-hidden />;
+    summary = (
+      <>
+        {okCount} done · {pendingCount} pending
+      </>
+    );
+  }
+
+  return (
+    <div className="mb-2.5 border-b border-border/40 pb-2.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex w-full items-center gap-1.5 text-left text-xs text-muted-foreground hover:text-foreground transition-colors",
+          toneClass,
+        )}
+        aria-expanded={open}
+      >
+        {icon}
+        <span className="flex-1 truncate">{summary}</span>
+        <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" aria-hidden />
+      </button>
+      {open && (
+        <ul className="mt-2 space-y-1 text-[11px]">
+          {tools.map((t) => (
+            <ToolDetailRow key={t.id} tool={t} />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ToolDetailRow({ tool }: { tool: ToolEvent }) {
+  const subject = describeToolSubject(tool);
+  const status = tool.ok === true ? "ok" : tool.ok === false ? "fail" : "…";
+  const statusClass =
+    tool.ok === true
+      ? "text-green-600"
+      : tool.ok === false
+        ? "text-destructive"
+        : "text-vgc-accent";
+  const duration =
+    tool.endedAt !== undefined ? formatMs(tool.endedAt - tool.startedAt) : null;
+  const summaryRows = tool.summary ? Object.entries(tool.summary) : [];
+  const visibleSummary = summaryRows.slice(0, 3);
+  return (
+    <li className="rounded bg-muted/40 px-2 py-1.5">
+      <div className="flex items-center gap-2 font-mono text-[10px]">
+        <span className={statusClass}>{status}</span>
+        <span className="font-semibold text-foreground/90">{tool.name}</span>
+        {subject && <span className="truncate text-muted-foreground">{subject}</span>}
+        {duration && <span className="ml-auto text-muted-foreground">{duration}</span>}
+      </div>
+      {tool.error && (
+        <div className="mt-1 rounded bg-destructive/15 px-1 py-0.5 text-[10px] text-destructive">
+          {tool.error}
+        </div>
+      )}
+      {visibleSummary.length > 0 && (
+        <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 font-mono text-[10px] text-muted-foreground">
+          {visibleSummary.map(([k, v]) => (
+            <React.Fragment key={k}>
+              <span>{k}</span>
+              <span className="truncate text-foreground/80">{summaryValue(v)}</span>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+    </li>
+  );
+}
+
+function describeToolSubject(t: ToolEvent): string | null {
+  const args = t.arguments;
+  if (!args) return null;
+  if (typeof args.name === "string") return args.name;
+  if (typeof args.query === "string")
+    return args.query.length > 40 ? `${args.query.slice(0, 40)}…` : args.query;
+  if (typeof args.move === "string") return args.move;
+  if (typeof args.item === "string") return args.item;
+  return null;
+}
+
+function summaryValue(v: unknown): string {
+  if (typeof v === "number") {
+    return Number.isInteger(v) ? String(v) : v.toFixed(2);
+  }
+  const s = JSON.stringify(v);
+  return s && s.length > 60 ? `${s.slice(0, 60)}…` : (s ?? "");
+}
+
+// ─── Thinking skeleton ───────────────────────────────────────────────────
+
+function ThinkingSkeleton() {
+  return (
+    <div className="space-y-2 py-1" role="status" aria-label="Assistant is thinking">
+      <div className="flex items-center gap-1.5">
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-vgc-accent animate-bounce"
+          style={{ animationDelay: "0ms" }}
+        />
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-vgc-accent animate-bounce"
+          style={{ animationDelay: "150ms" }}
+        />
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-vgc-accent animate-bounce"
+          style={{ animationDelay: "300ms" }}
+        />
+        <span className="ml-1 text-xs text-muted-foreground">Thinking…</span>
+      </div>
+      <div className="space-y-1.5">
+        <div className="h-2 w-48 animate-pulse rounded bg-muted-foreground/15" />
+        <div className="h-2 w-36 animate-pulse rounded bg-muted-foreground/12" />
+        <div className="h-2 w-56 animate-pulse rounded bg-muted-foreground/10" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Event reducer ───────────────────────────────────────────────────────
+
+function applyEvent(
+  assistantId: string,
+  evt: Record<string, unknown>,
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  setRun: React.Dispatch<React.SetStateAction<RunState | null>>,
+) {
+  const type = evt.type as string;
+  const now = Date.now();
+
+  setRun((r) => {
+    if (!r) return r;
+    const next: RunState = {
+      ...r,
+      rawEvents: [...r.rawEvents, { t: now, evt }],
+    };
+    if (type === "meta") {
+      next.requestId = evt.requestId as string;
+      next.model = evt.model as ModelId;
+      next.provider = evt.provider as Provider;
+      next.remoteName = evt.remoteName as string;
+      next.systemPromptVersion = evt.systemPromptVersion as string;
+    } else if (type === "iter_start") {
+      const iter = evt.iter as number;
+      next.iters = {
+        ...next.iters,
+        [iter]: { iter, startedAt: now, toolIds: [] },
+      };
+    } else if (type === "llm_first_token") {
+      const iter = evt.iter as number;
+      const existing = next.iters[iter];
+      if (existing) {
+        next.iters = {
+          ...next.iters,
+          [iter]: { ...existing, firstTokenAt: now },
+        };
+      }
+    } else if (type === "iter_end") {
+      const iter = evt.iter as number;
+      const existing = next.iters[iter];
+      if (existing) {
+        next.iters = {
+          ...next.iters,
+          [iter]: {
+            ...existing,
+            endedAt: now,
+            contentChars: evt.contentChars as number,
+            toolCallCount: evt.toolCallCount as number,
+            finishReason: evt.finishReason as string,
+          },
+        };
+      }
+    } else if (type === "tool_call") {
+      const id = evt.id as string;
+      const iter = evt.iter as number;
+      next.tools = {
+        ...next.tools,
+        [id]: {
+          id,
+          name: evt.name as string,
+          iter,
+          arguments: evt.arguments as Record<string, unknown>,
+          stages: [],
+          startedAt: now,
+        },
+      };
+      const itExisting = next.iters[iter];
+      if (itExisting && !itExisting.toolIds.includes(id)) {
+        next.iters = {
+          ...next.iters,
+          [iter]: { ...itExisting, toolIds: [...itExisting.toolIds, id] },
+        };
+      }
+    } else if (type === "tool_start") {
+      const id = evt.id as string;
+      const existing = next.tools[id];
+      if (existing) {
+        next.tools = { ...next.tools, [id]: { ...existing, startedAt: now } };
+      }
+    } else if (type === "tool_progress") {
+      const id = evt.id as string;
+      const existing = next.tools[id];
+      if (existing) {
+        next.tools = {
+          ...next.tools,
+          [id]: {
+            ...existing,
+            stages: [
+              ...existing.stages,
+              {
+                stage: evt.stage as string,
+                ts: now,
+                detail: evt.detail as Record<string, unknown> | null,
+              },
+            ],
+          },
+        };
+      }
+    } else if (type === "tool_result") {
+      const id = evt.id as string;
+      const existing = next.tools[id];
+      if (existing) {
+        next.tools = { ...next.tools, [id]: { ...existing, result: evt.result } };
+      }
+    } else if (type === "tool_end") {
+      const id = evt.id as string;
+      const existing = next.tools[id];
+      if (existing) {
+        next.tools = {
+          ...next.tools,
+          [id]: {
+            ...existing,
+            endedAt: now,
+            ok: evt.ok as boolean,
+            error: evt.error as string | null,
+            summary: evt.summary as Record<string, unknown> | null,
+          },
+        };
+      }
+    } else if (type === "error") {
+      next.errorStage = (evt.stage as string) ?? "error";
+      next.errorText = evt.error as string;
+      next.endedAt = now;
+    } else if (type === "done") {
+      next.endedAt = now;
+      next.finishReason = evt.finishReason as string;
+      next.totalMs = evt.totalMs as number;
+    }
+    return next;
+  });
+
+  setMessages((msgs) =>
+    msgs.map((m) => {
+      if (m.id !== assistantId) return m;
+      if (type === "content") {
+        return { ...m, content: m.content + (evt.delta as string) };
+      }
+      if (type === "tool_call") {
+        const toolIds = [...(m.toolIds ?? []), evt.id as string];
+        return { ...m, toolIds };
+      }
+      if (type === "iter_start" && (evt.iter as number) > 0) {
+        return { ...m, content: "" };
+      }
+      return m;
+    }),
+  );
+}
+
+// ─── Debug panel (legacy, opens via Ctrl+Shift+D) ────────────────────────
 
 function DebugPanel({
   health,
@@ -658,7 +1320,12 @@ function IterTimeline({ run, nowTick }: { run: RunState | null; nowTick: number 
     <div className="space-y-2">
       <div className="font-semibold text-muted-foreground">Timeline</div>
       {iters.map((it) => (
-        <IterCard key={it.iter} iter={it} tools={it.toolIds.map((id) => run.tools[id]).filter(Boolean)} nowTick={nowTick} />
+        <IterCard
+          key={it.iter}
+          iter={it}
+          tools={it.toolIds.map((id) => run.tools[id]).filter(Boolean)}
+          nowTick={nowTick}
+        />
       ))}
     </div>
   );
@@ -706,8 +1373,7 @@ function IterCard({
 function ToolCard({ tool, nowTick }: { tool: ToolEvent; nowTick: number }) {
   const [open, setOpen] = useState(false);
   const duration = (tool.endedAt ?? nowTick) - tool.startedAt;
-  const badge =
-    tool.ok === true ? "✓" : tool.ok === false ? "✗" : "…";
+  const badge = tool.ok === true ? "✓" : tool.ok === false ? "✗" : "…";
   const badgeColor =
     tool.ok === true
       ? "text-green-500"
@@ -721,7 +1387,11 @@ function ToolCard({ tool, nowTick }: { tool: ToolEvent; nowTick: number }) {
         onClick={() => setOpen((o) => !o)}
       >
         <span className="flex min-w-0 items-center gap-1">
-          {open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+          {open ? (
+            <ChevronDown className="h-3 w-3 shrink-0" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0" />
+          )}
           <Wrench className="h-3 w-3 shrink-0 text-muted-foreground" />
           <span className="truncate font-mono">{tool.name}</span>
         </span>
@@ -761,9 +1431,19 @@ function ToolCard({ tool, nowTick }: { tool: ToolEvent; nowTick: number }) {
   );
 }
 
+function summarizeArgs(args?: Record<string, unknown>): string {
+  if (!args) return "";
+  const entries = Object.entries(args);
+  if (entries.length === 0) return "";
+  const parts = entries.slice(0, 3).map(([k, v]) => {
+    const s = typeof v === "string" ? v : JSON.stringify(v);
+    return `${k}=${s && s.length > 30 ? `${s.slice(0, 30)}…` : s}`;
+  });
+  return parts.join(" ");
+}
+
 function StageBars({ stages }: { stages: ToolStage[] }) {
   if (stages.length === 0) return null;
-  // Pair *_start with *_end to derive per-stage ms.
   const segments: Array<{ name: string; ms: number; detail?: Record<string, unknown> | null }> = [];
   const starts: Record<string, number> = {};
   for (const s of stages) {
@@ -913,318 +1593,4 @@ function RawEventLog({ run }: { run: RunState | null }) {
 function formatMs(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
-}
-
-function formatHoursAgo(hours: number): string {
-  if (hours < 1) return `${Math.round(hours * 60)}m`;
-  if (hours < 48) return `${Math.round(hours)}h`;
-  return `${Math.round(hours / 24)}d`;
-}
-
-const STALENESS_WARN_HOURS = 72;
-
-function StalenessFooter({ staleness }: { staleness: StalenessInfo | null }) {
-  const [open, setOpen] = useState(false);
-  if (!staleness) return null;
-  const maxSourceAge = staleness.sources.reduce(
-    (acc, s) => Math.max(acc, s.hoursSinceMostRecent),
-    0,
-  );
-  const warn = maxSourceAge > STALENESS_WARN_HOURS;
-  const driftCount = staleness.sources.filter((s) => s.hasFsDrift).length;
-  return (
-    <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 hover:text-foreground transition-colors ${
-          warn ? "text-amber-600 dark:text-amber-500" : ""
-        }`}
-      >
-        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        <span>
-          Data refreshed {formatHoursAgo(maxSourceAge)} ago
-          {warn && " (stale — pipeline may be down)"}
-          {driftCount > 0 && ` · ${driftCount} local drift`}
-        </span>
-      </button>
-      {open && (
-        <div className="ml-4 grid grid-cols-[auto_auto_auto] gap-x-3 gap-y-0.5 font-mono text-[10px]">
-          {staleness.sources.map((s) => (
-            <React.Fragment key={s.name}>
-              <span className="text-foreground">{s.name}</span>
-              <span>{formatHoursAgo(s.hoursSinceMostRecent)} ago</span>
-              <span className={s.hasFsDrift ? "text-amber-600" : ""}>
-                {s.fileCount} file{s.fileCount === 1 ? "" : "s"}
-                {s.hasFsDrift && " · drift"}
-              </span>
-            </React.Fragment>
-          ))}
-          <span className="text-foreground">index</span>
-          <span>{formatHoursAgo(staleness.hoursSinceIndex)} ago</span>
-          <span />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function applyEvent(
-  assistantId: string,
-  evt: Record<string, unknown>,
-  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
-  setRun: React.Dispatch<React.SetStateAction<RunState | null>>,
-) {
-  const type = evt.type as string;
-  const now = Date.now();
-
-  setRun((r) => {
-    if (!r) return r;
-    const next: RunState = {
-      ...r,
-      rawEvents: [...r.rawEvents, { t: now, evt }],
-    };
-    if (type === "meta") {
-      next.requestId = evt.requestId as string;
-      next.model = evt.model as ModelId;
-      next.provider = evt.provider as Provider;
-      next.remoteName = evt.remoteName as string;
-      next.systemPromptVersion = evt.systemPromptVersion as string;
-    } else if (type === "iter_start") {
-      const iter = evt.iter as number;
-      next.iters = {
-        ...next.iters,
-        [iter]: { iter, startedAt: now, toolIds: [] },
-      };
-    } else if (type === "llm_first_token") {
-      const iter = evt.iter as number;
-      const existing = next.iters[iter];
-      if (existing) {
-        next.iters = {
-          ...next.iters,
-          [iter]: { ...existing, firstTokenAt: now },
-        };
-      }
-    } else if (type === "iter_end") {
-      const iter = evt.iter as number;
-      const existing = next.iters[iter];
-      if (existing) {
-        next.iters = {
-          ...next.iters,
-          [iter]: {
-            ...existing,
-            endedAt: now,
-            contentChars: evt.contentChars as number,
-            toolCallCount: evt.toolCallCount as number,
-            finishReason: evt.finishReason as string,
-          },
-        };
-      }
-    } else if (type === "tool_call") {
-      const id = evt.id as string;
-      const iter = evt.iter as number;
-      next.tools = {
-        ...next.tools,
-        [id]: {
-          id,
-          name: evt.name as string,
-          iter,
-          arguments: evt.arguments as Record<string, unknown>,
-          stages: [],
-          startedAt: now,
-        },
-      };
-      const itExisting = next.iters[iter];
-      if (itExisting && !itExisting.toolIds.includes(id)) {
-        next.iters = {
-          ...next.iters,
-          [iter]: { ...itExisting, toolIds: [...itExisting.toolIds, id] },
-        };
-      }
-    } else if (type === "tool_start") {
-      const id = evt.id as string;
-      const existing = next.tools[id];
-      if (existing) {
-        next.tools = {
-          ...next.tools,
-          [id]: { ...existing, startedAt: now },
-        };
-      }
-    } else if (type === "tool_progress") {
-      const id = evt.id as string;
-      const existing = next.tools[id];
-      if (existing) {
-        next.tools = {
-          ...next.tools,
-          [id]: {
-            ...existing,
-            stages: [
-              ...existing.stages,
-              {
-                stage: evt.stage as string,
-                ts: now,
-                detail: evt.detail as Record<string, unknown> | null,
-              },
-            ],
-          },
-        };
-      }
-    } else if (type === "tool_result") {
-      const id = evt.id as string;
-      const existing = next.tools[id];
-      if (existing) {
-        next.tools = {
-          ...next.tools,
-          [id]: { ...existing, result: evt.result },
-        };
-      }
-    } else if (type === "tool_end") {
-      const id = evt.id as string;
-      const existing = next.tools[id];
-      if (existing) {
-        next.tools = {
-          ...next.tools,
-          [id]: {
-            ...existing,
-            endedAt: now,
-            ok: evt.ok as boolean,
-            error: evt.error as string | null,
-            summary: evt.summary as Record<string, unknown> | null,
-          },
-        };
-      }
-    } else if (type === "error") {
-      next.errorStage = (evt.stage as string) ?? "error";
-      next.errorText = evt.error as string;
-      next.endedAt = now;
-    } else if (type === "done") {
-      next.endedAt = now;
-      next.finishReason = evt.finishReason as string;
-      next.totalMs = evt.totalMs as number;
-    }
-    return next;
-  });
-
-  setMessages((msgs) =>
-    msgs.map((m) => {
-      if (m.id !== assistantId) return m;
-      if (type === "content") {
-        return { ...m, content: m.content + (evt.delta as string) };
-      }
-      if (type === "tool_call") {
-        const toolIds = [...(m.toolIds ?? []), evt.id as string];
-        return { ...m, toolIds };
-      }
-      // D7+D9: clear accumulated content at the start of any non-first iter so the visible
-      // bubble shows only the current iter's stream. This drops intermediate "thinking" text
-      // from chain-of-thought-style models (e.g. DeepSeek streams ~6.8k chars across pre-final
-      // iters) AND replaces a failed iter's content when citation_retry triggers a fresh iter.
-      // Tool calls are preserved across iters since they represent real history.
-      if (type === "iter_start" && (evt.iter as number) > 0) {
-        return { ...m, content: "" };
-      }
-      return m;
-    }),
-  );
-}
-
-function MessageView({
-  message,
-  tools,
-  isStreaming,
-  isFinal,
-}: {
-  message: ChatMessage;
-  tools: Record<string, ToolEvent>;
-  isStreaming: boolean;
-  isFinal: boolean;
-}) {
-  const isUser = message.role === "user";
-  const msgTools = (message.toolIds ?? []).map((id) => tools[id]).filter(Boolean);
-  const isEmpty = !message.content && msgTools.length === 0;
-  const showSkeleton = !isUser && isStreaming && isEmpty;
-  const showEmptyFallback = !isUser && isFinal && isEmpty;
-  return (
-    <div className={`flex gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
-      {!isUser && (
-        <div className="shrink-0 mt-1">
-          <Bot className="h-5 w-5 text-muted-foreground" aria-hidden />
-        </div>
-      )}
-      <div
-        className={`max-w-[85%] space-y-2 rounded-lg px-3 py-2 text-sm ${
-          isUser ? "bg-primary text-primary-foreground" : "bg-muted"
-        }`}
-      >
-        {msgTools.length > 0 && (
-          <div className="space-y-1">
-            {msgTools.map((t) => {
-              const duration = t.endedAt ? t.endedAt - t.startedAt : null;
-              const badge = t.ok === true ? "✓" : t.ok === false ? "✗" : "…";
-              const badgeColor =
-                t.ok === true
-                  ? "text-green-500"
-                  : t.ok === false
-                    ? "text-red-500"
-                    : "text-yellow-500 animate-pulse";
-              return (
-                <div
-                  key={t.id}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <Wrench className="h-3 w-3" aria-hidden />
-                  <span className="font-mono truncate">
-                    {t.name}({summarizeArgs(t.arguments)})
-                  </span>
-                  <span className={badgeColor} aria-label={`tool ${t.ok === true ? "succeeded" : t.ok === false ? "failed" : "running"}`}>
-                    {badge}
-                  </span>
-                  {duration !== null && <span className="text-[10px]">{duration}ms</span>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {message.content && (
-          <div className="whitespace-pre-wrap break-words leading-relaxed">
-            {message.content}
-          </div>
-        )}
-        {showSkeleton && <ThinkingSkeleton />}
-        {showEmptyFallback && (
-          <div className="text-xs italic text-muted-foreground">
-            Stream ended without output. Try resubmitting your question.
-          </div>
-        )}
-        {!isUser && message.model && !showSkeleton && (
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
-            {message.model}
-          </div>
-        )}
-      </div>
-      {isUser && (
-        <div className="shrink-0 mt-1">
-          <User className="h-5 w-5 text-muted-foreground" aria-hidden />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ThinkingSkeleton() {
-  return (
-    <div className="space-y-1.5" role="status" aria-label="Assistant is thinking">
-      <div className="h-2 w-32 animate-pulse rounded bg-muted-foreground/20" />
-      <div className="h-2 w-24 animate-pulse rounded bg-muted-foreground/20" />
-      <div className="h-2 w-40 animate-pulse rounded bg-muted-foreground/20" />
-    </div>
-  );
-}
-
-function summarizeArgs(args: Record<string, unknown> | undefined): string {
-  if (!args) return "";
-  const entries = Object.entries(args).slice(0, 3);
-  return entries
-    .map(([k, v]) => `${k}: ${JSON.stringify(v).slice(0, 40)}`)
-    .join(", ");
 }

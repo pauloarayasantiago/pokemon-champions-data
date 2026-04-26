@@ -1,0 +1,195 @@
+ 
+=== Run started Sun 04/26/2026  3:00:01.98 === 
+Skipping 212 previously downloaded videos
+Pokemon Champions YouTube Transcript Scraper
+Release date filter: >= 20260408
+Output: C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\data\transcripts
+Queries: 21 | Cap: 20/run | Delay: 5s | 429-streak abort: 3 | Impersonate: Chrome
+Whisper fallback: on (cap 5/run)
+
+[1/21] Searching: 'Pokemon Champions competitive team building'
+  Found 15 results
+
+[2/21] Searching: 'Pokemon Champions VGC doubles tier list'
+  Found 15 results
+  Fetching transcript: Así será el META de Pokémon Champions | TIERLIST de PokeAlex...
+  No transcript for O_VfubUf9pA: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (1/5)
+  whisper model medium.en loaded (cuda/int8) in 3.7s
+  whisper 5327s audio in 877s (6.1x realtime, 59361 chars)
+    -> Saved (whisper): unknown_pokealexvgc-así-será-el-meta-de-pokémon-champions-tierlist-de-pokealex.md
+
+[3/21] Searching: 'Pokemon Champions best Pokemon meta'
+  Found 15 results
+  Fetching transcript: Pro Players Break Down The Pokemon Champions Meta...
+  No transcript for 1CG9I_TVaRo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (2/5)
+  whisper 2662s audio in 284s (9.4x realtime, 54119 chars)
+    -> Saved (whisper): unknown_justin-tang-pro-players-break-down-the-pokemon-champions-meta.md
+  Fetching transcript: The BEST META TEAMS in POKEMON CHAMPIONS to ALWAYS WIN...
+  No transcript for xwq83GH1Wus: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (3/5)
+  whisper 703s audio in 100s (7.0x realtime, 11114 chars)
+    -> Saved (whisper): unknown_kolash-the-best-meta-teams-in-pokemon-champions-to-always-win.md
+  Fetching transcript: 5 Underrated Mega Pokemon You Should Be Using In Pokemon Champions......
+  No transcript for yd0ty2pcdzw: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (4/5)
+  whisper 1519s audio in 125s (12.2x realtime, 28055 chars)
+    -> Saved (whisper): unknown_moxie-boosteds-gym-5-underrated-mega-pokemon-you-should-be-using-in-pokemon-cham.md
+
+[4/21] Searching: 'Pokemon Champions team guide'
+  Found 15 results
+  Fetching transcript: Pokémon Champions Perish Trap Guide | Everything You Need to Know...
+  No transcript for aBMYkkq4Y2w: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  -> trying whisper fallback (5/5)
+  whisper 1503s audio in 106s (14.2x realtime, 23156 chars)
+    -> Saved (whisper): unknown_kingvgc-pokémon-champions-perish-trap-guide-everything-you-need-to-know.md
+
+[5/21] Searching: 'Pokemon Champions top Pokemon ranked'
+  Found 15 results
+  Fetching transcript: Are You Top 300 in Pokemon Champions? | New Champion Rank Explained...
+  No transcript for 27UIwknrojo: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+
+[6/21] Searching: 'Pokemon Champions mega evolution competitive'
+  Found 15 results
+  Fetching transcript: Mega Gardevoir Just 2v1'd The Whole Team | Pokemon Champions...
+  No transcript for zIqKq47Gzso: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  Fetching transcript: Pokémon Champions: The 10 Best Mega Evolutions for Competitive Playing...
+  No transcript for Lc6CJZ8QWao: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests
+  Aborting run after 3 consecutive rate-limit signals across both methods.
+
+Done!
+  Saved: 5 transcripts (0 via ytdlp, 5 via whisper)
+  Skipped (filtered): 1
+  No transcript available: 3
+  ytdlp fetch attempts: 8 / cap 20 (rate-limit abort)
+  whisper fetch attempts: 5 / cap 5
+  Total unique videos checked: 221
+  Output directory: C:\Users\paulo\Documents\LOCAL_WORKSPACE\1-pokemon-skill\data\transcripts
+[main 6def06f] refresh: local youtube scrape
+ 107 files changed, 1819 insertions(+)
+ create mode 100644 data/transcripts/unknown_adrive-27-major-changes-to-competitive-pokemon-pokemon-champions-update.md
+ create mode 100644 data/transcripts/unknown_adrive-everything-you-need-to-know-before-you-start-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_adrive-ivs-gone-new-abilities-and-everything-we-know-about-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_austin-john-plays-fun-free-and-ugly-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_austin-john-plays-how-to-make-your-pok\303\251mon-super-strong.md"
+ create mode 100644 data/transcripts/unknown_austin-john-plays-top-5-things-pokemon-champions-changes-forever.md
+ create mode 100644 data/transcripts/unknown_championmads-the-new-best-teams-to-play-for-ranked-battles-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_cipherblk-nothing-is-safe-from-mega-excadrills-new-ability-pokemon-champions-ran.md
+ create mode 100644 "data/transcripts/unknown_citano-lets-play-pokemon-x-58-diantha-the-pok\303\251mon-champion.md"
+ create mode 100644 "data/transcripts/unknown_cloverbells-mega-tyranitar-is-back-6-sand-teams-with-full-evs-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_cybertronvgc-pokemon-champions-brings-big-changes.md
+ create mode 100644 data/transcripts/unknown_dashingsceptile-why-sneasler-is-the-queen-of-vgc-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_dragonwhale-how-the-new-pokemon-champions-training-system-changes-everything.md
+ create mode 100644 data/transcripts/unknown_edd-saavage-incineroar-is-unstoppable-right-now-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_emeraldminer-whose-idea-was-it-to-give-mega-floette-eternal-fairy-aura-champions.md
+ create mode 100644 data/transcripts/unknown_ericko-champions-and-erickotcg-best-sand-team-6-win-streak-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_fallen-whimmy-i-created-my-very-first-trick-room-team-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_false-swipe-gaming-why-items-are-close-to-everything-the-giratina-theorem.md
+ create mode 100644 data/transcripts/unknown_false-swipe-gaming-why-priority-is-close-to-everything-the-scizor-theorem.md
+ create mode 100644 data/transcripts/unknown_ghostie-vgc-the-best-duo-in-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_haydunn-all-reasons-why-pok\303\251mon-champions-is-a-disaster-so-far.md"
+ create mode 100644 data/transcripts/unknown_hoshinjosh-this-team-is-literally-free-wins-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_ign-pokemon-champions-every-major-battle-change-explained.md
+ create mode 100644 data/transcripts/unknown_jakspii-vgc-understanding-evs-ivs-and-natures-pokemon-vgc-guide.md
+ create mode 100644 data/transcripts/unknown_jeans-huge-power-mega-starmie-is-the-best-mega-evolution-for-ranked-battles-in-p.md
+ create mode 100644 data/transcripts/unknown_jeans-multiscale-mega-dragonite-is-broken-on-rain-teams-for-ranked-battles-in-po.md
+ create mode 100644 data/transcripts/unknown_jeans-this-mega-tyranitar-team-is-the-best-team-right-now-for-ranked-battles-in.md
+ create mode 100644 data/transcripts/unknown_jimothy-cool-sun-vs-rain-in-competitive-pokemon.md
+ create mode 100644 "data/transcripts/unknown_jon-luke-vgc-and-geordivgc-pok\303\251mon-champions-barely-has-options-so-we-built-8-co.md"
+ create mode 100644 "data/transcripts/unknown_josebuild-\303\251l-mejor-equipo-para-subir-a-master-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_joserockzvgc-i-tried-the-next-vgc-format-early-pre-champions.md
+ create mode 100644 data/transcripts/unknown_jptk-vgc-the-best-teams-for-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_justin-tang-pro-players-break-down-the-pokemon-champions-meta.md
+ create mode 100644 data/transcripts/unknown_kaglish-beginner-trick-room-team-for-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_kingvgc-pok\303\251mon-champions-perish-trap-guide-everything-you-need-to-know.md"
+ create mode 100644 "data/transcripts/unknown_koffing-sonriente-abilities-of-the-new-mega-evolutions-in-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_kolash-the-best-meta-teams-in-pokemon-champions-to-always-win.md
+ create mode 100644 "data/transcripts/unknown_la-f\303\241brica-pok\303\251mon-the-most-broken-duo-in-pok\303\251mon-champions-mega-tyranitar-excad.md"
+ create mode 100644 data/transcripts/unknown_laketwo-altaria-has-sun-teams-raging-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_laketwo-everything-you-need-to-know-about-incineroar-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_laketwo-this-is-a-rain-teams-worst-nightmare-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_laketwo-which-set-is-better-to-run-on-kommo-o-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_meplaysgames-how-do-pokemon-stats-actually-work.md
+ create mode 100644 data/transcripts/unknown_moxie-boosteds-gym-5-underrated-mega-pokemon-you-should-be-using-in-pokemon-cham.md
+ create mode 100644 "data/transcripts/unknown_mrsteelixyourgirl-weather-teams-are-dominating-the-pok\303\251mon-champions-meta-compet.md"
+ create mode 100644 data/transcripts/unknown_myspaceguide-incineroar-abillities-guide-how-to-get-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_mystica-ranking-every-new-mega-evolution-weakest-to-strongest.md
+ create mode 100644 data/transcripts/unknown_omniarch-tv-pokemons-new-game-is-already-a-disaster.md
+ create mode 100644 data/transcripts/unknown_pimpnite-mega-meganium-pokemon-champions-best-moveset-rain-team-how-to-use-mega.md
+ create mode 100644 data/transcripts/unknown_pinkacross-how-to-invest-evs-in-competitive-pokemon.md
+ create mode 100644 "data/transcripts/unknown_pinkgeerough-master-tier-ally-switch-in-pok\303\251mon-champions-four-win-streak.md"
+ create mode 100644 "data/transcripts/unknown_poke-zum-guia-completo-mega-floette-competitivo-no-pok\303\251mon-champions-vgc-double.md"
+ create mode 100644 data/transcripts/unknown_pokeaim-pokeaim-proves-trick-room-is-crazy-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_pokeaim-pokeaim-proves-why-sun-is-ridiculous-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_pokeaimmd-huge-move-nerfs-and-buffs-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_pokeaimmd-mega-delphox-is-anti-meta-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_pokeaimmd-this-new-trick-room-team-dominates-master-ball-rank.md
+ create mode 100644 "data/transcripts/unknown_pokealexvgc-as\303\255-ser\303\241-el-meta-de-pok\303\251mon-champions-tierlist-de-pokealex.md"
+ create mode 100644 "data/transcripts/unknown_pokeaprendiz-sandstorm-team-mega-tyranitar-excadrill-destroy-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_pokeaprendiz-this-trick-room-team-is-better-than-it-looks-pokemonchampions.md
+ create mode 100644 "data/transcripts/unknown_pokebot-champions-how-to-defeat-the-best-pok\303\251mon-in-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_pokegrinding-this-double-mega-trick-room-team-is-unstoppable-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_pokegrinding-this-mega-aggron-trick-room-team-is-dominating-master-ball-rank.md
+ create mode 100644 data/transcripts/unknown_pokegrinding-this-rain-team-got-me-master-rank-in-24-hours-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_pok\303\251sports-i-tried-a-hard-trick-room-team-in-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_prncessdiana-catch-your-opponents-off-guard-with-this-trick-room-team-pokemon-ch.md
+ create mode 100644 "data/transcripts/unknown_prof-oliveira-professor-oliveira-mega-floette-eternal-o-pok\303\251mon-que-quebrou-o-vg.md"
+ create mode 100644 data/transcripts/unknown_raven-dont-start-battling-without-knowing-this-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_reki-best-mega-evolution-for-pok\303\251mon-champions-tier-list-competitive.md"
+ create mode 100644 data/transcripts/unknown_reno-pokemon-champions-stats-evs-and-natures-simplified.md
+ create mode 100644 data/transcripts/unknown_robstar-z-the-underrated-intimidate-pick-in-pokemon-champions-krookodile.md
+ create mode 100644 "data/transcripts/unknown_sableyevgc-the-best-new-mega-evolutions-in-pok\303\251mon-champions-way-too-early-editi.md"
+ create mode 100644 "data/transcripts/unknown_scooteezyvgc-5-sleeper-combos-youre-not-using-in-regulation-m-a-pok\303\251mon-champion.md"
+ create mode 100644 "data/transcripts/unknown_scooteezyvgc-this-japanese-sun-team-reached-rank-1-on-the-pok\303\251mon-champions-ladd.md"
+ create mode 100644 "data/transcripts/unknown_scorph-pok\303\251mon-todo-mal-habilidades-de-nuevas-megas-en-pok\303\251mon-champions-scorph.md"
+ create mode 100644 "data/transcripts/unknown_sersun-the-best-beginner-sand-team-in-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_skraw-vgc-the-history-of-rain-in-competitive-pokemon.md
+ create mode 100644 "data/transcripts/unknown_snoozevgc-is-mega-mawile-broken-in-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_splashplate-and-blunder-why-mega-gengar-is-broken-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_splashplate-mega-floette-is-ridiculous-in-pokemon-champions-ranked-singles.md
+ create mode 100644 data/transcripts/unknown_splashplate-pokemon-champions-is-not-what-we-expected-an-in-depth-first-look.md
+ create mode 100644 data/transcripts/unknown_spragels-dont-miss-this-special-roster-in-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_spragels-you-must-recruit-these-pok\303\251mon-right-away-pokemon-champions.md"
+ create mode 100644 data/transcripts/unknown_tablemon-rumbo-al-mundial-vgc-2016-073-pikachuprimal-groudonxerneas-pokemon-oraz.md
+ create mode 100644 "data/transcripts/unknown_tall-grass-gaming-this-team-just-won-a-1000-tournament-for-pok\303\251mon-champions.md"
+ create mode 100644 data/transcripts/unknown_talonvgc-the-best-trick-room-team-in-pokemon-champions-replica-team.md
+ create mode 100644 "data/transcripts/unknown_team-eevee-the-best-pok\303\251mon-in-pok\303\251mon-champions-complete-guide-for-beginners-bu.md"
+ create mode 100644 data/transcripts/unknown_teriso-how-to-use-kingambit-in-pokemon-champions-vgc.md
+ create mode 100644 data/transcripts/unknown_thatsaplusone-anti-meta-mega-meowstic-pokemon-champions-vgc-ranked-competitive-b.md
+ create mode 100644 data/transcripts/unknown_thatsaplusone-is-floette-the-best-new-mega-pokemon-champions-vgc-ranked-competit.md
+ create mode 100644 data/transcripts/unknown_thatsaplusone-mega-beedrill-is-back-pokemon-champions-vgc-ranked-competitive-bat.md
+ create mode 100644 data/transcripts/unknown_thatsaplusone-my-best-charizard-team-pokemon-champions-vgc-ranked-competitive-ba.md
+ create mode 100644 data/transcripts/unknown_thedelybird-how-to-actually-play-weather-pokemon-vgc-regulation.md
+ create mode 100644 data/transcripts/unknown_thedelybird-how-to-transfer-pokemon-into-pokemon-champions-pokemon-pokemonchampi.md
+ create mode 100644 data/transcripts/unknown_trickrubyvgc-psyspam-trick-room-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_vio-this-mega-tyranitar-team-is-sick-pokemon-champions-ranked-singles-regulation.md
+ create mode 100644 data/transcripts/unknown_wolfeyvgc-aiming-for-rank-1-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_wolfeyvgc-how-i-became-the-1-ranked-player-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_wolfeyvgc-this-pokemon-proved-everyone-wrong.md
+ create mode 100644 data/transcripts/unknown_wolfeyvgc-trying-to-reach-rank-1-in-pokemon-champions.md
+ create mode 100644 data/transcripts/unknown_wolfeyvgc-why-this-stupid-cat-is-the-best-pokemon-ever.md
+ create mode 100644 data/transcripts/unknown_xatumi-pokemon-champions-and-xatumi-sneasler-is-speeding-its-way-through-ranked.md
+ create mode 100644 "data/transcripts/unknown_xehrfelrose-5-game-win-streak-with-this-awesome-mega-tyranitar-sand-team-in-pok\303\251.md"
+ create mode 100644 data/transcripts/unknown_zach-ty-reach-masterball-in-pokemon-champions-and-beat-rain-with-this-trick-room.md
+ create mode 100644 "data/transcripts/unknown_zagastarx-pok\303\251mon-champions-my-first-sandstorm-team-intense-battles.md"
+ create mode 100644 data/transcripts/unknown_zane-dyrewolf-laddering-with-mega-floette-pokemon-champions.md
+ create mode 100644 "data/transcripts/unknown_zemtennar-5-megas-that-could-dominate-vgc-when-pok\303\251mon-champions-drops.md"
+From https://github.com/pauloarayasantiago/pokemon-champions-data
+ * branch            main       -> FETCH_HEAD
+warning: in the working copy of '.claude/settings.local.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'memory-bank/activeContext.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scraper_youtube.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/test-team.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/team/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/meta/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/team/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/system-prompt.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/tools.ts', LF will be replaced by CRLF the next time Git touches it
+Created autostash: 64854eb
+Rebasing (1/1)Applied autostash.
+[KSuccessfully rebased and updated refs/heads/main.
+To https://github.com/pauloarayasantiago/pokemon-champions-data.git
+   2cc83d5..b73f954  main -> main
+=== Run finished Sun 04/26/2026  3:28:19.49 === 

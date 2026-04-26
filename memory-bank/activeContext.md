@@ -1,10 +1,24 @@
 # Active Context
 
-_Last updated: 2026-04-25 late night (post 9-model comparison + paid-routing fix + system prompt v4.5 + 7 new memory memos). Purpose: one-page "right now" snapshot for next-agent handoff. Forward plan: [rag-master-plan.md](rag-master-plan.md). Detailed history: [progress.md](progress.md). Bug log: [errors.md](errors.md). Data-pipeline source-of-truth: [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
+_Last updated: 2026-04-26 02:35 (post whisper backfill completion). Purpose: one-page "right now" snapshot for next-agent handoff. Forward plan: [rag-master-plan.md](rag-master-plan.md). Detailed history: [progress.md](progress.md). Bug log: [errors.md](errors.md). Data-pipeline source-of-truth: [techContext.md § Data Pipeline](techContext.md#data-pipeline)._
+
+> ⚠️ **Multiple agents may be active in this repo.** Other webapp/UI changes (`src/app/globals.css`, `src/app/meta/page.tsx`, `src/app/api/pokemon/`, `src/components/ui/type-badge.tsx`, `src/lib/markdown.tsx`) appeared in the working tree this session and are NOT from the YouTube-triage track. Don't bundle them into a YouTube commit; check with the user about their provenance before any commit.
+
+> ✅ **Whisper backfill completed 2026-04-26 02:30** (wall time ~4h 50min). **Saved 101 new transcripts (all via whisper, 0 via ytdlp** — captions endpoint stayed 429'd the entire run, validating the fallback architecture). 155 ytdlp attempts → all 429; 155 whisper attempts → 101 success + 54 audio-download failures (newer "Sign in to confirm you're not a bot" challenge — YouTube's tier-2 bot detection on the audio CDN, distinct from the captions 429). 24 candidates filtered by REJECT_KEYWORDS. **Total corpus: 212 transcripts** (was 110). Reindex run via `/reindex` skill — see chunk delta in [techContext.md](techContext.md). **Pending:** `git add data/transcripts/ memory-bank/ scraper_youtube.py scraper_youtube_whisper.py && git commit`.
 
 ## TL;DR
 
 **RAG declared feature-complete 2026-04-25**. Active track since the pivot is **Tier D — Webapp UX**. Tier D Phase 1+2, A15 validator, R1-R3 RAG follow-ups all shipped earlier today.
+
+**This session (2026-04-25 evening — YouTube triage + whisper fallback):** Discovered that A10's local YouTube scraper regressed (every 12h fire since 2026-04-23 returned `Saved: 0` — YouTube rate-limited the residential IP at the captions endpoint). Mitigated in **five** parts:
+
+1. **Backend swap** — [scraper_youtube.py](../scraper_youtube.py) `get_transcript()` rewritten from `youtube-transcript-api` to `yt-dlp --write-auto-subs --impersonate Chrome` (different HTTP path + curl_cffi 0.14 browser TLS fingerprint).
+2. **Volume controls** — `DELAY_SECONDS` 1→5 + new `MAX_FETCH_PER_RUN=20` env-overridable cap.
+3. **429-streak early-exit** — `RATE_LIMIT_STREAK_ABORT=3` (env-overridable). Aborts after 3 consecutive 429s across BOTH methods, capping wasted time at ~15s.
+4. **Schedule retune** — schtasks `pokemon-youtube-scraper` retuned 12h → daily 03:00. Daily aligns with VGC content publication; volume controls keep weekly worst-case at ~140 fetches vs. original ~2000.
+5. **NEW — Whisper fallback as second method.** Per-video waterfall: yt-dlp tries first; if it returns no transcript (429 or no captions), [scraper_youtube_whisper.py](../scraper_youtube_whisper.py) downloads audio via yt-dlp -x (different YouTube CDN, **NOT rate-limited**) and runs faster-whisper `medium.en` on RTX 2070 SUPER (~10× realtime, ~2-3 min/video). End-to-end test 2026-04-25: yt-dlp 429'd → whisper picked up → saved 36 KB transcript with `source: whisper` frontmatter. Cap `MAX_WHISPER_PER_RUN=5` (heavier compute). Installed `faster-whisper==1.2.1` + `ctranslate2==4.7.1` + `medium.en` model (~1.5 GB at `~/.cache/huggingface/hub/`).
+
+Bottom line: even with the captions endpoint blocked, we now successfully extract transcripts via the audio path. Verification gate is the 2026-04-26 03:00 daily fire on completely fresh search candidates. See [errors.md](errors.md) row "YouTube residential-IP rate-limit".
 
 **Late-night session (2026-04-25 17:30-19:30):** Built [scripts/test-team.ts](../scripts/test-team.ts) capture tool, ran 9-model comparison batches on the prompt "Build a team around Froslass and Krookodile". Discovered the OpenRouter adapter sent NO `provider` routing field — explaining why 6/9 models hit shared-pool 429s or transport timeouts despite a paid account. Shipped:
 - **Paid routing fix** in [src/lib/llm/openrouter.ts](../src/lib/llm/openrouter.ts) + [src/lib/llm/openai-compat.ts](../src/lib/llm/openai-compat.ts): per-call config injects `provider.{allow_fallbacks:false, sort:throughput, require_parameters:true}` plus per-model `provider.order` first-party pinning.
@@ -40,11 +54,15 @@ Verified 2026-04-25 with paid routing + v4.5 prompt. **Tiers below combine opera
 
 ## Next actions (in priority order)
 
-1. **Smoke + commit** the 2026-04-25 session bundle. Touched files span earlier ships (D7-D9, R1-R3, A15) + tonight (paid routing in openrouter.ts + openai-compat.ts + types.ts, system-prompt v4.5, AVAILABLE_MODELS curation in llm.ts, scripts/test-team.ts, CLAUDE.md). Run any model in `/team` to smoke. Suggested commit: `git commit -m "feat(ux+rag+routing): Tier D, R1-R3, A15, system prompt v4.5, OpenRouter paid routing, test-team capture CLI"`.
-2. **Retest `deepseek-v4-pro` periodically.** All 3 tool-supporting OpenRouter providers were simultaneously throttled today. Routing config (`provider.order: [DeepSeek, SiliconFlow, Together, Io Net]` + `require_parameters=true`) is correct — just need OpenRouter capacity to recover. Try: `npx tsx scripts/test-team.ts deepseek-v4-pro` after a few hours.
+1. **Verify YouTube weekly fire on 2026-04-26 03:00.** Check `scripts/logs/youtube-2026-04-26.log` Sunday morning + `git log --since="2026-04-26 03:00" --author="paulo"` for a `refresh: local youtube scrape` commit. **If `Saved: N>0`** → mitigation worked, observe across 2-3 weekly fires. **If still 429** → escalate: drop schedule entirely, switch to manual-only invocation, or revisit when IP-ban window closes (often days–weeks).
+2. **Retest `deepseek-v4-pro` periodically.** All 3 tool-supporting OpenRouter providers were simultaneously throttled 2026-04-25. Routing config (`provider.order: [DeepSeek, SiliconFlow, Together, Io Net]` + `require_parameters=true`) is correct — just need OpenRouter capacity to recover. Try: `npx tsx scripts/test-team.ts deepseek-v4-pro` after a few hours.
 3. **Optional: paid Google API for gemini-2.5-flash.** If user wants this back in the dropdown, set a paid Google AI Studio key (currently free tier hits 5 RPM daily cap). Adapter at [src/lib/llm/gemini.ts](../src/lib/llm/gemini.ts) just needs the env var.
-3. **A14 — Pikalytics non-EN ASCII-Latin detection.** Currently leaks Italian (Bora/Velaurora) past the `[^\x00-\x7f]` regex. Fix candidate: cross-check scraped move names against canonical `moves.csv` and trigger retry/fallback when >50% don't match. Currently degrading R2 enrichment for Froslass specifically.
-4. **C4 — exclude `memory-bank/**` from indexer ingest.** Stale-warning noise on every memory-bank edit. 5-min fix in chunker ignore globs.
+4. **A14 — Pikalytics non-EN ASCII-Latin detection.** A6's `[^\x00-\x7f]` regex misses Italian/Spanish/French/Portuguese/German on common words. Currently SELF-RESOLVED as of 2026-04-25 (Froslass row is clean English) but the detector gap could cause a future regression. Fix candidate: cross-check scraped move names against canonical `moves.csv` and trigger retry/fallback when >50% don't match. Preventive — no current breakage.
+5. **C4 — exclude `memory-bank/**` from indexer ingest.** Stale-warning noise on every memory-bank edit. 5-min fix in chunker ignore globs.
+
+## Planned focused sessions
+
+- **Perfect the system prompt — dedicated session with research.** User intent expressed 2026-04-25 evening: allocate a focused session to re-engineer [src/lib/system-prompt.ts](../src/lib/system-prompt.ts) (currently `2026-04-25.v4.5-reemit-both`). Scope explicitly includes prompt-engineering research — read up on tool-using-agent best practices, citation hygiene patterns, system-prompt patterns from comparable products before touching the file. Goal: tighter rules, fewer model-specific quirks, better eval scores across the dropdown. **Don't tackle piecemeal during routine work — block out a session.** Touches the same file as the v4.5 ship so coordinate with anyone else queuing prompt edits. Related context: [memory/project_system_prompt_v45.md](../.claude/projects/C--Users-paulo-Documents-LOCAL-WORKSPACE-1-pokemon-skill/memory/project_system_prompt_v45.md), [rag-master-plan.md § Strategic reframe item 3 "Agent ergonomics"](rag-master-plan.md#strategic-reframe-2026-04-23).
 
 ## Optional / deferred
 
@@ -53,6 +71,7 @@ Verified 2026-04-25 with paid routing + v4.5 prompt. **Tiers below combine opera
 - **D5** — `/pokedex` & `/sets` polish (search-as-you-type, archetype/core filter).
 - **D6** — Tailwind v4 design-token formalization (semantic color names: `--color-success`, `--color-info`).
 - **A8 / A9** — CLI harness wrapper / harder eval tests. Tier-A residue, deferred unless concrete need surfaces.
+- **B4** — Speed tier matrix proposal (2026-04-26). Pre-compute speed comparisons under speed-control modes (Tailwind, Trick Room, Sand Rush, Swift Swim, Chlorophyll, Surge Surfer) + `findSpeedTier(threat, mode?)` agent tool analogous to `findCounters`. Extends existing speed layer (matchup `speed_advantage` col, calc `speedUCurve`, [data/knowledge/speed_tiers.md](../data/knowledge/speed_tiers.md)). Aspirational — start when Phase 3 settles AND a real speed-tier question surfaces that current tools answer poorly. See [rag-master-plan.md § B4](rag-master-plan.md#b4--speed-tier-matrix-proposal-not-yet-started).
 
 ## Re-entry triggers for RAG work
 
@@ -64,7 +83,7 @@ Don't touch RAG further unless one fires:
 
 ## Observation gates pending
 
-- **YouTube local task** (`pokemon-youtube-scraper` Windows schtasks, 12h, run-as-paulo). Confirm 2026-04-26 (~24h after first scheduled fire 2026-04-24 07:57 local): `data/transcripts/` has new `.md` files + non-bot commit on `main`. Manual smoke (2026-04-23) landed 22 transcripts as `dfc3664` — script proven.
+- **YouTube local task** (`pokemon-youtube-scraper` Windows schtasks, **NOW daily 03:00**, run-as-paulo). First post-mitigation fire: 2026-04-26 03:00 local. Pass = `Saved: N>0` in `scripts/logs/youtube-2026-04-26.log` (split between `via ytdlp` and `via whisper` in summary) AND a `refresh: local youtube scrape` commit by `paulo` on `main`. Fail = `Saved: 0` + `(rate-limit abort)` in summary → both endpoints throttled simultaneously, escalate per Next Action #1. Original 12h cadence and `youtube-transcript-api` backend regressed 2026-04-23 → 2026-04-25 (see [errors.md](errors.md) "YouTube residential-IP rate-limit"); current architecture is **two-method waterfall** — primary: yt-dlp + Chrome impersonation (cap-20/run, 5s delay, 3-streak 429 early-exit); fallback: faster-whisper medium.en on audio CDN (cap-5/run, ~2-3min/video on RTX 2070).
 - **Serebii weekly cron**: first scheduled fire 2026-04-28 04:00 UTC; second 2026-05-05. Both green + row-counts stable closes A12 verified-shipped.
 
 ## Hard constraints

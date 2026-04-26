@@ -136,6 +136,7 @@ interface RunCapture {
   provider?: string;
   remoteName?: string;
   systemPromptVersion?: string;
+  outputMode?: string;
   prompt: string;
   baseUrl: string;
   startedAt: number;
@@ -167,6 +168,7 @@ function handleEvent(cap: RunCapture, evt: Record<string, unknown>, quiet: boole
       cap.provider = evt.provider as string;
       cap.remoteName = evt.remoteName as string;
       cap.systemPromptVersion = evt.systemPromptVersion as string;
+      cap.outputMode = evt.outputMode as string;
       break;
     case "staleness":
       cap.staleness = evt.data;
@@ -374,6 +376,7 @@ function renderMarkdown(cap: RunCapture, jsonlPath: string): string {
     : "";
   out.push(`- **Model:** \`${cap.model}\`${providerSuffix}`);
   out.push(`- **System prompt version:** \`${cap.systemPromptVersion ?? "(unknown)"}\``);
+  out.push(`- **Output mode:** \`${cap.outputMode ?? "(unknown)"}\``);
   out.push(`- **Base URL:** ${cap.baseUrl}`);
   out.push(`- **Started:** ${new Date(cap.startedAt).toISOString()}`);
   out.push(`- **Total wall time:** ${formatMs(cap.totalMs)}`);

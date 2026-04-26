@@ -7,6 +7,8 @@ import {
   findPokemon,
   findMega,
   findMove,
+  queryCounters,
+  type QueryCountersOptions,
 } from "@core/calc";
 import { lookupPokemon, validateSet, type SetInput } from "@core/team-validator";
 import type {
@@ -110,6 +112,40 @@ export const TOOL_DEFINITIONS: Tool[] = [
         megaStone: { type: "string", description: "If using a Mega, the stone name (e.g. 'Froslassite')." },
       },
       required: ["pokemon", "moves"],
+    },
+  },
+  {
+    name: "findCounters",
+    description:
+      "Calc-driven counter-finder backed by the pre-computed 245x245 efficiency matrix (offense + defense + speed + typing + movepool + mega sub-scores). Given a threat (e.g. 'Garchomp', 'Mega Gengar'), returns the top-K candidates sorted by composite efficiency, each with: attacker usage % (off-meta = <10%), best move + damage %, threat's reverse move + damage %, and flags (isOHKO, is2HKO, survivesHit, hasPriority, coverageDepth, trickRoomFavor). Use this when the user names a meta threat, asks 'how do I beat X', or wants calc-backed alternatives — especially for finding non-obvious off-meta picks. Results have no chunk_ids (do NOT cite in claims-json).",
+    parameters: {
+      type: "object",
+      properties: {
+        threat: {
+          type: "string",
+          description: "The Pokemon to find counters for. Accepts base form ('Garchomp') or Mega ('Mega Gengar'). Base-form queries match both base and Mega rows.",
+        },
+        topK: {
+          type: "integer",
+          description: "Number of counters to return (default 5, max 15).",
+          default: 5,
+          minimum: 1,
+          maximum: 15,
+        },
+        offMetaOnly: {
+          type: "boolean",
+          description: "If true, only return counters with Pikalytics usage <10% — useful for surfacing sleeper picks.",
+        },
+        metaOnly: {
+          type: "boolean",
+          description: "If true, only return counters with Pikalytics usage >=10% — useful for proven safe picks.",
+        },
+        minEfficiency: {
+          type: "number",
+          description: "Filter floor on composite efficiency [-1, +1]. Try 0.2 for clearly favorable matchups.",
+        },
+      },
+      required: ["threat"],
     },
   },
 ];
@@ -433,6 +469,30 @@ export async function executeTool(
         }
       }
       return JSON.stringify(result);
+    }
+    if (call.name === "findCounters") {
+      const args = call.arguments as {
+        threat: string;
+        topK?: number;
+        offMetaOnly?: boolean;
+        metaOnly?: boolean;
+        minEfficiency?: number;
+      };
+      const opts: QueryCountersOptions = {
+        topK: Math.max(1, Math.min(15, args.topK ?? 5)),
+        offMetaOnly: args.offMetaOnly,
+        metaOnly: args.metaOnly,
+        minEfficiency: args.minEfficiency,
+      };
+      const results = queryCounters(args.threat, opts);
+      if (results.length === 0) {
+        return JSON.stringify({
+          threat: args.threat,
+          results: [],
+          _instruction: `No matchup rows found for "${args.threat}". Verify the spelling — accepts base form ('Garchomp') or 'Mega X'. If correct, the threat is not in the 245x245 matrix coverage and you should fall back to search/calc.`,
+        });
+      }
+      return JSON.stringify({ threat: args.threat, count: results.length, results });
     }
     if (call.name === "validate_set") {
       const out = validateSet(call.arguments as unknown as SetInput);

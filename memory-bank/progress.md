@@ -12,6 +12,110 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### A10-backfill — uncapped whisper run to recover 2-day gap — SHIPPED (2026-04-26 02:30)
+
+- **Status:** RUNNING (background bash `befxnfedv`, Python PID 9684). Goal: backfill the ~148 candidates that 429'd between the 2026-04-23 19:50 working smoke and the 2026-04-25 mitigation ship. Default daily caps would take ~30 days at 5/day to clear; one uncapped run does it in a single 5-7h GPU session.
+- **Command:**
+  ```
+  YOUTUBE_MAX_FETCH_PER_RUN=500 YOUTUBE_MAX_WHISPER_PER_RUN=500 YOUTUBE_RATE_LIMIT_STREAK=1000 \
+    python scraper_youtube.py 2>&1 | tee scripts/logs/whisper-backfill-2026-04-25.log
+  ```
+- **Why uncapped is safe.** ytdlp captions endpoint is currently rate-limited (every fetch will 429 → fallthrough to whisper). The audio CDN is NOT rate-limited (verified earlier this session: 17 MB MP3 in 30s). So the run is essentially "audio-CDN bandwidth + GPU compute" with no captions-endpoint risk to amplify. Per-video: ~30s audio download + ~3min whisper compute = ~3.5min/video × 148 = ~8.6h max. In practice many candidates will skip (filtered, deleted, no audio, non-English) so likely 4-6h actual.
+- **Logging quirk.** Python stdout buffered through `tee` — `scripts/logs/whisper-backfill-2026-04-25.log` may stay 0 bytes for minutes during the search fan-out phase (21 queries × yt-dlp search subprocess), then bursts as transcripts land. Easier real-time check: `ls -lt data/transcripts/ | head` to see newest saves.
+- **Final result (2026-04-26 02:30, wall time 4h 50min).**
+  - **Saved: 101 new transcripts, all via whisper, 0 via ytdlp.** Validates the fallback architecture end-to-end at scale: captions endpoint stayed 429-throttled the entire 5-hour run, yet we extracted ~67% of available content via the audio CDN.
+  - **155 ytdlp attempts** → 100% rate-limited (every fetch returned HTTP 429 from the captions endpoint).
+  - **155 whisper attempts** → 101 success (65%), 54 failure (35%).
+  - **54 audio-download failures** were a NEW kind of block — `ERROR: [youtube] <id>: Sign in to confirm you're not a bot. Use --cookies-from-browser or --cookies for the authentication.` This is YouTube's tier-2 anti-bot challenge on the audio CDN, distinct from the captions 429. It started appearing partway through the run (consistent with cumulative-volume detection — the audio CDN tolerated us for the first ~50 videos then locked down). Workaround for next round: pass `--cookies-from-browser firefox` (or any browser the user is logged into) to give yt-dlp authenticated session cookies; that should unblock those 54 + future ones. Filed as a known-issue follow-up.
+  - **24 candidates filtered** by REJECT_KEYWORDS (wrong-game / off-topic content).
+  - **290 unique videos checked** total (110 already-saved skipped + 180 new candidates → 24 filtered → 156 attempted → 101 saved + 55 missed).
+  - **Total corpus now 212 transcripts** (was 110 pre-backfill, +102 net new — +101 from the backfill plus the 1 from the e2e validation earlier in the session).
+  - Notable saves: WolfeyVGC #1-Ranked Player journey (127 KB), Mega Gengar broken analysis (42 KB), Pimpnite Mega Meganium Rain guide (45 KB), AngrySlowbroPlus tier list, multiple tournament-winning team breakdowns.
+- **Quality observation.** A few non-English-titled videos slipped through (Spanish "tablemon", Portuguese "poke-zum") because REJECT_KEYWORDS doesn't have a language filter and `medium.en` will produce English-ish output even on non-English audio. Quality on those is questionable — they may be retrieval noise. Also one off-topic Pokemon X Let's Play (`unknown_citano-lets-play-pokemon-x-58-diantha-the-pokémon-champion`) got through because "X" is too short to safely add to REJECT_KEYWORDS. Filed as a future quality-filter improvement. Not blocking — RAG embedding will down-weight irrelevant chunks naturally.
+- **Reindex.** Run via `/reindex` skill immediately post-backfill to ingest the 101 new files into Supabase pgvector. Chunk delta documented in [techContext.md § Data Pipeline](techContext.md#data-pipeline) (or session report).
+- **Pending user action.** Review and commit:
+  ```
+  git add data/transcripts/ memory-bank/ scraper_youtube.py scraper_youtube_whisper.py
+  git commit -m "refresh(whisper): backfill 101 transcripts via audio-CDN waterfall"
+  ```
+  Don't bundle the unrelated webapp changes (`src/app/globals.css`, `src/app/meta/page.tsx`, etc.) — those are from a parallel agent on a different track.
+
+### A10-resolution — Whisper fallback completes the two-method waterfall — SHIPPED (2026-04-25 night)
+
+- **Status:** SHIPPED + verified end-to-end. After the earlier mitigation traded the broken `youtube-transcript-api` for `yt-dlp --impersonate`, both backends still 429'd on the same rate-limited captions endpoint. User pushed for a true second method. Researched alternatives (pytube — same endpoint; webshare — paid; SaaS — paid; whisper — different infra). Whisper on downloaded audio was the only viable free path that hits **fundamentally different YouTube infrastructure** (audio CDN). Implemented as a per-video waterfall fallback.
+
+- **Web research (4 parallel queries).** Confirmed that:
+  - `youtube-transcript-api`, `pytube`, `yt-dlp --write-subs` all hit the same captions endpoint → same IP block applies.
+  - Webshare residential proxy integration with `youtube-transcript-api` exists but only the free tier fits no-paid-APIs (and free tier is GB-capped).
+  - `faster-whisper` (CTranslate2 reimpl of OpenAI Whisper) is the recommended local-ASR path; runs on CPU 4-6× realtime, GPU ~20× realtime; medium.en model is the pragmatic accuracy/speed sweet spot for clear English VGC commentary.
+  - YouTube's audio CDN is a separate rate-limit pool from the captions endpoint, so an audio download succeeds even when the captions endpoint 429s.
+
+- **Architecture choice (3-way questionnaire).** User picked: per-video waterfall (vs. staggered tasks or parallel jobs), `medium.en` model (vs. `large-v3` or `small.en`), and fallback-only (vs. backfilling captions-available videos). Single-script approach keeps `seen_ids` state in one place and runs whisper only when ytdlp fails — no wasted compute on easy videos.
+
+- **Code change A — new module [scraper_youtube_whisper.py](../scraper_youtube_whisper.py)** (~110 LOC). Lazy-loads `WhisperModel(medium.en, device=cuda, compute_type=int8)` on first call (cached for the rest of the run). `_download_audio(video_id, dest_dir)` wraps `python -m yt_dlp -x --audio-format mp3 --audio-quality 7 --impersonate Chrome` into a `tempfile.TemporaryDirectory()`. `transcribe_via_whisper(video_id) -> tuple[str|None, bool]` returns the transcript text plus a 429-flag (propagated from the audio download so the caller can fold it into its rate-limit-streak counter). Whisper-internal failures (CUDA OOM, model load, transcription crash) return (None, False) — they're not rate-limit signals. Falls back to CPU automatically if CUDA load fails. Quality floor: outputs <200 chars treated as transcription failure (silent / non-English audio with .en model).
+
+- **Code change B — main loop wiring in [scraper_youtube.py](../scraper_youtube.py).** Per-video waterfall:
+  ```
+  text, rate_limited_m1 = get_transcript(video_id)        # ytdlp captions
+  if not text and WHISPER_FALLBACK and whisper_attempts < MAX_WHISPER_PER_RUN:
+      text, rate_limited_m2 = transcribe_via_whisper(video_id)  # whisper audio
+  ```
+  `RATE_LIMIT_STREAK_ABORT` now counts 429s across both methods so a fully-blocked run still aborts after 3. New env knobs: `WHISPER_FALLBACK` (default 1), `MAX_WHISPER_PER_RUN` (default 5), `WHISPER_MODEL` (default `medium.en`), `WHISPER_DEVICE` (default `cuda`), `WHISPER_BEAM_SIZE` (default 5), `WHISPER_AUDIO_TIMEOUT` (default 300s), `WHISPER_TRANSCRIBE_TIMEOUT` (default 1200s). `save_transcript()` gained a `source` parameter that writes to frontmatter (`source: ytdlp` or `source: whisper`) for downstream audit/quality-comparison. The Done summary now reports `Saved: N transcripts (X via ytdlp, Y via whisper)` plus per-method attempt counts.
+
+- **Dependencies installed (local conda env).** `faster-whisper==1.2.1`, `ctranslate2==4.7.1`, `av==17.0.1`, `onnxruntime==1.25.0`, `huggingface-hub==1.12.0`, `tokenizers==0.22.2`. First-run download: `medium.en` weights (~1.5 GB) to `~/.cache/huggingface/hub/`. ffmpeg 8.0.1 already present (CUDA-enabled build). curl_cffi 0.14.0 already installed from the prior mitigation. No requirements.txt to update (project is Node-first).
+
+- **End-to-end test (post-implementation).** Ran `YOUTUBE_MAX_FETCH_PER_RUN=2 YOUTUBE_MAX_WHISPER_PER_RUN=1 python scraper_youtube.py --max 3 --query "kommo-o build"`. Result:
+  - Video 1 (LakeTwo `JRJKRylH4Uo`): ytdlp 429 → whisper engaged → `whisper model medium.en loaded (cuda/int8) in 3.8s` → `whisper 1746s audio in 166s (10.5× realtime, 35696 chars)` → saved as `unknown_laketwo-which-set-is-better-to-run-on-kommo-o-in-pokemon-champions.md` with `source: whisper` frontmatter.
+  - Video 2 (`6P834GMiX5Q`): ytdlp 429 → whisper cap hit (1/1) → marked no_transcript.
+  - Done summary: `Saved: 1 transcripts (0 via ytdlp, 1 via whisper)`. Validates the waterfall + cap + frontmatter.
+
+- **Volume math (post-whisper).** Worst-case daily: 20 ytdlp + 5 whisper = 25 attempts. Weekly: 175 attempts (still well under the original ~2000 broken state). On a fully-throttled IP, the 429-streak abort fires after 3 across both methods → ~3 ytdlp tries + 0 whisper = ~15s wasted. On a working IP, all 20 ytdlp succeed (no fallback) → ~100s of cheap fetches. On a partially-broken IP, ytdlp gets some, whisper picks up the rest.
+
+- **Smoke-test note.** Before the e2e test, validated audio-download against the WolfeyVGC mega-meganium video (`HxHTeE0UrnA`, 26 min). Audio CDN succeeded — 17 MB MP3 in ~30s — while captions endpoint was 429ing. Confirmed the central architectural hypothesis that audio infrastructure is rate-limited separately from captions.
+
+- **What ships to users.** Even when YouTube's captions endpoint is throttling our IP, the daily 03:00 task can still extract transcripts for up to 5 videos via the audio + local-whisper path. Frontmatter `source` field lets us audit which path produced each transcript. Whisper transcripts are clean English ASR (the kommo-o test produced 36 KB of correctly-spelled VGC commentary including names like "Kommo-o", "Body Press", "Iron Defense"). The waterfall is invisible to downstream consumers — chunker / RAG / agent loop all just see new `.md` files in `data/transcripts/`.
+
+- **What this DOESN'T cover.** (a) Whisper has a quality floor — sub-200-char outputs are skipped, but mid-range gibberish (e.g., Spanish video transcribed by `medium.en`) would still save. Future improvement: language-detection probe before main transcription. (b) Bandwidth: each whisper fetch downloads ~5-50 MB of audio (vs. ~50 KB for native captions). At cap-5/run × daily = ~25-250 MB/day — negligible on residential broadband. (c) GPU memory: medium.en/int8 is ~1.5 GB VRAM; RTX 2070 SUPER has 8 GB so headroom for concurrent use. (d) The `source` frontmatter field is new — existing 110 transcripts have no source tag (treat as legacy ytdlp).
+
+### A10-mitigation — YouTube residential-IP rate-limit triage — SHIPPED (2026-04-25 evening)
+
+- **Status:** SHIPPED (mitigation; verification pending). Replaced the broken `youtube-transcript-api` backend with `yt-dlp --write-auto-subs --impersonate Chrome`, raised per-request delay (1s→5s), capped per-run fetch volume (default 20), added 429-streak early-exit, retuned scheduled-task cadence from 12h → **daily 03:00**. The IP is currently still rate-limited; first real verification is the 2026-04-26 03:00 daily fire.
+
+- **Frequency-vs-rate-limit balance.** Initial mitigation went weekly for safety; user pushed back that it's too sparse. Retuned to daily 03:00 with cap-20 + 5s delay + 3-streak abort. Math: worst-case 20 × 7 = 140 fetches/week (vs. original broken state's ~2000/week); typical case much lower because most candidates dedup against the existing 110-transcript corpus; rate-limited-day case caps at 3 fetches × 5s = ~15s wasted before abort. Daily cadence aligns with VGC content-publication rate (~1-5 new Champions videos/day across tracked creators).
+
+- **Discovery.** Read of memory-bank's "YouTube observation gate" line revealed the latest `data/transcripts/` files were dated 2026-04-23 (the smoke-test commit) — no fires landed in the intervening 2+ days even though `schtasks /query` reported "Status: Ready, Next Run: 4/26/2026 7:57 AM". Inspected `scripts/logs/youtube-2026-04-23.log` (which rolls forward across runs): 2026-04-25 8:01am fire returned `Saved: 0 transcripts, No transcript available: 148`. Each "no transcript" is the lib's masked report of `youtube-transcript-api`'s "YouTube is blocking requests from your IP" exception. The wording mentions "cloud provider IP" but the lib uses that phrase for ALL IP-level blocks regardless of actual ISP class. The user's residential IP appears to have been added to YouTube's rate-limit pool, likely after 2 days of 12h × ~150-fetch hammering during the post-A10 weeks.
+
+- **Probe ladder.**
+  1. yt-dlp `--write-auto-subs` against the just-failed `DHHv9A0ZE5w`: HTTP 429 ("Too Many Requests") on the subtitle-download endpoint. Different endpoint than youtube-transcript-api uses, but still rate-limited.
+  2. Tried a second video, then iOS player client (`--extractor-args "youtube:player_client=ios"`): blocked with PO Token requirement.
+  3. Tried `--cookies-from-browser chrome`: failed because Chrome was holding the cookie DB lock.
+  4. Installed `curl_cffi 0.15.0` for browser TLS impersonation — yt-dlp rejected it with "Only curl_cffi versions 0.5.10 and 0.10.x through 0.14.x are supported".
+  5. Downgraded to `curl_cffi 0.14.0`. `yt-dlp --list-impersonate-targets` confirmed Chrome/Safari/Firefox/Edge all available.
+  6. yt-dlp `--impersonate Chrome` against the same video: still HTTP 429.
+  7. yt-dlp `--impersonate Chrome` against Rickroll (`dQw4w9WgXcQ` — most heavily cached video on YouTube): still HTTP 429. Confirms the block is at the IP level, not video-specific or fingerprint-related.
+
+- **Mitigation (four-part).**
+
+  - **Backend swap** in [scraper_youtube.py](../scraper_youtube.py): dropped `from youtube_transcript_api import YouTubeTranscriptApi`. Rewrote `get_transcript()` to subprocess-call `python -m yt_dlp --write-auto-subs --skip-download --sub-lang en --sub-format vtt --impersonate <target>` with output to a `tempfile.TemporaryDirectory()`, parse the resulting `.en.vtt` via new `_vtt_to_text()` helper. The helper strips WEBVTT/Kind/Language headers, NOTE/STYLE/REGION blocks, `-->` timecode lines, and inline `<c>` / `<00:00:04.500>` tag interleaving from auto-subs; deduplicates consecutive identical cues. Smoke test on a synthetic VTT confirmed `Hello world this is a test Goodbye world` round-trip. `get_transcript()` returns `(text_or_None, was_rate_limited)` so the caller can react to 429s specifically.
+  - **Volume controls** in same file: `DELAY_SECONDS` 1 → 5 (raised politeness gap between fetches). New `MAX_FETCH_PER_RUN` env-overridable cap (default 20) added to `main()` loop with a `cap_hit` short-circuit and a clear log line when triggered. New `IMPERSONATE_TARGET` env (default `Chrome`) so future-Claude can swap to Safari/Firefox without code change.
+  - **Rate-limit early-exit.** New `RATE_LIMIT_STREAK_ABORT` env (default 3): main loop counts consecutive HTTP 429 responses (parsed from yt-dlp stderr); when the streak hits the threshold, the run aborts with a clear log message and the Done-summary tag `(rate-limit abort)`. Keeps a fully-throttled run to ~15s (3 fetches × 5s) instead of the full cap × delay = 100s. Verified via dry-run with cap=10/streak=3: aborted cleanly at 3/10.
+  - **Schedule retune.** Initial ship went weekly for safety; user feedback flagged that as too sparse. Final: `schtasks /delete /tn pokemon-youtube-scraper /f` then `schtasks /create /tn pokemon-youtube-scraper /tr <bat> /sc daily /st 03:00 /ru paulo /it`. Verified Status=Ready, Schedule Type=Daily, Next Run=4/26/2026 3:00:00 AM. Daily 03:00 + cap-20 + 5s delay = max 100s/day fetch time. Weekly worst-case: 20 × 7 = 140 fetches (vs. original ~2000); typical case lower because dedup against existing 110-transcript corpus; rate-limited-day case caps at 3 × 5s = 15s before abort.
+
+- **Dependency added (local only).** `curl_cffi==0.14.0` installed via `python -m pip install "curl_cffi>=0.10,<0.15"`. The project has no `requirements.txt` or `pyproject.toml` (Python is local-only on user's miniconda3 env), so no manifest edit needed. If a manifest is added later, pin to `curl_cffi>=0.10,<0.15` to match yt-dlp 2026.3.17's supported range.
+
+- **Smoke test (post-mitigation, while still rate-limited).** Ran `YOUTUBE_MAX_FETCH_PER_RUN=2 python scraper_youtube.py --max 5 --query "garchomp build"`. Output:
+  - Skipping 110 previously downloaded videos
+  - Found 5 results
+  - 2 fetch attempts, both 429'd cleanly with: `No transcript for AJohHScjV1s: ERROR: Unable to download video subtitles for 'en': HTTP Error 429: Too Many Requests`
+  - Cap hit, run terminated early as designed
+  - Final summary: `Fetch attempts: 2 / cap 2 (cap hit)`. Script structure works; backend is wired correctly; only the IP-level block remains.
+
+- **Verification gate.** First real validation lands on 2026-04-26 03:00 local (the next weekly schtasks fire). Pass = `scripts/logs/youtube-2026-04-26.log` shows `Saved: N>0` AND a `refresh: local youtube scrape` commit by `paulo` on `main`. Fail = continued 429s → escalate per activeContext "Next Action #1" (drop schedule, switch to manual-only, or wait for a longer ban window to clear).
+
+- **Documentation updates.** Row added to [errors.md](errors.md). [activeContext.md](activeContext.md) TL;DR + "Next actions" + "Observation gates" all flipped to reflect the mitigation. [rag-master-plan.md](rag-master-plan.md) A10 row updated to "SHIPPED-then-DEGRADED-then-MITIGATED".
+
+- **What this DOESN'T cover.** (a) If the IP block doesn't lift on its own, the mitigation alone won't help — we'd need to wait longer or escalate to manual-only. (b) Paid YT Data API v3 captions endpoint is OAuth-gated and out of scope under no-paid-APIs. (c) `requirements.txt` / `pyproject.toml` was not introduced — keeping the local-only Python env convention. (d) No CI integration of the new yt-dlp dep — the GH Actions cron doesn't run YouTube scraping (cloud IPs are still blocked categorically per the original A10 fallback).
+
 ### M-tier — 9-model comparison + paid routing + system prompt v4.5 + tier classification — SHIPPED (2026-04-25 late night)
 
 - **Status:** SHIPPED. Built `scripts/test-team.ts` (capture CLI), ran 5 sequential batches across 9 dropdown models on the prompt "Build a team around Froslass and Krookodile", root-caused why 6/9 initially failed, shipped 3 layers of fixes (paid routing, per-model provider pinning, system prompt v4.5), and went from 3/9 working → **7/9 working**. Wrote 7 new memory memos and updated MEMORY.md + activeContext.md. The two outstanding failures (`deepseek-v4-pro`, `gemini-2.5-flash`) are external (OpenRouter capacity transient + Google free-tier daily quota), not config defects.

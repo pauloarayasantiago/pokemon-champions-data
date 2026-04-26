@@ -17,11 +17,10 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-
-from youtube_transcript_api import YouTubeTranscriptApi
 
 # ---------------------------------------------------------------------------
 # Config
@@ -29,7 +28,16 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 RELEASE_DATE = "20260408"  # Pokemon Champions release date (YYYYMMDD)
 OUTPUT_DIR = Path(__file__).parent / "data" / "transcripts"
-DELAY_SECONDS = 1  # polite delay between transcript fetches
+DELAY_SECONDS = 5  # polite delay between transcript fetches (raised from 1 after IP rate-limit observed 2026-04-24)
+MAX_FETCH_PER_RUN = int(os.environ.get("YOUTUBE_MAX_FETCH_PER_RUN", "20"))  # daily cadence × this cap = ~140/week ceiling
+RATE_LIMIT_STREAK_ABORT = int(os.environ.get("YOUTUBE_RATE_LIMIT_STREAK", "3"))  # abort run after N consecutive 429s
+IMPERSONATE_TARGET = os.environ.get("YOUTUBE_IMPERSONATE", "Chrome")  # requires curl_cffi 0.10-0.14.x installed
+
+# Whisper fallback (per-video waterfall): if yt-dlp captions returns None, try
+# faster-whisper on downloaded audio. Lower cap because whisper is heavier
+# (audio download + GPU compute, ~1-3 min/video on RTX 2070 SUPER).
+WHISPER_FALLBACK_ENABLED = os.environ.get("WHISPER_FALLBACK", "1") not in ("0", "false", "False")
+MAX_WHISPER_PER_RUN = int(os.environ.get("YOUTUBE_MAX_WHISPER_PER_RUN", "5"))
 
 # Fix Windows console encoding for emoji-heavy YouTube titles
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -137,21 +145,70 @@ def filter_video(video: dict) -> bool:
     return True
 
 
-def get_transcript(video_id: str) -> str | None:
-    """Fetch transcript for a YouTube video. Returns None if unavailable."""
-    try:
-        api = YouTubeTranscriptApi()
-        transcript = api.fetch(video_id, languages=["en"])
-        # Join snippet texts into full transcript
-        return " ".join(snippet.text for snippet in transcript)
-    except Exception as e:
-        safe_msg = str(e).encode("ascii", errors="replace").decode()
-        print(f"  No transcript for {video_id}: {safe_msg}")
-        return None
+def get_transcript(video_id: str) -> tuple[str | None, bool]:
+    """Fetch transcript via yt-dlp's subtitle path with browser impersonation.
+
+    Returns (transcript_text_or_None, was_rate_limited). The bool lets the
+    main loop count consecutive 429s and abort early to avoid digging deeper
+    into a known-blocked state.
+
+    The original `youtube-transcript-api` backend was IP-blocked by YouTube
+    (residential IP, post-2026-04-23). yt-dlp uses a different HTTP path
+    plus curl_cffi-based TLS impersonation, which is more resilient.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--write-auto-subs", "--skip-download",
+            "--sub-lang", "en", "--sub-format", "vtt",
+            "--impersonate", IMPERSONATE_TARGET,
+            "-o", f"{tmpdir}/%(id)s.%(ext)s",
+            "--no-warnings", "--quiet",
+            f"https://www.youtube.com/watch?v={video_id}",
+        ]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
+        except subprocess.TimeoutExpired:
+            print(f"  yt-dlp timeout for {video_id}")
+            return None, False
+        vtt_path = Path(tmpdir) / f"{video_id}.en.vtt"
+        stderr = (result.stderr or "")
+        if not vtt_path.exists():
+            stderr_tail = stderr.strip().splitlines()[-1] if stderr.strip() else "(no stderr)"
+            safe_msg = stderr_tail.encode("ascii", errors="replace").decode()
+            print(f"  No transcript for {video_id}: {safe_msg}")
+            rate_limited = "429" in stderr or "Too Many Requests" in stderr
+            return None, rate_limited
+        return _vtt_to_text(vtt_path.read_text(encoding="utf-8", errors="replace")), False
 
 
-def save_transcript(video: dict, transcript_text: str, output_dir: Path) -> Path:
-    """Save transcript as markdown with frontmatter metadata."""
+def _vtt_to_text(vtt: str) -> str:
+    """Strip VTT headers, timecodes, and inline tags. Dedup consecutive duplicate cues."""
+    lines = []
+    for raw in vtt.splitlines():
+        line = raw.strip()
+        if not line or line == "WEBVTT":
+            continue
+        if line.startswith(("NOTE", "Kind:", "Language:", "STYLE", "REGION")):
+            continue
+        if "-->" in line:
+            continue
+        line = re.sub(r"<[^>]+>", "", line)  # YouTube auto-subs interleave <c> and timestamp tags
+        if line:
+            lines.append(line)
+    deduped = []
+    for ln in lines:
+        if not deduped or deduped[-1] != ln:
+            deduped.append(ln)
+    return " ".join(deduped)
+
+
+def save_transcript(video: dict, transcript_text: str, output_dir: Path, source: str = "ytdlp") -> Path:
+    """Save transcript as markdown with frontmatter metadata.
+
+    `source` is the extraction method ("ytdlp" for native captions, "whisper"
+    for ASR fallback). Saved to frontmatter for downstream auditing.
+    """
     title = video.get("title", "Untitled")
     channel = video.get("channel") or video.get("uploader") or "Unknown"
     upload_date = video.get("upload_date") or "unknown"
@@ -200,6 +257,7 @@ date: {date_str}
 url: https://www.youtube.com/watch?v={video_id}
 views: {view_count}
 duration: {mins}m{secs:02d}s
+source: {source}
 ---
 
 # {title}
@@ -247,10 +305,20 @@ def main():
     print(f"Pokemon Champions YouTube Transcript Scraper")
     print(f"Release date filter: >= {RELEASE_DATE}")
     print(f"Output: {OUTPUT_DIR}")
-    print(f"Queries: {len(queries)}")
+    print(f"Queries: {len(queries)} | Cap: {MAX_FETCH_PER_RUN}/run | Delay: {DELAY_SECONDS}s | 429-streak abort: {RATE_LIMIT_STREAK_ABORT} | Impersonate: {IMPERSONATE_TARGET}")
+    print(f"Whisper fallback: {'on' if WHISPER_FALLBACK_ENABLED else 'off'} (cap {MAX_WHISPER_PER_RUN}/run)")
     print()
 
+    fetch_attempts = 0
+    whisper_attempts = 0
+    saved_via_ytdlp = 0
+    saved_via_whisper = 0
+    rate_limit_streak = 0
+    cap_hit = False
+    rate_limit_aborted = False
     for qi, query in enumerate(queries, 1):
+        if cap_hit or rate_limit_aborted:
+            break
         print(f"[{qi}/{len(queries)}] Searching: 'Pokemon Champions {query}'")
         videos = search_youtube(query, max_results=args.max)
         print(f"  Found {len(videos)} results")
@@ -267,25 +335,70 @@ def main():
                 skip_count += 1
                 continue
 
+            if fetch_attempts >= MAX_FETCH_PER_RUN:
+                print(f"  Reached MAX_FETCH_PER_RUN={MAX_FETCH_PER_RUN}; stopping this run to avoid rate-limit.")
+                cap_hit = True
+                break
+
             print(f"  Fetching transcript: {title[:70]}...")
-            transcript_text = get_transcript(video_id)
+            fetch_attempts += 1
+            transcript_text, rate_limited = get_transcript(video_id)
+            source = "ytdlp"
+
+            if rate_limited:
+                rate_limit_streak += 1
+            else:
+                rate_limit_streak = 0
+
+            # Per-video waterfall: if yt-dlp captions came back empty (whether
+            # 429, no captions, or other failure), try faster-whisper on the
+            # downloaded audio. Whisper hits a different YouTube endpoint
+            # (audio CDN), so it can succeed even when captions are blocked.
+            if not transcript_text and WHISPER_FALLBACK_ENABLED and whisper_attempts < MAX_WHISPER_PER_RUN:
+                from scraper_youtube_whisper import transcribe_via_whisper
+                print(f"  -> trying whisper fallback ({whisper_attempts+1}/{MAX_WHISPER_PER_RUN})")
+                whisper_attempts += 1
+                w_text, w_rate_limited = transcribe_via_whisper(video_id)
+                if w_rate_limited:
+                    rate_limit_streak += 1
+                # Whisper success resets the streak (we got data despite the captions block)
+                if w_text:
+                    rate_limit_streak = 0
+                    transcript_text = w_text
+                    source = "whisper"
+
+            # 429-streak abort considered AFTER whisper fallback so we only bail
+            # when both endpoints are simultaneously blocked.
+            if rate_limit_streak >= RATE_LIMIT_STREAK_ABORT:
+                print(f"  Aborting run after {rate_limit_streak} consecutive rate-limit signals across both methods.")
+                rate_limit_aborted = True
+                if not transcript_text:
+                    no_transcript_count += 1
+                    break
 
             if not transcript_text:
                 no_transcript_count += 1
                 continue
 
-            filepath = save_transcript(video, transcript_text, OUTPUT_DIR)
+            filepath = save_transcript(video, transcript_text, OUTPUT_DIR, source=source)
             saved_count += 1
-            print(f"    -> Saved: {filepath.name}")
+            if source == "whisper":
+                saved_via_whisper += 1
+            else:
+                saved_via_ytdlp += 1
+            print(f"    -> Saved ({source}): {filepath.name}")
 
             time.sleep(DELAY_SECONDS)
 
         print()
 
     print(f"Done!")
-    print(f"  Saved: {saved_count} transcripts")
+    print(f"  Saved: {saved_count} transcripts ({saved_via_ytdlp} via ytdlp, {saved_via_whisper} via whisper)")
     print(f"  Skipped (filtered): {skip_count}")
     print(f"  No transcript available: {no_transcript_count}")
+    abort_note = " (cap hit)" if cap_hit else (" (rate-limit abort)" if rate_limit_aborted else "")
+    print(f"  ytdlp fetch attempts: {fetch_attempts} / cap {MAX_FETCH_PER_RUN}{abort_note}")
+    print(f"  whisper fetch attempts: {whisper_attempts} / cap {MAX_WHISPER_PER_RUN}")
     print(f"  Total unique videos checked: {len(seen_ids)}")
     print(f"  Output directory: {OUTPUT_DIR}")
 
