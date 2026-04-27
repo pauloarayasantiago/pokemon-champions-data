@@ -12,6 +12,51 @@ Stage 6.3 code was committed (`b056e4c`) while the first-attempt full 100-case r
 
 ## Completed
 
+### A16 — Prompt-perfection loop on Gemini 3 Flash — EXECUTED (2026-04-26, prompt-only exhausted)
+
+**Goal.** User-flagged at 2026-04-25 evening: dedicated session to "perfect the system prompt". Original framing: re-engineer [src/lib/system-prompt.ts](../src/lib/system-prompt.ts) v4.8 with prompt-engineering research (tool-using-agent best practices, citation hygiene, behavior cloning, etc.) targeting tighter rules + better eval scores.
+
+**Architecture shipped.** Self-iterating prompt optimizer that I (Claude Opus 4.7) drive between ScheduleWakeup ticks. Per-iteration phases: Diagnose → Research (web, deduplicated via `RESEARCH-INDEX.md`) → Propose → Score (paired comparison vs cached champion on 26 trials) → Decide. Acceptance gate: paired_score ≥ 1 + anti-cherry-pick reproducibility check + zero-tolerance banned-item/phantom regressions + 5% growth cap. Full infrastructure at [scripts/prompt-loop/](../scripts/prompt-loop/) (prompts.ts, score.ts, state.ts, re-evaluate.ts) + [runs/prompt-loop/](../runs/prompt-loop/) (HISTORY.md, BEST.md, RATIONALE.md, RESEARCH-INDEX.md, per-iter dirs).
+
+**Run result.** 11 iterations, $8.16 of $13.50 budget, ~7h wall-clock.
+
+| Iter | Decision | Notes |
+|---|---|---|
+| 0 | ACCEPTED | Baseline (initial 4-case suite) |
+| 1-3 | REJECTED | Tournament-search edits (bottom-section / worked-example / sandwich) — all rejected on what turned out to be a **predicate bug** |
+| 4 | META-FIX | Discovered tournament-search predicate hardcoded `team:pc227` + case-sensitive joeux9; JoeUX9 actually has 5 PC entries. Fixed predicate; iter 0-3 baselines re-evaluated to 8/8 each. Added off-meta-required + citation-density cases (suite 4→6). Baseline 12/12 |
+| 5 | BASELINE-EXPANSION | Added 7 more hard cases (incineroar-knock-off-trap, tera-question, all-different-berries, moonblast-30-trap, salt-cure-trap, power-herb-trap, all-off-meta-team). Suite 6→13. New baseline 24/26 with 2 real failures (off-meta-required #1 max-iter timeout; all-different-berries #0 used Mental Herb + Dragoninite Mega Stone) |
+| 6 | REJECTED | item-type-constraint-enforcement: 30-berry list + confusables. Berries unchanged + power-herb-trap regression |
+| 7 | REJECTED | constraint-priority-user-over-mega-rule: priority sentence. paired_score=-1, but FIRST off-meta-required #1 win as side effect |
+| 8 | REJECTED | berries-worked-example-mega-skipped: brief demo. paired_score=-1, off-meta-required #1 win reproduced (2nd confirmation) |
+| 9 | REJECTED | off-meta-trust-findcounters-no-recalc: STOP-gate sentence on OFF-META workflow. **CATASTROPHIC paired_score=-4** + zero-tolerance banned-item leak (Clear Amulet). The "STOP — do not re-verify" language generalized — model under-validated everywhere |
+| 10 | REJECTED | off-meta-positive-parenthetical: 51-char positive-only parenthetical (smallest edit attempted, +0.40% growth). Off-meta-required #1 win 4th confirmation but ALSO leaked Choice Band on banned-item-temptation. consecutiveNoImprovement=5 → **NATURAL HALT** |
+
+**Findings (real, durable).**
+1. **v4.8 is at a brittle local optimum for Gemini 3 Flash** — every edit attempted (regardless of size, position, framing) introduced regressions on the 13-case dev suite. Smallest edit (+0.40%) still leaked a banned item.
+2. **Berries failure is robust to prompt-only fixes** — model's `Mega Pokemon = Mega Stone` heuristic dominates planning. 3 distinct prompt mechanisms (enumeration / priority / demonstration) all failed. Needs structural fix.
+3. **Off-meta-required improvement IS real but sticky** — same case-flip reproduced 4× across iters 7/8/10 with completely different edits. Comes from attention-distribution shift in mid-prompt sections, not specific rule content. Every edit that captures it ALSO regresses other categories.
+4. **Power-herb regression is a position effect** — ANY edit near Item Clause section triggers `team_size<6` on power-herb-trap. Suggests planning-under-conflict logic is fragile.
+5. **NEW research finding — negative imperatives generalize on Gemini 3 Flash.** Iter 9's "STOP — do not re-verify findCounters output" caused the model to under-validate across ALL tools (banned-item leak + 4 other regressions). In long-context Gemini 3 Flash prompts, prescriptive negative imperatives in tool-workflow paragraphs do NOT stay scoped. Use positive-only phrasing.
+
+**Surviving improvements (durable, NOT in production prompt — benefit any future re-launch).**
+- **Predicate fixes**: tournament-search accepts all 5 JoeUX9 PC IDs + case-insensitive name; `bannedItemsInTrial` requires explicit recommendation context; tera-question accepts more refusal phrasings ("absent", "replaced by Mega", "sole battle gimmick").
+- **Dev set hardened 4 → 6 → 13 cases** with adversarial S/V-trap and complex-constraint cases.
+- **Acceptance gate v2**: paired_score ≥ 1 + anti-cherry-pick reproducibility check (relaxed from ≥2 since 13-case suite is 3.25× larger than original 8-case).
+- **22+ research findings** preserved in [RESEARCH-INDEX.md](../runs/prompt-loop/RESEARCH-INDEX.md) including the new iter-9 finding on negative-imperative generalization.
+
+**Pivot to structural fixes (M1 + M2 in [rag-master-plan.md](rag-master-plan.md)).** Prompt-only is exhausted on the two real failures discovered. Both have ready-to-ship structural alternatives:
+- **M1 — Consecutive-tool-call cap in route.ts** (~30 LOC) — fixes off-meta-required deterministically
+- **M2 — Pre-flight item-type validator** (~80 LOC) — fixes berries deterministically
+
+**Lessons for future loops.**
+1. **Validate predicates against cached real outputs BEFORE optimizing against them.** Iters 1-3 burned ~$1.00 of budget on phantom failures because tournament-search predicate was wrong, not the prompt.
+2. **The smallest edit can still cause regressions** when the prompt is at a brittle equilibrium. Run the full paired-comparison harness, not just spot tests.
+3. **Reproducibility evidence beats single-trial signal.** The off-meta-required win was real because it reproduced 4× across different edits. The anti-cherry-pick gate would have been wrong to accept on a single-iter +1 score without that confirmation.
+4. **Per-iteration web research** kept the loop grounded in 2025-2026 prompt-engineering literature. Cumulative research index of 22+ findings (Gemini patterns, citation hygiene, optimization-loop pitfalls) is reusable for future sessions.
+
+**Total cost**: $8.16 of $13.50 OpenRouter budget. **Production prompt unchanged.** Loop infrastructure preserved at [scripts/prompt-loop/](../scripts/prompt-loop/) for future re-launches (multi-model bake-off M3, token-efficiency variant R-prompt-trim).
+
 ### A10-backfill — uncapped whisper run to recover 2-day gap — SHIPPED (2026-04-26 02:30)
 
 - **Status:** RUNNING (background bash `befxnfedv`, Python PID 9684). Goal: backfill the ~148 candidates that 429'd between the 2026-04-23 19:50 working smoke and the 2026-04-25 mitigation ship. Default daily caps would take ~30 days at 5/day to clear; one uncapped run does it in a single 5-7h GPU session.

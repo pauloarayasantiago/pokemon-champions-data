@@ -34,6 +34,10 @@ interface TeamRequestBody {
   model: ModelId;
   messages: Message[];
   systemPromptVersion?: string;
+  /** Prompt-loop override: when set, replaces the production system prompt verbatim.
+   * Used by scripts/prompt-loop/score.ts to test candidate prompts without touching
+   * the production file. Production callers MUST NOT set this. */
+  systemPromptOverride?: string;
 }
 
 function sseEncode(event: Record<string, unknown>): string {
@@ -96,7 +100,11 @@ export async function POST(request: NextRequest) {
       const lastUserText =
         lastUser && typeof lastUser.content === "string" ? lastUser.content : "";
       const outputMode = classifyOutputMode(lastUserText);
-      const systemPrompt = buildSystemPrompt(outputMode);
+      const systemPrompt = body.systemPromptOverride ?? buildSystemPrompt(outputMode);
+      const promptVersion =
+        body.systemPromptOverride && body.systemPromptVersion
+          ? body.systemPromptVersion
+          : SYSTEM_PROMPT_VERSION;
 
       try {
         send({
@@ -106,10 +114,10 @@ export async function POST(request: NextRequest) {
           provider: providerInfo.provider,
           remoteName: providerInfo.remoteName,
           tier: providerInfo.tier,
-          systemPromptVersion: SYSTEM_PROMPT_VERSION,
+          systemPromptVersion: promptVersion,
           outputMode,
         });
-        log(`start model=${body.model} provider=${providerInfo.provider} mode=${outputMode}`);
+        log(`start model=${body.model} provider=${providerInfo.provider} mode=${outputMode} promptVer=${promptVersion}`);
 
         // A13 — emit staleness telemetry once per request. Cached 60s in
         // getStaleness() so this adds ~0ms on warm cache, ~50ms cold.
