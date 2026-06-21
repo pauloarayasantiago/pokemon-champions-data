@@ -1,34 +1,49 @@
 name,effect,location
+Big Root,An item to be held by a Pokémon. This root boosts the amount of HP the holder restores to itself when it uses HP-stealing moves.,Shop700 VP
 Black Belt,An item to be held by a Pokémon. This belt helps with focus and boosts the power of the holder's Fighting-type moves.,Shop700 VP
 Black Glasses,An item to be held by a Pokémon. It's a pair of shady- looking glasses that boost the power of the holder's Dark-type moves.,Shop700 VP
 Bright Powder,An item to be held by a Pokémon. This glittery powder casts a tricky glare that lowers the accuracy of opposing Pokémon's moves.,Beginning
 Charcoal,An item to be held by a Pokémon. It's a combustible fuel that boosts the power of the holder's Fire-type moves.,Shop700 VP
 Choice Scarf,An item to be held by a Pokémon. This curious scarf boosts the holder's Speed stat but only allows the use of a single move.,Beginning
+Damp Rock,"An item to be held by a Pokémon. When the holder changes the weather to rain, the rain will persist for longer than usual.",Shop700 VP
 Dragon Fang,"An item to be held by a Pokémon. This hard, sharp fang boosts the power of the holder's Dragon-type moves.",Shop700 VP
+Expert Belt,An item to be held by a Pokémon. It's a well-worn belt that slightly boosts the power of the holder's supereffective moves.,Shop1000 VP
 Fairy Feather,"An item to be held by a Pokémon. This feather, which gleams faintly when hit by light, boosts the power of the holder's Fairy-type moves.",Shop700 VP
 Focus Band,"An item to be held by a Pokémon. When the holder is hit with a move that should knock it out, it may be able to endure with 1 HP.",Beginning
 Focus Sash,"An item to be held by a Pokémon. If the holder has full HP and it is hit with a move that should knock it out, it will endure with 1 HP—but only once.",Beginning
 Hard Stone,An item to be held by a Pokémon. It's a durable stone that boosts the power of the holder's Rock-type moves.,Shop700 VP
+Heat Rock,"An item to be held by a Pokémon. When the holder changes the weather to harsh sunlight, the sunlight will persist for longer than usual.",Shop700 VP
+Icy Rock,"An item to be held by a Pokémon. When the holder changes the weather to snow, the snow will persist for longer than usual.",Shop700 VP
+Iron Ball,An item to be held by a Pokémon. It lowers the holder's Speed stat and makes the holder vulnerable to Ground- type moves even if it is a Flying type or is levitating.,Shop1000 VP
 King's Rock,An item to be held by a Pokémon. It may cause the target to flinch whenever the holder successfully inflicts damage on them with an attack.,Beginning
 Leftovers,An item to be held by a Pokémon. It slowly but steadily restores the holder's HP.,Beginning
+Life Orb,"An item to be held by a Pokémon. It boosts the power of the holder's moves, but the holder also loses a small amount of HP upon landing an attack.",Shop1000 VP
 Light Ball,An item to be held by Pikachu. It's a mysterious orb that boosts Pikachu's Attack and Sp. Atk stats.,Shop1000 VP
+Light Clay,"An item to be held by a Pokémon. When the holder uses protective moves like Light Screen or Reflect, their effects will last longer than usual.",Shop1000 VP
 Magnet,An item to be held by a Pokémon. It's a powerful magnet that boosts the power of the holder's Electric-type moves.,Shop700 VP
 Mental Herb,An item to be held by a Pokémon. The holder will be able to shake off move-binding effects to move freely— but only once.,Shop1000 VP
 Metal Coat,An item to be held by a Pokémon. It's a special metallic coating that boosts the power of the holder's Steel-type moves.,Shop700 VP
+Metronome,"An item to be held by a Pokémon. It boosts the power of a move that's used repeatedly. Once the chain is broken, the move's power returns to normal.",Shop700 VP
 Miracle Seed,An item to be held by a Pokémon. It's a seed imbued with life force that boosts the power of the holder's Grass-type moves.,Shop700 VP
+Muscle Band,"An item to be held by a Pokémon. This headband exudes strength, slightly boosting the power of the holder's physical moves.",Shop700 VP
 Mystic Water,An item to be held by a Pokémon. This teardrop-shaped gem boosts the power of the holder's Water-type moves.,Shop700 VP
 Never-Melt Ice,An item to be held by a Pokémon. It's a heat-repelling piece of ice that boosts the power of the holder's Ice- type moves.,Shop700 VP
 Poison Barb,An item to be held by a Pokémon. This small poisonous barb boosts the power of the holder's Poison-type moves.,Shop700 VP
 Quick Claw,"An item to be held by a Pokémon. This light, sharp claw lets the holder occasionally unleash a move faster than it usually would.",Beginning
 Scope Lens,An item to be held by a Pokémon. It's a lens for scoping out weak points. It boosts the holder's critical-hit ratio.,Shop1000 VP
 Sharp Beak,"An item to be held by a Pokémon. It's a long, sharp beak that boosts the power of the holder's Flying-type moves.",Shop700 VP
+Shed Shell,"An item to be held by a Pokémon. Hard and sturdy, this discarded carapace enables the holder to switch out of battle without fail.",Shop700 VP
 Shell Bell,An item to be held by a Pokémon. The holder restores a little HP to itself every time it inflicts damage with an attack.,Shop700 VP
 Silk Scarf,An item to be held by a Pokémon. It's a sumptuous scarf that boosts the power of the holder's Normal-type moves.,Shop700 VP
 Silver Powder,An item to be held by a Pokémon. It's a shiny silver powder that boosts the power of the holder's Bug-type moves.,Shop700 VP
+Smooth Rock,"An item to be held by a Pokémon. When the holder changes the weather to a sandstorm, the storm will persist for longer than usual.",Shop700 VP
 Soft Sand,"An item to be held by a Pokémon. This loose, silky sand boosts the power of the holder's Ground-type moves.",Shop700 VP
 Spell Tag,"An item to be held by a Pokémon. It's a sinister, eerie tag that boosts the power of the holder's Ghost-type moves.",Shop700 VP
 Twisted Spoon,An item to be held by a Pokémon. This spoon is imbued with telekinetic energy and boosts the power of the holder's Psychic-type moves.,Shop700 VP
 White Herb,An item to be held by a Pokémon. It will restore any lowered stat in battle—but only once.,Beginning
+Wide Lens,An item to be held by a Pokémon. It's a magnifying lens that slightly boosts the accuracy of the holder's moves.,Shop700 VP
+Wise Glasses,An item to be held by a Pokémon. This thick pair of glasses slightly boosts the power of the holder's special moves.,Shop700 VP
+Zoom Lens,"An item to be held by a Pokémon. When the holder acts after its target, its move will be more accurate than usual.",Shop700 VP
 Abomasite,One of a variety of mysterious Mega Stones. An Abomasnow holding this stone will be able to Mega Evolve during battle.,Mega Evolution Tutorial
 Absolite,One of a variety of mysterious Mega Stones. An Absol holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Aerodactylite,One of a variety of mysterious Mega Stones. An Aerodactyl holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
@@ -38,21 +53,26 @@ Altarianite,One of a variety of mysterious Mega Stones. An Altaria holding this 
 Ampharosite,One of a variety of mysterious Mega Stones. An Ampharos holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Audinite,One of a variety of mysterious Mega Stones. An Audino holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Banettite,One of a variety of mysterious Mega Stones. A Banette holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Barbaracite,One of a variety of mysterious Mega Stones. A Barbaracle holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Beedrillite,One of a variety of mysterious Mega Stones. A Beedrill holding this stone will be able to Mega Evolve during battle.,Mega Evolution Tutorial
 Blastoisinite,One of a variety of mysterious Mega Stones. A Blastoise holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Blazikenite,One of a variety of mysterious Mega Stones. A Blaziken holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Cameruptite,One of a variety of mysterious Mega Stones. A Camerupt holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Chandelurite,One of a variety of mysterious Mega Stones. A Chandelure holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Charizardite X,One of a variety of mysterious Mega Stones. A Charizard holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Charizardite Y,One of a variety of mysterious Mega Stones. A Charizard holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
-Chesnaughtite,One of a variety of mysterious Mega Stones. A Chesnaught holding this stone will be able to Mega Evolve during battle.,Deposit a Chesnaught from Pokémon Legends: Z-A
+Chesnaughtite,One of a variety of mysterious Mega Stones. A Chesnaught holding this stone will be able to Mega Evolve during battle.,Deposit a Chesnaught from Pokémon Legends: Z-AShop2000 VP
 Chimechite,One of a variety of mysterious Mega Stones. A Chimecho holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Clefablite,One of a variety of mysterious Mega Stones. A Clefable holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Crabominite,One of a variety of mysterious Mega Stones. A Crabominable holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
-Delphoxite,One of a variety of mysterious Mega Stones. A Delphox holding this stone will be able to Mega Evolve during battle.,Deposit a Delphox from Pokémon Legends: Z-A
+Delphoxite,One of a variety of mysterious Mega Stones. A Delphox holding this stone will be able to Mega Evolve during battle.,Deposit a Delphox from Pokémon Legends: Z-AShop2000 VP
+Dragalgite,One of a variety of mysterious Mega Stones. A Dragalge holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Dragoninite,One of a variety of mysterious Mega Stones. A Dragonite holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Drampanite,One of a variety of mysterious Mega Stones. A Drampa holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Eelektrossite,One of a variety of mysterious Mega Stones. An Eelektross holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Emboarite,One of a variety of mysterious Mega Stones. An Emboar holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Excadrite,One of a variety of mysterious Mega Stones. An Excadrill holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Falinksite,One of a variety of mysterious Mega Stones. A Falinks holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Feraligite,One of a variety of mysterious Mega Stones. A Feraligatr holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Floettite,One of a variety of mysterious Mega Stones. A special Floette holding this stone will be able to Mega Evolve during battle.,Deposit a Floette Eternal Flower from Pokémon Legends: Z-A
 Froslassite,One of a variety of mysterious Mega Stones. A Froslass holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
@@ -63,7 +83,7 @@ Gengarite,One of a variety of mysterious Mega Stones. A Gengar holding this ston
 Glalitite,One of a variety of mysterious Mega Stones. A Glalie holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Glimmoranite,One of a variety of mysterious Mega Stones. A Glimmora holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Golurkite,One of a variety of mysterious Mega Stones. A Golurk holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
-Greninjite,One of a variety of mysterious Mega Stones. A Greninja holding this stone will be able to Mega Evolve during battle.,Deposit a Greninja from Pokémon Legends: Z-A
+Greninjite,One of a variety of mysterious Mega Stones. A Greninja holding this stone will be able to Mega Evolve during battle.,Deposit a Greninja from Pokémon Legends: Z-AShop2000 VP
 Gyaradosite,One of a variety of mysterious Mega Stones. A Gyarados holding this stone will be able to Mega Evolve during battle.,Mega Evolution Tutorial
 Hawluchanite,One of a variety of mysterious Mega Stones. A Hawlucha holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Heracronite,One of a variety of mysterious Mega Stones. A Heracross holding this stone will be able to Mega Evolve during battle.,Mega Evolution Tutorial
@@ -71,20 +91,31 @@ Houndoominite,One of a variety of mysterious Mega Stones. A Houndoom holding thi
 Kangaskhanite,One of a variety of mysterious Mega Stones. A Kangaskhan holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Lopunnite,One of a variety of mysterious Mega Stones. A Lopunny holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Lucarionite,One of a variety of mysterious Mega Stones. A Lucario holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Malamarite,One of a variety of mysterious Mega Stones. A Malamar holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Manectite,One of a variety of mysterious Mega Stones. A Manectric holding this stone will be able to Mega Evolve during battle.,Mega Evolution Tutorial
+Mawilite,One of a variety of mysterious Mega Stones. A Mawile holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Medichamite,One of a variety of mysterious Mega Stones. A Medicham holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Meganiumite,One of a variety of mysterious Mega Stones. A Meganium holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Meowsticite,One of a variety of mysterious Mega Stones. A Meowstic holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Metagrossite,One of a variety of mysterious Mega Stones. A Metagross holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Pidgeotite,One of a variety of mysterious Mega Stones. A Pidgeot holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Pinsirite,One of a variety of mysterious Mega Stones. A Pinsir holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Pyroarite,One of a variety of mysterious Mega Stones. A Pyroar holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Raichunite X,One of a variety of mysterious Mega Stones. A Raichu holding this stone will be able to Mega Evolve during battle.,Special Gift
+Raichunite Y,One of a variety of mysterious Mega Stones. A Raichu holding this stone will be able to Mega Evolve during battle.,Special Gift
 Sablenite,One of a variety of mysterious Mega Stones. A Sableye holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Sceptilite,One of a variety of mysterious Mega Stones. A Sceptile holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Scizorite,One of a variety of mysterious Mega Stones. A Scizor holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Scolipite,One of a variety of mysterious Mega Stones. A Scolipede holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Scovillainite,One of a variety of mysterious Mega Stones. A Scovillain holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
+Scraftinite,One of a variety of mysterious Mega Stones. A Scrafty holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Sharpedonite,One of a variety of mysterious Mega Stones. A Sharpedo holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Skarmorite,One of a variety of mysterious Mega Stones. A Skarmory holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Slowbronite,"One of a variety of mysterious Mega Stones. A Slowbro holding this stone will be able to Mega Evolve during battle. It won't work for a Galarian Slowbro, however.",Shop2000 VP
+Staraptite,One of a variety of mysterious Mega Stones. A Staraptor holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Starminite,One of a variety of mysterious Mega Stones. A Starmie holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Steelixite,One of a variety of mysterious Mega Stones. A Steelix holding this stone will be able to Mega Evolve during battle.,Mega Evolution Tutorial
+Swampertite,One of a variety of mysterious Mega Stones. A Swampert holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Tyranitarite,One of a variety of mysterious Mega Stones. A Tyranitar holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Venusaurite,One of a variety of mysterious Mega Stones. A Venusaur holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
 Victreebelite,One of a variety of mysterious Mega Stones. A Victreebel holding this stone will be able to Mega Evolve during battle.,Shop2000 VP
@@ -118,7 +149,9 @@ Wacan Berry,"If a Pokémon holding this Berry is hit with a supereffective Elect
 Yache Berry,"If a Pokémon holding this Berry is hit with a supereffective Ice-type move, the power of that move will be weakened.",Shop400 VP
 Bug-Type Affinity Ticket,A ticket that makes you more likely to meet Bug-type Pokémon in the next lineup.,Achievements
 Dark-Type Affinity Ticket,A ticket that makes you more likely to meet Dark-type Pokémon in the next lineup.,Achievements
+Dive Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Dive Balls.,-
 Dragon-Type Affinity Ticket,A ticket that makes you more likely to meet Dragon-type Pokémon in the next lineup.,Achievements
+Dusk Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Dusk Balls.,-
 Electric-Type Affinity Ticket,A ticket that makes you more likely to meet Electric-type Pokémon in the next lineup.,Achievements
 Fairy-Type Affinity Ticket,A ticket that makes you more likely to meet Fairy-type Pokémon in the next lineup.,Achievements
 Fighting-Type Affinity Ticket,A ticket that makes you more likely to meet Fighting-type Pokémon in the next lineup.,Achievements
@@ -127,13 +160,23 @@ Flying-Type Affinity Ticket,A ticket that makes you more likely to meet Flying-t
 Ghost-Type Affinity Ticket,A ticket that makes you more likely to meet Ghost-type Pokémon in the next lineup.,Achievements
 Grass-Type Affinity Ticket,A ticket that makes you more likely to meet Grass-type Pokémon in the next lineup.,Achievements
 Ground-Type Affinity Ticket,A ticket that makes you more likely to meet Ground-type Pokémon in the next lineup.,Achievements
+Heal Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Heal Balls.,-
 Ice-Type Affinity Ticket,A ticket that makes you more likely to meet Ice-type Pokémon in the next lineup.,Achievements
+Luxury Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Luxury Balls.,-
+Nest Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Nest Balls.,-
+Net Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Net Balls.,-
 Normal-Type Affinity Ticket,A ticket that makes you more likely to meet Normal-type Pokémon in the next lineup.,Achievements
 Poison-Type Affinity Ticket,A ticket that makes you more likely to meet Poison-type Pokémon in the next lineup.,Achievements
+Poke Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside regular Poké Balls.,-
+Premier Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Premier Balls.,-
 Psychic-Type Affinity Ticket,A ticket that makes you more likely to meet Psychic-type Pokémon in the next lineup.,Achievements
+Quick Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Quick Balls.,-
 Quick Coupon,A ticket that can be used to reduce the wait time in Recruit Ranch,MissionsBattle PassAchievements
+Rare Poke Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside rare Poké Balls.,-
+Repeat Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Repeat Balls.,-
 Rock-Type Affinity Ticket,A ticket that makes you more likely to meet Rock-type Pokémon in the next lineup.,Achievements
 Steel-Type Affinity Ticket,A ticket that makes you more likely to meet Steel-type Pokémon in the next lineup.,Achievements
 Teammate Ticket,A ticket that can be used to recruit a Pokémon at Recruit Ranch,MissionsBattle PassAchievements
+Timer Ball Guaranteed Ticket,A ticket that will let you meet a lineup of Pokémon that are inside Timer Balls.,-
 Training Ticket,A ticket that can be used to train a Pokémon without using Victory Points,MissionsBattle PassAchievements
 Water-Type Affinity Ticket,A ticket that makes you more likely to meet Water-type Pokémon in the next lineup.,Achievements
