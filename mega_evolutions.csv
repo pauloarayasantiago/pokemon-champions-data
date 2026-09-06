@@ -41,13 +41,16 @@ Camerupt,Mega Camerupt,Fire,Ground,Sheer Force,70,120,100,145,105,20,560
 Altaria,Mega Altaria,Dragon,Fairy,Pixilate,75,110,110,110,105,80,590
 Banette,Mega Banette,Ghost,,Prankster,64,165,75,93,83,75,555
 Chimecho,Mega Chimecho,Psychic,Steel,Levitate,75,50,110,135,120,65,555
-Absol,Mega Absol,Dark,,Magic Bounce,65,150,60,115,60,115,565
+Absol,Mega Absol X,Dark,,Magic Bounce,65,150,60,115,60,115,565
+Absol,Mega Absol Y,Dark,Ghost,Sharpness,65,154,60,75,60,151,565
 Glalie,Mega Glalie,Ice,,Refrigerate,80,120,80,120,80,100,580
 Metagross,Mega Metagross,Steel,Psychic,Tough Claws,80,145,150,105,110,110,700
 Staraptor,Mega Staraptor,Fighting,Flying,Contrary,85,140,100,60,90,110,585
 Lopunny,Mega Lopunny,Normal,Fighting,Scrappy,65,136,94,54,96,135,580
-Garchomp,Mega Garchomp,Dragon,Ground,Sand Force,108,170,115,120,95,92,700
-Lucario,Mega Lucario,Fighting,Steel,Adaptability,70,145,88,140,70,112,625
+Garchomp,Mega Garchomp X,Dragon,Ground,Sand Force,108,170,115,120,95,92,700
+Garchomp,Mega Garchomp Y,Dragon,,Levitate,108,130,85,141,85,151,700
+Lucario,Mega Lucario X,Fighting,Steel,Adaptability,70,145,88,140,70,112,625
+Lucario,Mega Lucario Y,Fighting,Steel,Aura Guard,70,100,70,164,70,151,625
 Abomasnow,Mega Abomasnow,Grass,Ice,Snow Warning,90,132,105,132,105,30,594
 Gallade,Mega Gallade,Psychic,Fighting,Inner Focus,68,165,95,65,115,110,618
 Froslass,Mega Froslass,Ice,Ghost,Snow Warning,70,80,70,140,100,120,580
